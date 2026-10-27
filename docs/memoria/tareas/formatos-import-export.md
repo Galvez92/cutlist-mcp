@@ -9,7 +9,7 @@ Importadores/exportadores: Cortecloud (fixture real en tests/fixtures/cortecloud
   - `cutlist/model.py` — `Pieza`, `ListaCorte`, `Hoja`, `Colocacion`, `Layout`, `Aviso`/`Fuente` y estados de verificación.
   - `cutlist/formats/` — `cortecloud`, `csv_generico`, `opencutlist`, `polyboard`, `promob`, `pro100`, `dxf`, más `base.py` (utilidades de tabla y contrato), `listado.py` (listados con columnas declaradas) y `__init__.py` (registro).
 - Documentación por formato en `docs/formatos/` (índice con tabla de estados + una ficha por formato con fuentes y «por revisar»).
-- Pruebas: `tests/test_cortecloud.py`, `test_csv_generico.py`, `test_opencutlist.py`, `test_listados.py`, `test_dxf.py`, `test_registry.py` (58 pruebas, todas pasando).
+- Pruebas: `tests/test_cortecloud.py`, `test_csv_generico.py`, `test_opencutlist.py`, `test_listados.py`, `test_dxf.py`, `test_registry.py` (59 pruebas, todas pasando).
 - Fixtures nuevos en `tests/fixtures/` con `README.md` que distingue reales de ejemplos construidos.
 - Entorno: `docker-compose.base44.yml`, `.base44/environment.json` y la sección de entorno en `AGENTS.md`.
 

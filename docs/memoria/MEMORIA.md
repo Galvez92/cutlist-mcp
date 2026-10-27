@@ -32,7 +32,7 @@ Restricciones observadas en uso real (no son reglas del motor por defecto):
 
 ## Entorno de desarrollo
 - `docker compose -f docker-compose.base44.yml up -d --build` (servicio `docs` en el puerto 3000 para el preview; el branch no tiene UI web todavía, la demo llega con `demo-web-docs`).
-- Pruebas en el contenedor: `docker compose -f docker-compose.base44.yml run --rm pruebas` (58 pruebas `unittest`).
+- Pruebas en el contenedor: `docker compose -f docker-compose.base44.yml run --rm pruebas` (59 pruebas `unittest`).
 
 ## Reglas
 - Nunca merge a `main` ni force-push sin OK del owner.
