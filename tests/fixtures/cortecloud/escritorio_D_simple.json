@@ -1,0 +1,321 @@
+{
+  "parts": [
+    {
+      "quantity": 1,
+      "c": 732.0,
+      "l": 600.0,
+      "function": "Pata costado exterior acento der (doble 36)",
+      "complement": "D01 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 732.0,
+      "l": 600.0,
+      "function": "Pata costado exterior acento izq (doble 36)",
+      "complement": "D01 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 732.0,
+      "l": 564.0,
+      "function": "Costado interior der (pegado+tornillo al exterior)",
+      "complement": "D02 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 732.0,
+      "l": 564.0,
+      "function": "Costado interior izq (pegado+tornillo al exterior)",
+      "complement": "D02 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 1173.5,
+      "l": 600.0,
+      "function": "Cubierta izquierda (pasacables Ø35)",
+      "complement": "D03 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)",
+      "machining": {
+        "x": 1173.5,
+        "y": 600.0,
+        "z": 18,
+        "startSide": 0,
+        "horizontalDrills": [],
+        "verticalDrills": [
+          {
+            "corner": 0,
+            "bolthole": false,
+            "x": 300,
+            "y": 60,
+            "depth": 18,
+            "diameter": 35,
+            "face": "i"
+          }
+        ],
+        "furrowMachining": null,
+        "furrowMachiningPair": null
+      }
+    },
+    {
+      "quantity": 1,
+      "c": 600.0,
+      "l": 373.5,
+      "function": "Cubierta derecha (pasacables Ø35)",
+      "complement": "D04 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)",
+      "machining": {
+        "x": 600.0,
+        "y": 373.5,
+        "z": 18,
+        "startSide": 0,
+        "horizontalDrills": [],
+        "verticalDrills": [
+          {
+            "corner": 0,
+            "bolthole": false,
+            "x": 223.5,
+            "y": 60,
+            "depth": 18,
+            "diameter": 35,
+            "face": "i"
+          }
+        ],
+        "furrowMachining": null,
+        "furrowMachiningPair": null
+      }
+    },
+    {
+      "quantity": 1,
+      "c": 438.5,
+      "l": 153.0,
+      "function": "Cubierta relleno frontal contacto (153 a medida)",
+      "complement": "D05 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 153.0,
+      "l": 98.5,
+      "function": "Cubierta relleno trasero contacto (153 a medida)",
+      "complement": "D06 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 2,
+      "c": 449.0,
+      "l": 100.0,
+      "function": "Travesaño bajo junta de cubierta (soporta rellenos)",
+      "complement": "D07 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 1628.0,
+      "l": 100.0,
+      "function": "Travesaño trasero (rigidez, sujeta a muro)",
+      "complement": "D08 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 2,
+      "c": 546.0,
+      "l": 112.0,
+      "function": "Colgador cajón",
+      "complement": "D09 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 2,
+      "c": 460.0,
+      "l": 110.0,
+      "function": "Frente cajón",
+      "complement": "D10 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "c2": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "l1": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "l2": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 4,
+      "c": 450.0,
+      "l": 75.0,
+      "function": "Lateral cajón",
+      "complement": "D11 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 2,
+      "c": 402.0,
+      "l": 75.0,
+      "function": "Frente interior cajón",
+      "complement": "D12 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 2,
+      "c": 402.0,
+      "l": 75.0,
+      "function": "Trasera cajón",
+      "complement": "D12 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 2,
+      "c": 450.0,
+      "l": 438.0,
+      "function": "Piso cajón",
+      "complement": "D13 Escritorio Atelier Simple 1700x600x750",
+      "c1": null,
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 664.0,
+      "l": 65.0,
+      "function": "Faldón central zona rodillas (h65)",
+      "complement": "D14 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 771L Moscato 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 1500.0,
+      "l": 250.0,
+      "function": "Repisa flotante R1 roble (soporte oculto HyM 00105412 + LED)",
+      "complement": "D15 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)",
+      "machining": {
+        "x": 1500.0,
+        "y": 250.0,
+        "z": 18,
+        "startSide": 0,
+        "horizontalDrills": [],
+        "verticalDrills": [
+          {
+            "corner": 0,
+            "bolthole": false,
+            "x": 30,
+            "y": 34.85,
+            "depth": 18,
+            "diameter": 8,
+            "face": "i"
+          }
+        ],
+        "furrowMachining": {
+          "face": "i",
+          "depth": 8,
+          "width": 9.7,
+          "distance": 30
+        },
+        "furrowMachiningPair": null
+      }
+    },
+    {
+      "quantity": 1,
+      "c": 1500.0,
+      "l": 250.0,
+      "function": "Repisa flotante R2 roble (soporte oculto HyM 00105412)",
+      "complement": "D15 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 1500.0,
+      "l": 250.0,
+      "function": "Repisa flotante R3 roble (soporte oculto HyM 00105412)",
+      "complement": "D15 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    },
+    {
+      "quantity": 1,
+      "c": 262.0,
+      "l": 250.0,
+      "function": "Divisor nicho entre R1 y R2 (acento, tornillo oculto)",
+      "complement": "D16 Escritorio Atelier Simple 1700x600x750",
+      "c1": "PVC 719L Roble Americano 0.4 x 22 mm REHAU ®",
+      "c2": null,
+      "l1": null,
+      "l2": null,
+      "material": "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)"
+    }
+  ]
+}
