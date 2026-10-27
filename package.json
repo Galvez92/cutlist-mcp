@@ -1,0 +1,29 @@
+{
+  "name": "cutlist-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Optimizador de corte de tableros open-source con servidor MCP (módulos paramétricos → piezas → optimización → exportación)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start:stdio": "tsx src/stdio.ts",
+    "start:http": "tsx src/http.ts",
+    "dev:http": "tsx watch src/http.ts",
+    "test": "node --import tsx --test tests/modulos.test.ts tests/optimizar.test.ts tests/export.test.ts tests/servidor.test.ts tests/stdio.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/node": "^2.1.2",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+!.env.base44-defaults
+.DS_Store
+.salidas/

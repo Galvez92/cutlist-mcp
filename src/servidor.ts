@@ -1,0 +1,25 @@
+/** Fábrica del servidor MCP: registra las cuatro herramientas del proyecto. */
+
+import { McpServer } from '@modelcontextprotocol/server';
+
+import { registrarCrearModulo } from './tools/crearModulo';
+import { registrarExportar } from './tools/exportar';
+import { registrarListarPiezas } from './tools/listarPiezas';
+import { registrarOptimizarCorte } from './tools/optimizarCorte';
+
+export const NOMBRE_SERVIDOR = 'cutlist-mcp';
+export const VERSION_SERVIDOR = '0.1.0';
+
+export const NOMBRES_HERRAMIENTAS = ['crear_modulo', 'listar_piezas', 'optimizar_corte', 'exportar'] as const;
+
+/** Construye una instancia nueva (una por conexión o por request, según el transporte). */
+export function crearServidor(): McpServer {
+  const servidor = new McpServer({ name: NOMBRE_SERVIDOR, version: VERSION_SERVIDOR });
+
+  registrarCrearModulo(servidor);
+  registrarListarPiezas(servidor);
+  registrarOptimizarCorte(servidor);
+  registrarExportar(servidor);
+
+  return servidor;
+}
