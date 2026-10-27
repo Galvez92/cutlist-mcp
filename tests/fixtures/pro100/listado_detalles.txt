@@ -1,0 +1,4 @@
+Pata costado exterior acento der	1	732	600	18
+Costado interior der	1	732	564	18
+Lateral cajón	4	450	75	18
+Travesaño trasero	1	1628	100	18

@@ -1,0 +1,77 @@
+# Entorno de desarrollo Base44 para cutlist-mcp.
+#
+# Este repositorio es una biblioteca de Python (sin dependencias externas) más
+# documentación. No hay todavía interfaz web: la demo web llega con la rama
+# `demo-web-docs`. Por eso:
+#   - `docs`     sirve la documentación del repo en el puerto 3000 (lo que muestra
+#                el preview). Es el único servicio de larga duración.
+#   - `pruebas`  ejecuta la suite de pruebas (unittest) y termina; se usa con
+#                `docker compose -f docker-compose.base44.yml run --rm pruebas`.
+#
+# Uso normal:
+#   docker compose -f docker-compose.base44.yml up -d --build
+#   docker compose -f docker-compose.base44.yml ps
+#   docker compose -f docker-compose.base44.yml run --rm pruebas
+#
+# No hay secretos ni variables externas. No se necesitan overrides de sandbox
+# (no hay allowlist de host ni origen, ni HMR: `python -m http.server` no valida
+# el encabezado Host y los archivos se sirven directamente desde el repo montado).
+
+name: cutlist-mcp
+
+services:
+  docs:
+    image: python:3.12-slim
+    working_dir: /app
+    command:
+      - python
+      - -m
+      - http.server
+      - "3000"
+      - --bind
+      - 0.0.0.0
+      - --directory
+      - /app/docs
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    labels:
+      base44.project: "cutlist-mcp documentación"
+      base44.kind: web
+      base44.port: "3000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3000/', timeout=3).status == 200 else 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
+
+  pruebas:
+    image: python:3.12-slim
+    working_dir: /app
+    command:
+      - python
+      - -m
+      - unittest
+      - discover
+      - -s
+      - tests
+      - -t
+      - .
+      - -v
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+    labels:
+      base44.project: "cutlist-mcp pruebas"
+      base44.kind: worker
+    depends_on:
+      - docs

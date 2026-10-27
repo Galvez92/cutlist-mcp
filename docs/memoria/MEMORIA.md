@@ -22,6 +22,18 @@ Restricciones observadas en uso real (no son reglas del motor por defecto):
 - Tablero 2500 × 1830 mm, 18 mm.
 - Ranuras permitidas: 5.7/6.2/6.7/7/9.7/12.7/15.7/18.7/25.7 mm. Barrenos horizontales Ø3/8; verticales Ø3/5/8/10/15/20/35.
 
+## Estado de formatos (2026-10-27, rama `formatos-import-export`)
+- Paquete `cutlist/` con la biblioteca estándar de Python 3.12 (sin dependencias) y registro en `cutlist/formats/__init__.py`; cada formato declara dirección, estado y fuentes, y lo no verificado viaja como aviso «por revisar» con enlace.
+- Verificado: CSV genérico (especificación propia, `docs/formatos/csv-generico.md`).
+- Parcial (interfaz documentada, contenido sin verificar): Cortecloud JSON (unidad y semántica de `c`/`l` sin declarar en la guía oficial), OpenCutList CSV (títulos por defecto configurables/traducibles; `.skp` no se lee), PolyBoard (columnas/orden y opciones de cotas configurables), DXF (escritura limitada a R12; lectura sólo de rectángulos alineados a los ejes).
+- Por revisar: Promob (columnas del CSV de Cut Pro configurables por optimizador; esquema del XML de listagem no publicado, importador XML pendiente) y PRO100 (layout del listado exportado no publicado; el archivo no trae tipo de material por pieza).
+- PolyBoard, Promob y PRO100: sólo importación (no está documentado que importen listas de corte externas). DXF se exporta desde un `Layout`, no desde una `ListaCorte`.
+- Detalle y fuentes: `docs/formatos/`.
+
+## Entorno de desarrollo
+- `docker compose -f docker-compose.base44.yml up -d --build` (servicio `docs` en el puerto 3000 para el preview; el branch no tiene UI web todavía, la demo llega con `demo-web-docs`).
+- Pruebas en el contenedor: `docker compose -f docker-compose.base44.yml run --rm pruebas` (58 pruebas `unittest`).
+
 ## Reglas
 - Nunca merge a `main` ni force-push sin OK del owner.
 - No releases, ni listados en marketplaces (DataVendor, Flippa, etc.) sin OK del owner.
