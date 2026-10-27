@@ -23,3 +23,19 @@ Scope:
 4. **Simple web demo**, tests and es/en docs.
 
 MIT licensed.
+
+## Demo web
+
+Demo mínima (Vite) del motor: piezas y tablero en stock → layout SVG, PDF y CSV, con el
+fixture real de Cortecloud cargado como ejemplo. Guía, ejemplos y pruebas en
+[`demo/README.md`](demo/README.md); el motor está en [`core/`](core/README.md) y lo no
+verificado en [`docs/por-revisar.md`](docs/por-revisar.md).
+
+```bash
+docker compose -f docker-compose.base44.yml up -d   # http://localhost:3000
+npm install && npm test
+```
+
+Minimal Vite demo of the engine: parts plus sheet stock → SVG layout, PDF and CSV, with the
+real Cortecloud fixture preloaded. See [`demo/README.md`](demo/README.md) for usage,
+examples and tests; the engine lives in [`core/`](core/README.md).

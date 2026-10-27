@@ -1,0 +1,17 @@
+{
+  "name": "cutlist-mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Optimizador de corte de tableros open-source (motor, demo web, servidor MCP)",
+  "license": "MIT",
+  "workspaces": [
+    "core",
+    "demo"
+  ],
+  "scripts": {
+    "dev": "npm --workspace cutlist-demo run dev",
+    "build": "npm --workspace cutlist-demo run build",
+    "test": "npm --workspace cutlist-demo run test"
+  }
+}
