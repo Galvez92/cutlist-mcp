@@ -1,0 +1,24 @@
+{
+  "name": "cutlist-mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Optimizador de corte de tableros: motor TypeScript (piezas + stock -> layout, aprovechamiento, lista de corte, SVG/PDF)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "tsx tools/preview/server.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "pdf-lib": "^1.17.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
