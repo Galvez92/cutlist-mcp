@@ -7,6 +7,9 @@
 #                el preview). Es el único servicio de larga duración.
 #   - `pruebas`  ejecuta la suite de pruebas (unittest) y termina; se usa con
 #                `docker compose -f docker-compose.base44.yml run --rm pruebas`.
+#                Está detrás del perfil `pruebas` para que `up -d` (el arranque
+#                normal del entorno) no deje un contenedor terminado: es un
+#                trabajo de un solo uso, no un servicio de larga duración.
 #
 # Uso normal:
 #   docker compose -f docker-compose.base44.yml up -d --build
@@ -53,6 +56,11 @@ services:
     restart: on-failure
 
   pruebas:
+    # Trabajo de un solo uso: fuera de `docker compose up -d` para no dejar un
+    # contenedor terminado que parezca un servicio caído. Se ejecuta a demanda
+    # con `docker compose -f docker-compose.base44.yml run --rm pruebas`.
+    profiles:
+      - pruebas
     image: python:3.12-slim
     working_dir: /app
     command:

@@ -18,9 +18,13 @@
     Es lo que muestra el preview, porque **esta rama todavía no tiene UI web** (la
     demo web llega con la rama `demo-web-docs`). Los archivos se sirven por bind
     mount, directo desde el repo.
-  - `pruebas` (un solo uso): corre la suite `unittest` y termina.
+  - `pruebas` (un solo uso): corre la suite `unittest` y termina. Está detrás del
+    perfil `pruebas`, así que **`up -d` no lo arranca**: un contenedor terminado
+    se lee como servicio caído en las validaciones automáticas del entorno.
 - Pruebas: `docker compose -f docker-compose.base44.yml run --rm pruebas`
   (equivale a `python3 -m unittest discover -s tests -t .`). 59 pruebas.
+  Para limpiar todo, incluido el servicio de pruebas: `docker compose -f
+  docker-compose.base44.yml --profile pruebas down --remove-orphans`.
 - Sin secretos, sin variables de entorno requeridas y **sin overrides de sandbox**:
   no hay allowlist de host/origen ni HMR que ajustar (`python -m http.server` no
   valida el encabezado `Host` y no hay servidor de recarga). `BASE44_PREVIEW_MODE`
