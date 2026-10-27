@@ -1,0 +1,52 @@
+# Entorno de desarrollo de cutlist-mcp (Base44).
+#
+# El proyecto todavía no tiene aplicación web propia: esta rama entrega la capa de
+# módulos paramétricos, que es una biblioteca. Para que el entorno tenga un punto
+# de entrada visible en el puerto 3000, `web` sirve una vista previa de desarrollo
+# con el servidor HTTP de la biblioteca estándar de Python (sin dependencias).
+#
+# Ambos servicios montan el repositorio y no construyen imagen: cualquier edición
+# del código se ve al instante, sin rebuild.
+
+name: cutlist-mcp
+
+services:
+  web:
+    image: python:3.12-slim
+    working_dir: /app
+    command: ["python", "-m", "app.servidor"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=3000
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    labels:
+      base44.project: "cutlist-mcp (vista previa de módulos paramétricos)"
+      base44.kind: web
+      base44.port: "3000"
+    healthcheck:
+      # Usa una ruta que ya existe en la aplicación (no se agregan endpoints para el chequeo).
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3000/api/modulos', timeout=3).status == 200 else 1)
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  tests:
+    # Servicio de una sola corrida: pytest sobre el código montado.
+    #   docker compose -f docker-compose.base44.yml run --rm tests
+    image: python:3.12-slim
+    working_dir: /app
+    command: ["sh", "-ec", "pip install -q -r requirements-dev.txt && exec python -m pytest"]
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./:/app
+    profiles: ["tests"]
