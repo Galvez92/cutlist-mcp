@@ -1,5 +1,5 @@
 # Tarea: motor-optimizador
-**Rama:** `optimizer-engine`  **Estado:** en revisión (PR en borrador)
+**Rama:** `optimizer-engine`  **Estado:** en revisión (PR #4 en borrador)
 
 ## Objetivo
 Motor de nesting: piezas (ancho, alto, cantidad, veta, canto) + tableros (medidas, espesor, kerf) → layout guillotina y no guillotina, % aprovechamiento, lista de corte, etiquetas, salida SVG/PDF. Soporte de perfiles de restricciones (ej. Cortecloud/Madijal).
