@@ -6,7 +6,7 @@
   "description": "Optimizador de corte de tableros: motor TypeScript (optimizer-engine) + módulos paramétricos + demo web (Vite)",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "workspaces": [
     "demo"

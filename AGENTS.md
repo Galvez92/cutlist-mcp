@@ -19,6 +19,14 @@
 - Pruebas: `docker compose -f docker-compose.base44.yml exec -T web npm test`
   (Vitest; la suite cubre el motor en `tests/`, los módulos paramétricos en `tests/test_*` y
   la demo en `demo/tests/`).
+- Node: `jsdom` 30.1.3 arrastra `undici` 8.12.3, que exige Node ≥ 22.19; con Node 20 los
+  workers de jsdom (`demo/tests/app/*.test.js`) no arrancan
+  (`TypeError: Cannot read properties of undefined (reading 'bind')` en
+  `undici/lib/interceptor/decompress.js`). `package.json` declara el mismo rango que jsdom
+  (`^22.22.2 || ^24.15.0 || >=26.0.0`), `.nvmrc` fija `22.23.4` y
+  `.github/workflows/ci.yml` lo usa (`node-version-file: .nvmrc`) para correr `npm ci`,
+  `npm test` y `npm run typecheck`. La imagen `node:22-bookworm-slim` del compose sigue la
+  línea 22 LTS, así que también cumple; si actualizas jsdom, revisa estos tres valores.
 - Hosts y orígenes: el compose pasa `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.${BASE44_SANDBOX_HOST_DOMAIN}`
   (Vite ≥ 6.1 lo agrega a `allowedHosts`); sin efecto cuando la variable no está definida.
   No hay hosts fijos en el código ni overrides condicionados a `BASE44_PREVIEW_MODE`: no hizo
