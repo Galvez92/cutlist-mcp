@@ -61,6 +61,12 @@ const servidor = crearServidorHttp((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && url.pathname === '/favicon.ico') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
     const cuerpo = paginaPresentacion();
     res.writeHead(200, {
