@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
-import { optimizar } from '../src/core/optimizar';
+import { optimizar } from '../src/core/adaptador';
 import { normalizarPieza, normalizarTablero, type Pieza } from '../src/core/tipos';
 import { buscarFormato, catalogoFormatos, IDS_FORMATOS, idsFormatos } from '../src/export';
 import { exportarCortecloud } from '../src/export/cortecloud';

@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import type { ResultadoOptimizacion } from '../core/optimizar';
-import { optimizar } from '../core/optimizar';
+import type { ResultadoOptimizacion } from '../core/adaptador';
+import { optimizar } from '../core/adaptador';
 import { exportarSchema } from '../esquemas';
 import { buscarFormato, catalogoFormatos, idsFormatos } from '../export';
 import { ejecutar, normalizarPiezas, normalizarTableros } from './comun';

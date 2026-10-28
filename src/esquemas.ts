@@ -13,7 +13,7 @@ export const piezaSchema = z.object({
   largo: z.number().positive().describe('Medida en el eje de la veta (campo `c` de Cortecloud).'),
   ancho: z.number().positive().describe('Medida transversal (campo `l` de Cortecloud).'),
   cantidad: z.number().int().positive().optional().describe('Unidades iguales. Por defecto 1.'),
-  veta: z.boolean().optional().describe('`true` = la veta debe seguir el eje `largo`; la pieza no se rota.'),
+  veta: z.boolean().optional().describe('`true` = la veta sigue el eje `largo`. La pieza se rota sólo sobre tableros sin veta.'),
   cantos: z
     .object({
       largo1: canto.optional(),
@@ -60,7 +60,7 @@ export const listaPiezasSchema = {
 };
 
 export const opcionesOptimizacionShape = {
-  estrategia: z.enum(['guillotina', 'no-guillotina']).optional().describe('Por defecto `guillotina`.'),
+  estrategia: z.enum(['guillotina', 'no-guillotina']).optional().describe('Por defecto `auto`: prueba ambas y elige el mejor resultado.'),
   kerf: z.number().nonnegative().optional().describe('Kerf global en mm; si falta se usa el del tablero.'),
   permitirRotacion: z.boolean().optional().describe('`false` desactiva la rotación de todas las piezas.')
 };

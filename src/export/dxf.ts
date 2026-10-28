@@ -9,7 +9,7 @@
  * y TEXT (10/20/30, 40, 1) en las capas TABLERO, PIEZA y ETIQUETA, sin tabla de capas.
  */
 
-import type { ResultadoOptimizacion } from '../core/optimizar';
+import type { ResultadoOptimizacion } from '../core/adaptador';
 import { componerLienzo } from './disposicion';
 
 const SEPARACION_HOJAS = 200;

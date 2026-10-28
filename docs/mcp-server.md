@@ -101,14 +101,18 @@ Todo lo que no se ha podido contrastar con una fuente real queda marcado `por re
    100 mm, 3 cajones, 4 estantes (librero), 1 estante (clóset) y 2 puertas son valores de partida del
    proyecto; conviene pasarlos explícitos en cada corrida. El espesor por defecto (18 mm) sí sale del
    perfil de `docs/memoria/MEMORIA.md`.
-5. **Restricciones de fabricación.** El motor todavía **no** aplica el perfil de restricciones de
-   Cortecloud/Madijal de la memoria (pieza mínima, pieza mecanizada, medidas máximas, ranuras y
-   barrenos permitidos).
+5. **Restricciones de fabricación.** El motor (de `optimizer-engine`) ya tiene perfiles de
+   restricciones (`CORTECLOUD_MADIJAL_PROFILE` en `src/engine/profiles.ts`), pero el adaptador del
+   MCP (`src/core/adaptador.ts`) todavía no los pasa a `optimize()`. Falta exponer el perfil como
+   parámetro de `optimizar_corte`.
 6. **Alcance de la cajonera.** Genera el cuerpo y los frentes de cajón, no la caja del cajón.
 7. **Trasera.** Se modela con el mismo espesor que el cuerpo, no con un fondo delgado.
-8. **Optimizador.** Heurística de primer ajuste (estantes para guillotina, MaxRects con mejor lado
-   corto para no guillotina); no garantiza el óptimo. En `no-guillotina` el kerf se descuenta también
-   en los bordes del tablero.
+8. **Optimizador.** El motor es el de la rama `optimizer-engine` (PR 4), integrado en `src/engine/`.
+   Con `auto` (por defecto) prueba guillotina y MaxRects con cuatro órdenes de piezas cada uno y
+   devuelve el mejor resultado (menos piezas sin colocar → menos hojas → menos desperdicio). La
+   guillotina hace partición recursiva con cortes de lado a lado; MaxRects usa cortes en L. El
+   kerf se respeta entre piezas vecinas. Las piezas con veta **pueden** rotarse sobre un tablero sin
+   veta (el motor lo permite); sobre un tablero con veta, no. No garantiza el óptimo.
 
 ## Entorno del sandbox de Base44
 

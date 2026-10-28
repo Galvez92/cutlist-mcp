@@ -6,7 +6,7 @@
  * junto con la fuente consultada (regla 5 de AGENTS.md).
  */
 
-import type { ResultadoOptimizacion } from '../core/optimizar';
+import type { ResultadoOptimizacion } from '../core/adaptador';
 import type { Pieza } from '../core/tipos';
 import { exportarCortecloud } from './cortecloud';
 import { exportarCsv } from './csv';

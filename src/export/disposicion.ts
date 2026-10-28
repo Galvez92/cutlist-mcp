@@ -3,7 +3,7 @@
  * Las coordenadas son milímetros en el mismo sistema que el optimizador (X a la derecha, Y hacia abajo).
  */
 
-import type { HojaOptimizada } from '../core/optimizar';
+import type { HojaOptimizada } from '../core/adaptador';
 
 export interface HojaUbicada {
   hoja: HojaOptimizada;

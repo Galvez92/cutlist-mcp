@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import { optimizar } from '../core/optimizar';
+import { optimizar } from '../core/adaptador';
 import { optimizarCorteSchema } from '../esquemas';
 import { ejecutar, normalizarPiezas, normalizarTableros, textoOptimizacion } from './comun';
 
@@ -12,7 +12,8 @@ export function registrarOptimizarCorte(servidor: McpServer): void {
       description:
         'Reparte las piezas sobre los tableros en stock y devuelve el layout por hoja (coordenadas en mm), ' +
         'el aprovechamiento y las piezas que no cupieron. Estrategias: `guillotina` (cortes que atraviesan la ' +
-        'pieza, por defecto) y `no-guillotina` (MaxRects). Las piezas con veta nunca se rotan.',
+        'pieza, por defecto) y `no-guillotina` (MaxRects). Con `auto` (omitiendo `estrategia`) prueba ambas y ' +
+        'elige el mejor resultado. Las piezas con veta se rotan sólo sobre tableros sin veta.',
       inputSchema: optimizarCorteSchema
     },
     async ({ piezas: entradasPiezas, tableros: entradasTableros, estrategia, kerf, permitirRotacion }) =>

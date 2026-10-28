@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import type { Colocacion, HojaOptimizada } from '../src/core/optimizar';
-import { optimizar } from '../src/core/optimizar';
+import type { Colocacion, HojaOptimizada } from '../src/core/adaptador';
+import { optimizar } from '../src/core/adaptador';
 import { normalizarPieza, normalizarTablero, type PiezaEntrada, type TableroEntrada } from '../src/core/tipos';
 
 const KERF = 3;
@@ -77,9 +77,9 @@ describe('optimizar_corte · guillotina', () => {
     assert.equal(resultado.resumen.hojasUsadas, 2);
   });
 
-  it('no rota las piezas con veta y las deja como sobrante si no caben', () => {
+  it('deja como sobrante una pieza con veta que no cabe en ningún tablero (ni girada)', () => {
     const resultado = optimizar(
-      piezas([{ id: 'p1', nombre: 'Costado con veta', largo: 1500, ancho: 400, veta: true }]),
+      piezas([{ id: 'p1', nombre: 'Costado con veta', largo: 3000, ancho: 400, veta: true }]),
       tableros([{ id: 't1', largo: 1000, ancho: 2000, kerf: KERF }])
     );
     assert.equal(resultado.hojas.length, 0);
@@ -102,7 +102,7 @@ describe('optimizar_corte · guillotina', () => {
 
   it('respeta el stock disponible y reporta lo que no cupo', () => {
     const resultado = optimizar(
-      piezas([{ id: 'p1', nombre: 'Tapa', largo: 1600, ancho: 1000, cantidad: 2 }]),
+      piezas([{ id: 'p1', nombre: 'Tapa', largo: 2000, ancho: 1500, cantidad: 2 }]),
       tableros([{ id: 't1', largo: 2500, ancho: 1830, kerf: KERF, cantidad: 1 }])
     );
     assert.equal(resultado.hojas.length, 1);

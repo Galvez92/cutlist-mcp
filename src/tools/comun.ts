@@ -1,6 +1,6 @@
 /** Utilidades compartidas por las herramientas MCP. */
 
-import type { ResultadoOptimizacion } from '../core/optimizar';
+import type { ResultadoOptimizacion } from '../core/adaptador';
 import { type Pieza, type PiezaEntrada, type Tablero, type TableroEntrada, normalizarPieza, normalizarTablero, redondear } from '../core/tipos';
 
 export type ResultadoHerramienta = {
