@@ -1,8 +1,8 @@
 {
   "previewPort": 3000,
-  "healthPath": "/",
+  "healthPath": "/health",
   "startCommand": "docker compose -f docker-compose.base44.yml up -d",
   "project": "cutlist-mcp",
-  "notes": "Biblioteca de Python (sólo biblioteca estándar) más documentación. El servicio `docs` sirve docs/ en el puerto 3000 para el preview (único servicio de larga duración); `pruebas` ejecuta la suite y termina, detrás del perfil `pruebas` para que `up -d` no deje un contenedor terminado (docker compose -f docker-compose.base44.yml run --rm pruebas). Sin secretos ni variables externas.",
+  "notes": "Importadores/exportadores de formatos de corte en TypeScript (sobre los tipos del motor de la rama optimizer-engine). El servicio `web` (node:22) instala las dependencias de desarrollo al arrancar y sirve la documentación en el puerto 3000 (tools/preview/server.ts). Pruebas y tipos: docker compose -f docker-compose.base44.yml exec -T web npm test | npm run typecheck. Sin secretos ni variables externas.",
   "secrets": []
 }

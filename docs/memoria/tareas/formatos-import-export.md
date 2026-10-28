@@ -5,16 +5,16 @@
 Importadores/exportadores: Cortecloud (fixture real en tests/fixtures/cortecloud), Promob, CSV genérico, SketchUp/OpenCutList, Polyboard, Pro100, DXF. Investigar documentación pública; lo no verificable = por revisar.
 
 ## Entregado
-- Paquete `cutlist/` (biblioteca estándar de Python 3.12, sin dependencias):
-  - `cutlist/model.py` — `Pieza`, `ListaCorte`, `Hoja`, `Colocacion`, `Layout`, `Aviso`/`Fuente` y estados de verificación.
-  - `cutlist/formats/` — `cortecloud`, `csv_generico`, `opencutlist`, `polyboard`, `promob`, `pro100`, `dxf`, más `base.py` (utilidades de tabla y contrato), `listado.py` (listados con columnas declaradas) y `__init__.py` (registro).
+- Paquete `src/formats/` en TypeScript (Node estándar, sin dependencias de ejecución), sobre los tipos del motor (`src/types.ts`, rama `optimizer-engine`):
+  - `src/formats/model.ts` — `Piece`, `CutList`, `Notice`/`Source` y estados de verificación. La pieza conserva veta tri-estado y cantos de texto (no se fuerza a `PartInput` para no inventar datos); los formatos usan los tipos del motor donde encajan sin pérdida (DXF exporta desde `LayoutResult`).
+  - `src/formats/` — `cortecloud`, `csv_generico`, `opencutlist`, `polyboard`, `promob`, `pro100`, `dxf`, más `base.ts` (utilidades de tabla y contrato), `listado.ts` (listados con columnas declaradas) e `index.ts` (registro). DXF exporta desde el `LayoutResult` del motor.
 - Documentación por formato en `docs/formatos/` (índice con tabla de estados + una ficha por formato con fuentes y «por revisar»).
-- Pruebas: `tests/test_cortecloud.py`, `test_csv_generico.py`, `test_opencutlist.py`, `test_listados.py`, `test_dxf.py`, `test_registry.py` (59 pruebas, todas pasando).
-- Fixtures nuevos en `tests/fixtures/` con `README.md` que distingue reales de ejemplos construidos.
-- Entorno: `docker-compose.base44.yml`, `.base44/environment.json` y la sección de entorno en `AGENTS.md`.
+- Pruebas: `tests/cortecloud.test.ts`, `csv-generico.test.ts`, `opencutlist.test.ts`, `listados.test.ts`, `dxf.test.ts`, `registry.test.ts` (59 pruebas `vitest`, todas pasando; las 59 de Python portadas a TypeScript).
+- Fixtures en `tests/fixtures/` con `README.md` que distingue reales de ejemplos construidos.
+- Entorno: `docker-compose.base44.yml` (node:22), `.base44/environment.json` y la sección de entorno en `AGENTS.md`. El código Python original se eliminó.
 
 ## Criterios de aceptación
-- [x] Pruebas automatizadas pasando (58).
+- [x] Pruebas automatizadas pasando (59 `vitest`, portadas de Python).
 - [x] PR en borrador, sin merge a main.
 - [x] Formatos/datos no verificados marcados `por revisar` con fuente (descriptor + avisos en cada lista).
 - [x] Entrada en la bitácora.

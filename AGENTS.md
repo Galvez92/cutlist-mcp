@@ -11,27 +11,26 @@
 
 ## Entorno de desarrollo (Base44 / sandbox)
 
-- El proyecto es una **biblioteca de Python 3.12 sin dependencias externas** (sólo
-  biblioteca estándar) más documentación. No hay que instalar nada.
-- `docker compose -f docker-compose.base44.yml up -d --build` levanta:
-  - `docs` (puerto 3000, larga duración): sirve `docs/` con `python -m http.server`.
-    Es lo que muestra el preview, porque **esta rama todavía no tiene UI web** (la
-    demo web llega con la rama `demo-web-docs`). Los archivos se sirven por bind
-    mount, directo desde el repo.
-  - `pruebas` (un solo uso): corre la suite `unittest` y termina. Está detrás del
-    perfil `pruebas`, así que **`up -d` no lo arranca**: un contenedor terminado
-    se lee como servicio caído en las validaciones automáticas del entorno.
-- Pruebas: `docker compose -f docker-compose.base44.yml run --rm pruebas`
-  (equivale a `python3 -m unittest discover -s tests -t .`). 59 pruebas.
-  Para limpiar todo, incluido el servicio de pruebas: `docker compose -f
-  docker-compose.base44.yml --profile pruebas down --remove-orphans`.
+- El proyecto es **TypeScript sin dependencias de ejecución** (sólo biblioteca
+  estándar de Node). Las de desarrollo (`typescript`, `tsx`, `vitest`,
+  `@types/node`) están en `package.json` y las instala el contenedor al arrancar.
+- `docker compose -f docker-compose.base44.yml up -d` levanta `web` (node:22,
+  puerto 3000): `npm install` y luego `tsx watch tools/preview/server.ts`, que
+  sirve la documentación del repo (`docs/`). Es lo que muestra el preview: esta
+  rama no tiene UI web (la demo llega con `demo-web-docs`). El código se monta por
+  bind mount y `node_modules` es un volumen Docker.
+- Pruebas y tipos (dentro del contenedor, nunca en el host):
+  - `docker compose -f docker-compose.base44.yml exec -T web npm test`
+  - `docker compose -f docker-compose.base44.yml exec -T web npm run typecheck`
 - Sin secretos, sin variables de entorno requeridas y **sin overrides de sandbox**:
-  no hay allowlist de host/origen ni HMR que ajustar (`python -m http.server` no
-  valida el encabezado `Host` y no hay servidor de recarga). `BASE44_PREVIEW_MODE`
-  no se usa en este repositorio; si alguna vez se necesita, debe compararse con
-  `"1"` y pasarse como variable sin valor por defecto en el compose.
-- Formatos: el registro está en `cutlist/formats/__init__.py`; cada formato declara
+  el servidor de preview no valida el encabezado `Host`. `BASE44_PREVIEW_MODE` no
+  se usa en este repositorio; si alguna vez se necesita, debe compararse con `"1"`
+  y pasarse como variable sin valor por defecto en el compose.
+- Formatos: el registro está en `src/formats/index.ts`; cada formato declara
   dirección, estado (`verificado`/`parcial`/`por revisar`) y fuentes, y lo no
-  verificado viaja como aviso en la lista de corte. Detalle en `docs/formatos/`.
+  verificado viaja como aviso en la lista de corte (`src/formats/model.ts`). Los
+  tipos del motor vienen de `src/types.ts` (copia de la rama `optimizer-engine` /
+  PR 4); los formatos los usan donde encajan sin pérdida (DXF exporta desde el
+  `LayoutResult` del motor). Detalle en `docs/formatos/`.
   Los fixtures nuevos se documentan en `tests/fixtures/README.md` (real vs ejemplo
   construido).

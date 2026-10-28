@@ -28,15 +28,17 @@ Capas:
 
 Las hojas se dibujan una al lado de la otra con 50 mm de separación.
 
-```python
-from cutlist.formats import exportar
+```ts
+import { exportar } from "../../src/formats/index.js";
+import type { LayoutResult } from "../../src/types.js";
 
-dxf = exportar(layout, "dxf")                       # Layout: hojas + colocaciones
-dxf = exportar(layout, "dxf", incluir_etiquetas=False, alto_texto=30)
+const layout: LayoutResult = optimizar(/* partes, tableros */);
+let dxf = exportar(layout, "dxf");                        // LayoutResult: hojas + colocaciones
+dxf = exportar(layout, "dxf", { incluirEtiquetas: false, altoTexto: 30 });
 ```
 
-La exportación no acepta una `ListaCorte`: el DXF describe **dónde** se corta cada
-pieza, así que necesita el `Layout` que produce el motor de optimización.
+La exportación no acepta una `CutList`: el DXF describe **dónde** se corta cada
+pieza, así que necesita el `LayoutResult` que produce el motor de optimización.
 
 ## Lectura
 
@@ -52,12 +54,12 @@ la posición en `extra = {"x", "y"}`.
 Por defecto se excluyen las capas propias `HOJA` y `ETIQUETAS`; con DXF de otros
 programas conviene indicar la capa (o capas) que contienen las piezas:
 
-```python
-from cutlist.formats import importar
+```ts
+import { importar } from "../../src/formats/index.js";
 
-lista = importar(texto_dxf, "dxf")                       # excluye HOJA y ETIQUETAS
-lista = importar(texto_dxf, "dxf", solo_capa="PIEZAS")
-lista = importar(texto_dxf, "dxf", excluir_capas=())     # todo lo rectangular
+let lista = importar(textoDxf, "dxf");                    // excluye HOJA y ETIQUETAS
+lista = importar(textoDxf, "dxf", { soloCapa: "PIEZAS" });
+lista = importar(textoDxf, "dxf", { excluirCapas: [] });   // todo lo rectangular
 ```
 
 ## Por revisar
@@ -72,7 +74,7 @@ lista = importar(texto_dxf, "dxf", excluir_capas=())     # todo lo rectangular
 
 ## Pruebas
 
-`tests/test_dxf.py`: escritura R12 (cabecera, capas, POLYLINE/VERTEX/SEQEND),
+`tests/dxf.test.ts`: escritura R12 (cabecera, capas, POLYLINE/VERTEX/SEQEND),
 ida y vuelta del layout, exclusión de capas propias, lectura de un DXF hecho a
 mano con 4 `LINE` por rectángulo (`tests/fixtures/dxf/rectangulo_lineas.dxf`) y
 errores de archivo.

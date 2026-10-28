@@ -23,7 +23,7 @@ Restricciones observadas en uso real (no son reglas del motor por defecto):
 - Ranuras permitidas: 5.7/6.2/6.7/7/9.7/12.7/15.7/18.7/25.7 mm. Barrenos horizontales Ø3/8; verticales Ø3/5/8/10/15/20/35.
 
 ## Estado de formatos (2026-10-27, rama `formatos-import-export`)
-- Paquete `cutlist/` con la biblioteca estándar de Python 3.12 (sin dependencias) y registro en `cutlist/formats/__init__.py`; cada formato declara dirección, estado y fuentes, y lo no verificado viaja como aviso «por revisar» con enlace.
+- Paquete `src/formats/` en TypeScript (Node estándar, sin dependencias de ejecución) sobre los tipos del motor (`src/types.ts`, rama `optimizer-engine`); registro en `src/formats/index.ts`. Cada formato declara dirección, estado y fuentes, y lo no verificado viaja como aviso «por revisar» con enlace. Los formatos usan los tipos del motor donde encajan sin pérdida (DXF exporta desde el `LayoutResult` del motor).
 - Verificado: CSV genérico (especificación propia, `docs/formatos/csv-generico.md`).
 - Parcial (interfaz documentada, contenido sin verificar): Cortecloud JSON (unidad y semántica de `c`/`l` sin declarar en la guía oficial), OpenCutList CSV (títulos por defecto configurables/traducibles; `.skp` no se lee), PolyBoard (columnas/orden y opciones de cotas configurables), DXF (escritura limitada a R12; lectura sólo de rectángulos alineados a los ejes).
 - Por revisar: Promob (columnas del CSV de Cut Pro configurables por optimizador; esquema del XML de listagem no publicado, importador XML pendiente) y PRO100 (layout del listado exportado no publicado; el archivo no trae tipo de material por pieza).
@@ -32,7 +32,7 @@ Restricciones observadas en uso real (no son reglas del motor por defecto):
 
 ## Entorno de desarrollo
 - `docker compose -f docker-compose.base44.yml up -d --build` (servicio `docs` en el puerto 3000 para el preview; el branch no tiene UI web todavía, la demo llega con `demo-web-docs`).
-- Pruebas en el contenedor: `docker compose -f docker-compose.base44.yml run --rm pruebas` (59 pruebas `unittest`). El servicio `pruebas` vive detrás del perfil `pruebas`: es de un solo uso y `up -d` no lo arranca, para no dejar un contenedor terminado que parezca un servicio caído.
+- Entorno TypeScript (rama `formatos-import-export`): el servicio `web` (node:22) sirve la documentación en el puerto 3000 (`tools/preview/server.ts`). Pruebas y tipos: `docker compose -f docker-compose.base44.yml exec -T web npm test` (59 pruebas `vitest`) y `npm run typecheck`.
 
 ## Reglas
 - Nunca merge a `main` ni force-push sin OK del owner.

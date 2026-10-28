@@ -20,13 +20,14 @@ Como el archivo es configurable, el importador pide el orden de las columnas
 `veta`, `grupo`, `etiqueta`, `notas`, `canto_c1`, `canto_c2`, `canto_l1`,
 `canto_l2`):
 
-```python
-from cutlist.formats import importar
+```ts
+import { importar } from "../../src/formats/index.js";
 
-lista = importar(texto, "polyboard", columnas=("nombre", "largo", "ancho", "cantidad",
-                                               "espesor", "material"))
-lista = importar(texto, "polyboard", encabezado=True)   # si el archivo trae cabecera
-lista = importar(texto, "polyboard")                    # orden por defecto, avisa «por revisar»
+let lista = importar(texto, "polyboard", {
+  columnas: ["nombre", "largo", "ancho", "cantidad", "espesor", "material"],
+});
+lista = importar(texto, "polyboard", { encabezado: true });  // si el archivo trae cabecera
+lista = importar(texto, "polyboard");                       // orden por defecto, avisa «por revisar»
 ```
 
 Sin `columnas=` se usa un orden por defecto y la lista queda marcada con un aviso
@@ -45,5 +46,5 @@ Sin `columnas=` se usa un orden por defecto y la lista queda marcada con un avis
 
 ## Pruebas
 
-`tests/test_listados.py::TestPolyboard`: lectura con columnas por defecto (con
+`tests/listados.test.ts` (PolyBoard): lectura con columnas por defecto (con
 aviso), con columnas declaradas, con encabezado real y errores de columnas/datos.

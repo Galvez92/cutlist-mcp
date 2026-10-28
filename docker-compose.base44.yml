@@ -1,85 +1,53 @@
 # Entorno de desarrollo Base44 para cutlist-mcp.
 #
-# Este repositorio es una biblioteca de Python (sin dependencias externas) más
-# documentación. No hay todavía interfaz web: la demo web llega con la rama
-# `demo-web-docs`. Por eso:
-#   - `docs`     sirve la documentación del repo en el puerto 3000 (lo que muestra
-#                el preview). Es el único servicio de larga duración.
-#   - `pruebas`  ejecuta la suite de pruebas (unittest) y termina; se usa con
-#                `docker compose -f docker-compose.base44.yml run --rm pruebas`.
-#                Está detrás del perfil `pruebas` para que `up -d` (el arranque
-#                normal del entorno) no deje un contenedor terminado: es un
-#                trabajo de un solo uso, no un servicio de larga duración.
+# Los formatos son TypeScript (sobre los tipos del motor, rama optimizer-engine)
+# sin dependencias de ejecución. El servicio `web` corre desde el código clonado
+# (bind mount), instala las dependencias de desarrollo al arrancar y sirve en el
+# puerto 3000 la documentación del repo (tools/preview/server.ts). No hay
+# secretos. Las pruebas se corren dentro del contenedor:
+#   docker compose -f docker-compose.base44.yml exec -T web npm test
+#   docker compose -f docker-compose.base44.yml exec -T web npm run typecheck
 #
-# Uso normal:
-#   docker compose -f docker-compose.base44.yml up -d --build
-#   docker compose -f docker-compose.base44.yml ps
-#   docker compose -f docker-compose.base44.yml run --rm pruebas
-#
-# No hay secretos ni variables externas. No se necesitan overrides de sandbox
-# (no hay allowlist de host ni origen, ni HMR: `python -m http.server` no valida
-# el encabezado Host y los archivos se sirven directamente desde el repo montado).
+# Uso:  docker compose -f docker-compose.base44.yml up -d
+#       docker compose -f docker-compose.base44.yml ps
 
 name: cutlist-mcp
 
 services:
-  docs:
-    image: python:3.12-slim
+  web:
+    image: node:22
     working_dir: /app
+    # Las dependencias de desarrollo viven en el volumen `node_modules`; se
+    # instalan al arrancar, ya con el código montado, y luego arranca la vista.
     command:
-      - python
-      - -m
-      - http.server
-      - "3000"
-      - --bind
-      - 0.0.0.0
-      - --directory
-      - /app/docs
+      - sh
+      - -ec
+      - |
+        npm install --no-audit --no-fund --prefer-offline
+        exec npx tsx watch tools/preview/server.ts
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=3000
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
     ports:
       - "3000:3000"
-    volumes:
-      - .:/app
-    labels:
-      base44.project: "cutlist-mcp documentación"
-      base44.kind: web
-      base44.port: "3000"
     healthcheck:
+      # /health responde 200: comprueba que el proceso responde.
       test:
-        - CMD
-        - python
-        - -c
-        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3000/', timeout=3).status == 200 else 1)"
-      interval: 10s
+        - CMD-SHELL
+        - "node -e \"require('http').get('http://127.0.0.1:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""
+      interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 120s
     restart: on-failure
-
-  pruebas:
-    # Trabajo de un solo uso: fuera de `docker compose up -d` para no dejar un
-    # contenedor terminado que parezca un servicio caído. Se ejecuta a demanda
-    # con `docker compose -f docker-compose.base44.yml run --rm pruebas`.
-    profiles:
-      - pruebas
-    image: python:3.12-slim
-    working_dir: /app
-    command:
-      - python
-      - -m
-      - unittest
-      - discover
-      - -s
-      - tests
-      - -t
-      - .
-      - -v
-    volumes:
-      - .:/app
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
     labels:
-      base44.project: "cutlist-mcp pruebas"
-      base44.kind: worker
-    depends_on:
-      - docs
+      base44.project: "cutlist-mcp (formatos + documentación)"
+      base44.kind: "web"
+      base44.port: "3000"
+
+volumes:
+  node_modules:

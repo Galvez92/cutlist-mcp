@@ -66,16 +66,16 @@ Atributos de usinaje documentados (se conservan sin interpretar):
 | `material` | `material` |
 | `machining`, `startSide` | `extra` (tal cual, ida y vuelta fiel) |
 
-El espesor no viene en el archivo: el importador lo deja en `None` (el material
+El espesor no viene en el archivo: el importador lo deja en `null` (el material
 suele llevarlo en el texto, pero no se parsea adivinando).
 
 ## Uso
 
-```python
-from cutlist.formats import importar, exportar
+```ts
+import { importar, exportar } from "../../src/formats/index.js";
 
-lista = importar(texto_json, "cortecloud")
-json_cortecloud = exportar(lista, "cortecloud")   # listo para cargar en Cortecloud
+const lista = importar(textoJson, "cortecloud");
+const jsonCortecloud = exportar(lista, "cortecloud");   // listo para cargar en Cortecloud
 ```
 
 ## Por revisar
@@ -88,6 +88,6 @@ json_cortecloud = exportar(lista, "cortecloud")   # listo para cargar en Cortecl
 
 ## Pruebas
 
-`tests/test_cortecloud.py`: lectura del fixture real, mapeo de campos,
+`tests/cortecloud.test.ts`: lectura del fixture real, mapeo de campos,
 conservación de `machining`, avisos «por revisar» con fuente, ida y vuelta fiel
-(`json.loads(exportar(importar(x))) == json.loads(x)`) y errores de formato.
+(`JSON.parse(exportar(importar(x)))` igual a `JSON.parse(x)`) y errores de formato.

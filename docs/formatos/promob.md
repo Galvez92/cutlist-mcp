@@ -21,14 +21,15 @@ Clave: `promob` · Dirección: **sólo importar** · Estado: **por revisar**
 
 Promob define las columnas y el separador: se declaran al importar.
 
-```python
-from cutlist.formats import importar
+```ts
+import { importar } from "../../src/formats/index.js";
 
-lista = importar(texto, "promob", columnas=("nombre", "cantidad", "largo", "ancho",
-                                            "espesor", "material", "grupo", "veta",
-                                            "canto_c1", "canto_c2", "canto_l1", "canto_l2"))
-lista = importar(texto, "promob", encabezado=True, decimal=",")   # con cabecera
-lista = importar(texto, "promob")                                 # orden por defecto, avisa
+let lista = importar(texto, "promob", {
+  columnas: ["nombre", "cantidad", "largo", "ancho", "espesor", "material",
+            "grupo", "veta", "canto_c1", "canto_c2", "canto_l1", "canto_l2"],
+});
+lista = importar(texto, "promob", { encabezado: true, decimal: "," });  // con cabecera
+lista = importar(texto, "promob");                                      // orden por defecto, avisa
 ```
 
 ## Por revisar
@@ -46,5 +47,5 @@ lista = importar(texto, "promob")                                 # orden por de
 
 ## Pruebas
 
-`tests/test_listados.py::TestPromob`: lectura con columnas por defecto (con
+`tests/listados.test.ts` (Promob): lectura con columnas por defecto (con
 aviso), con columnas declaradas, con cabecera y separador coma, y errores.

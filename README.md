@@ -23,20 +23,23 @@ Alcance:
 | PRO100 (listado TXT/CSV) | `pro100` | sólo importar | por revisar |
 | DXF (ASCII R12) | `dxf` | importar + exportar | parcial |
 
-```python
-from cutlist.formats import importar_archivo, importar, exportar
+```ts
+import { importarArchivo, importar, exportar } from "./src/formats/index.js";
 
-lista = importar_archivo("proyecto.json")                 # Cortecloud
-lista = importar(texto, "promob", columnas=("nombre", "cantidad", "largo", "ancho", "espesor"))
-print(lista.total_piezas, lista.area_total_m2)
-for aviso in lista.por_revisar():                        # lo no verificado, con su fuente
-    print(aviso.texto())
+const lista = importarArchivo("proyecto.json");          // Cortecloud (deduce por extensión)
+const lista2 = importar(texto, "promob", {
+  columnas: ["nombre", "cantidad", "largo", "ancho", "espesor"],
+});
+console.log(lista.totalPiezas, lista.areaTotalM2);
+for (const aviso of lista.porRevisar()) {                // lo no verificado, con su fuente
+  console.log(aviso.mensaje, aviso.fuente);
+}
 ```
 
 Cada formato declara su estado y sus fuentes públicas; lo que no se pudo verificar
 se marca **por revisar** con enlace. Ver `docs/formatos/`.
 
-Pruebas (biblioteca estándar, sin dependencias): `docker compose -f docker-compose.base44.yml run --rm pruebas` o `python3 -m unittest discover -s tests -t .`.
+Pruebas (TypeScript, sin dependencias de ejecución): `docker compose -f docker-compose.base44.yml exec -T web npm test` (59 pruebas `vitest`), o `npx vitest run` sobre Node. Tipos: `npm run typecheck`.
 
 Licencia MIT.
 
@@ -51,13 +54,14 @@ Scope:
 
 ### Formats (branch `formatos-import-export`)
 
-`cutlist/formats/` ships importers/exporters for Cortecloud (JSON, import+export),
+`src/formats/` ships importers/exporters for Cortecloud (JSON, import+export),
 our own generic CSV (import+export), SketchUp/OpenCutList CSV (import+export),
 PolyBoard, Promob and PRO100 cut lists (import only), and DXF R12 (layout export +
-rectangle reading). Each format declares its verification status and its public
+rectangle reading), built on the engine types in `src/types.ts` (branch
+`optimizer-engine`). Each format declares its verification status and its public
 sources; anything that could not be verified is flagged **por revisar** (to be
-verified) with a link — see `docs/formatos/`. Python 3.12 standard library only, no
-third-party dependencies; tests run with
-`docker compose -f docker-compose.base44.yml run --rm pruebas`.
+verified) with a link — see `docs/formatos/`. TypeScript, Node standard library
+only, no runtime dependencies; tests run with
+`docker compose -f docker-compose.base44.yml exec -T web npm test`.
 
 MIT licensed.

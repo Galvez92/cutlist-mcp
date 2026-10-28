@@ -26,12 +26,12 @@ Designation;Length;Width;Thickness;Quantity;Material;Tags
 Importar: se reconocen los encabezados de esos campos (en inglés o español) con
 separador `;`, `,` o tabulador, y se exige el cuarteto obligatorio documentado.
 
-```python
-from cutlist.formats import importar, exportar
+```ts
+import { importar, exportar } from "../../src/formats/index.js";
 
-lista = importar(texto_csv, "opencutlist")
-texto = exportar(lista, "opencutlist")                       # ; y decimal punto
-texto = exportar(lista, "opencutlist", incluir_etiquetas=False)
+const lista = importar(textoCsv, "opencutlist");
+let texto = exportar(lista, "opencutlist");                  // ; y decimal punto
+texto = exportar(lista, "opencutlist", { incluirEtiquetas: false });
 ```
 
 ## Por revisar
@@ -45,5 +45,5 @@ texto = exportar(lista, "opencutlist", incluir_etiquetas=False)
 
 ## Pruebas
 
-`tests/test_opencutlist.py`: columnas obligatorias y opcionales, cantidad asumida
+`tests/opencutlist.test.ts`: columnas obligatorias y opcionales, cantidad asumida
 1, otros separadores, encabezados en español, ida y vuelta y errores.

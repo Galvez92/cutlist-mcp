@@ -47,16 +47,16 @@ inglés y portugués: `nombre`/`name`/`nome`/`designation`/`pieza`…,
 
 ## Uso
 
-```python
-from cutlist.formats import importar, exportar
+```ts
+import { importar, exportar } from "../../src/formats/index.js";
 
-lista = importar(texto, "csv_generico")                    # por defecto y autodetección
-lista = importar(texto, "csv_generico", separador=",", decimal=".")
-texto = exportar(lista, "csv_generico")                     # ; y decimal coma
-texto = exportar(lista, "csv_generico", separador=",", decimal=".", unidad=True)
+const lista = importar(texto, "csv_generico");                 // por defecto y autodetección
+const lista2 = importar(texto, "csv_generico", { separador: ",", decimal: "." });
+let texto = exportar(lista, "csv_generico");                    // ; y decimal coma
+texto = exportar(lista, "csv_generico", { separador: ",", decimal: ".", unidad: true });
 ```
 
 ## Pruebas
 
-`tests/test_csv_generico.py`, incluida la ida y vuelta sin pérdida de datos y las
+`tests/csv-generico.test.ts`, incluida la ida y vuelta sin pérdida de datos y las
 utilidades de tabla (números con coma, separadores, alias).

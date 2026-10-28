@@ -3,7 +3,7 @@
 Estado de cada formato, con la documentación pública consultada. Regla del
 proyecto: **no se inventan formatos**; lo que no se pudo verificar en fuentes
 públicas se marca **por revisar** con el enlace a la fuente y viaja con la lista
-de corte como aviso (ver `ListaCorte.avisos` / `cutlist.formats.por_revisar()`).
+de corte como aviso (ver `CutList.avisos` / `porRevisar()` de `src/formats/index.ts`).
 
 | Formato | Clave | Dirección | Estado | Documentación |
 |---|---|---|---|---|
@@ -24,30 +24,33 @@ de corte como aviso (ver `ListaCorte.avisos` / `cutlist.formats.por_revisar()`).
 
 ## Uso
 
-```python
-from cutlist.formats import importar, exportar, importar_archivo, listar_formatos
+```ts
+import { importar, exportar, importarArchivo, listarFormatos } from "../../src/formats/index.js";
 
-lista = importar_archivo("proyecto.json")            # deduce por extensión
-lista = importar(texto, "promob", columnas=("nombre", "cantidad", "largo", "ancho", "espesor"))
-print(lista.total_piezas, lista.area_total_m2)
+const lista = importarArchivo("proyecto.json");          // deduce por extensión
+const lista2 = importar(texto, "promob", {
+  columnas: ["nombre", "cantidad", "largo", "ancho", "espesor"],
+});
+console.log(lista.totalPiezas, lista.areaTotalM2);
 
-for aviso in lista.por_revisar():                    # lo no verificado, con fuente
-    print(aviso.texto())
+for (const aviso of lista.porRevisar()) {                // lo no verificado, con fuente
+  console.log(aviso.mensaje, aviso.fuente);
+}
 
-texto_csv = exportar(lista, "csv_generico")
+const textoCsv = exportar(lista, "csv_generico");
 ```
 
-Para exportar DXF hace falta un `Layout` (resultado de optimización: hojas con
+Para exportar DXF hace falta un `LayoutResult` (resultado del motor: hojas con
 piezas colocadas), no una lista de piezas:
 
-```python
-from cutlist.model import Colocacion, Hoja, Layout
-from cutlist.formats import exportar
+```ts
+import { exportar } from "../../src/formats/index.js";
+import type { LayoutResult } from "../../src/types.js";
 
-hoja = Hoja(nombre="H1", largo=2500, ancho=1830, espesor=18)
-hoja.colocaciones.append(Colocacion(pieza=lista.piezas[0], x=10, y=10,
-                                    largo=732, ancho=600, identificador="P-01"))
-dxf = exportar(Layout(hojas=[hoja]), "dxf")
+// El DXF se exporta desde un LayoutResult del motor (hojas con piezas
+// colocadas), no desde una lista de piezas:
+const layout: LayoutResult = optimizar(/* partes, tableros */);
+const dxf = exportar(layout, "dxf");
 ```
 
 ## Qué falta (por revisar)
