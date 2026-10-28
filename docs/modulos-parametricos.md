@@ -11,27 +11,35 @@ ramas (`optimizer-engine`, `mcp-server`, `formatos-import-export`).
 
 ## Uso rápido
 
-```python
-from cutlist.spec import construir_desde_texto
+```ts
+import { construirDesdeTexto } from "../src/modules/spec.js";
 
-modulo = construir_desde_texto("cajonera ancho=450 alto=800 fondo=500 cajones=4")
-print(modulo.tabla())          # lista de corte en texto plano
-for hallazgo in modulo.validar():   # perfil Cortecloud/Madijal
-    print(hallazgo.nivel, hallazgo.regla, hallazgo.mensaje)
+const modulo = construirDesdeTexto("cajonera ancho=450 alto=800 fondo=500 cajones=4");
+console.log(modulo.tabla());        // lista de corte en texto plano
+for (const hallazgo of modulo.validar()) {   // perfil Cortecloud/Madijal
+  console.log(hallazgo.nivel, hallazgo.regla, hallazgo.mensaje);
+}
 ```
 
-```python
-from cutlist.modules import generar_modulo
+```ts
+import { generarModulo } from "../src/modules/index.js";
 
-modulo = generar_modulo("closet", {"ancho": 1800, "alto": 2400, "puertas": 3})
-datos = modulo.to_dict_con_perfil()   # piezas, accesorios, notas y hallazgos
+const modulo = generarModulo("closet", { ancho: 1800, alto: 2400, puertas: 3 });
+const datos = modulo.toDictConPerfil();   // piezas, accesorios, notas y hallazgos
 ```
 
 Sintaxis de las ideas escritas (propia de esta herramienta, **no** es un formato
 de intercambio): `tipo clave=valor clave=valor`, con el tipo entre los alias de
-`cutlist.modules.ALIAS` (`clóset`, `placard`, `biblioteca`, `bajo mesada`, ...).
+`src/modules/index.js` (`clóset`, `placard`, `biblioteca`, `bajo mesada`, ...).
 Las listas van en JSON (`posiciones_repisas=[500,1000]`), los booleanos aceptan
 `si/no` y las cadenas con espacios van entre comillas (`nombre="Clóset pieza 2"`).
+
+Las piezas generadas se bridgean al motor de optimización con
+`Pieza.toPartInput()`/`toPart()` (width = ancho, height = largo, veta → grain,
+cantos → `EdgeBanding`) y el perfil con `PerfilRestricciones.toConstraintProfile()`,
+usando los tipos de `src/types.ts` (traídos de la rama `optimizer-engine`). El
+reparto de las aristas geométricas a los lados absolutos del motor es
+`por revisar` (no verificado contra el formato de Cortecloud).
 
 ## Convención de medidas y de cantos
 
@@ -75,19 +83,18 @@ en `modulo.accesorios`, no como piezas de tablero.
 
 ## Perfil de restricciones (opcional)
 
-`cutlist.profiles.PERFIL_CORTECLOUD_MADIJAL` transcribe el perfil de ejemplo de la
-MEMORIA: pieza mínima de corte 65 mm (recomendado 70; terminada ≥ ~66 mm con canto
-de 0.4 mm), pieza mecanizada de largo ≥ 250 mm, pieza máxima 2480 x 1810 mm,
-tablero 2500 x 1830 x 18 mm, ranuras permitidas
+`src/modules/profiles.js` (`PERFIL_CORTECLOUD_MADIJAL`) transcribe el perfil de
+ejemplo de la MEMORIA: pieza mínima de corte 65 mm (recomendado 70; terminada ≥ ~66
+mm con canto de 0.4 mm), pieza mecanizada de largo ≥ 250 mm, pieza máxima
+2480 x 1810 mm, tablero 2500 x 1830 x 18 mm, ranuras permitidas
 5.7/6.2/6.7/7/9.7/12.7/15.7/18.7/25.7 mm, barrenos horizontales Ø 3/8" (9.525 mm) y
 verticales Ø 3/5/8/10/15/20/35 mm.
 
-```python
-from dataclasses import replace
-from cutlist.profiles import PERFIL_CORTECLOUD_MADIJAL, validar
+```ts
+import { PERFIL_CORTECLOUD_MADIJAL, validar } from "../src/modules/profiles.js";
 
-perfil_taller = replace(PERFIL_CORTECLOUD_MADIJAL, pieza_min_corte=80.0)
-hallazgos = validar(modulo.resumen(), perfil_taller)
+const perfilTaller = PERFIL_CORTECLOUD_MADIJAL.con({ piezaMinCorte: 80.0 });
+const hallazgos = validar(modulo.resumen(), perfilTaller);
 ```
 
 Reglas y niveles: `error` (no fabricable en ese perfil) y `aviso` (revisar). El
@@ -125,13 +132,14 @@ docker compose -f docker-compose.base44.yml --profile tests run --rm tests
 Cubren: modelo de piezas y cantos (medidas terminadas, agrupación de líneas,
 totales), las reglas del perfil (una prueba por regla, incluidos los umbrales de
 65/70/66 mm), la geometría de los cuatro módulos con sus cantos y el reparto de
-puertas y frentes, la idea escrita y el punto de entrada HTTP.
+puertas y frentes, la idea escrita y el punto de entrada HTTP. Son **95 pruebas
+vitest** (las 92 originales del Python, con los casos parametrizados expandidos)
+y `tsc --noEmit` estricto pasa.
 
 ## Vista previa de desarrollo
 
-`app/servidor.py` es un servidor HTTP de la biblioteca estándar (sin
-dependencias) que sirve una página para ver y probar los módulos en el puerto
-3000, más:
+`tools/preview/server.ts` es un servidor HTTP de Node (sin framework, solo
+`tsx`) que sirve una página para ver y probar los módulos en el puerto 3000, más:
 
 - `GET /api/modulos` — módulos registrados con sus parámetros.
 - `GET /api/perfil` — perfil de restricciones por omisión.
@@ -139,8 +147,8 @@ dependencias) que sirve una página para ver y probar los módulos en el puerto
 - `POST /api/idea` — `{"texto": "cajonera ancho=450 cajones=3"}`.
 
 Es una herramienta de desarrollo, **no** la demo web del proyecto (esa es la
-tarea `demo-web-docs`). El servidor no recarga código solo: después de editar hay
-que reiniciarlo con
+tarea `demo-web-docs`). El servidor corre con `tsx watch`, que recarga el código
+al editar; si no refresca, reinícialo con
 `docker compose -f docker-compose.base44.yml restart web`.
 
 ## Pendientes

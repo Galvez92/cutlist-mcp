@@ -13,15 +13,18 @@
 
 - Levantar: `docker compose -f docker-compose.base44.yml up -d` (el servicio `web`
   queda en el puerto 3000 y sirve la vista previa de desarrollo desde
-  `app/servidor.py`).
+  `tools/preview/server.ts`, en Node + tsx).
 - Pruebas: `docker compose -f docker-compose.base44.yml --profile tests run --rm tests`.
-  El host del sandbox no tiene Python: todo se corre dentro del contenedor.
-- `web` usa el servidor HTTP de la biblioteca estándar y **no recarga código solo**:
-  después de editar, `docker compose -f docker-compose.base44.yml restart web`.
-- El proyecto es una biblioteca Python sin dependencias de ejecución. La única
-  dependencia de desarrollo es `pytest` (`requirements-dev.txt`). No hay base de
-  datos, colas ni secretos.
+  El host del sandbox no tiene Node: todo se corre dentro del contenedor.
+- `web` corre `tsx watch`, que recarga el servidor al cambiar archivos; si no
+  refresca, `docker compose -f docker-compose.base44.yml restart web`.
+- El proyecto es una biblioteca TypeScript. Las dependencias de desarrollo son
+  `tsx`, `typescript` y `vitest` (`package.json`). No hay base de datos, colas ni
+  secretos.
+- Los tipos del motor de optimización (`src/types.ts`, `src/geometry.ts`,
+  `src/errors.ts`) se traen de la rama `optimizer-engine` (PR 4) y son la base
+  compartida; la pieza paramétrica se bridgea al motor con `Pieza.toPartInput()`.
 - El repositorio todavía no tiene optimizador, importadores/exportadores, servidor
   MCP ni demo web: cada uno es una rama con su ficha en `docs/memoria/tareas/`.
-  Aquí solo vive la capa de módulos paramétricos (`cutlist/`) y su vista previa
-  (`app/`); ver `docs/modulos-parametricos.md`.
+  Aquí solo vive la capa de módulos paramétricos (`src/modules/`) y su vista previa
+  (`tools/preview/`); ver `docs/modulos-parametricos.md`.
