@@ -21,13 +21,16 @@ npm install && npm run dev                                # http://localhost:517
 
 ### Uso
 
-1. **Piezas**: etiqueta, ancho, alto, cantidad, veta y canto (mm). `+ Pieza` agrega una fila,
-   `Cargar fixture Cortecloud` trae el ejemplo real de `../tests/fixtures/cortecloud/`.
-2. **Tablero en stock**: medida, espesor, kerf, cantidad disponible (vacío = ilimitado),
+1. **Módulos paramétricos**: elige cajonera, clóset, cocina o librero, ajusta las medidas y
+   pulsa **Generar piezas del módulo**. El despiece (medidas reales de ARAUCO) se pasa al
+   optimizador como lista de piezas. Ver [`docs/modulos-parametricos.md`](../docs/modulos-parametricos.md).
+2. **Piezas**: etiqueta, ancho, alto, cantidad, veta y canto (mm). `+ Pieza` agrega una fila,
+   `Escritorio compacto (fixture)` trae el ejemplo real de `../tests/fixtures/cortecloud/`.
+3. **Tablero en stock**: medida, espesor, kerf, cantidad disponible (vacío = ilimitado),
    modo de corte y perfil de restricciones.
-3. **Layout**: se recalcula al editar cualquier campo; muestra tableros usados,
+4. **Layout**: se recalcula al editar cualquier campo; muestra tableros usados,
    aprovechamiento, piezas colocadas, sobrante y los avisos del perfil.
-4. **Descargas**: PDF (una página por tablero a escala 1:1 + lista de corte) y dos CSV
+5. **Descargas**: PDF (una página por tablero a escala 1:1 + lista de corte) y dos CSV
    (lista de corte agrupada y posiciones pieza por pieza).
 
 ### Ejemplos
@@ -59,7 +62,24 @@ renderLayoutSvg(layout);      // string SVG con todos los tableros
 renderLayoutPdf(layout);      // Uint8Array de un PDF válido (sync, sin dependencias)
 ```
 
-**c) Importar un JSON de Cortecloud** (`{"parts": [...]}`)
+**c) Generar un módulo paramétrico** (cajonera, clóset, cocina, librero → piezas → optimizar):
+
+```js
+import { generarModulo } from '../src/index.js';
+
+const modulo = generarModulo('cajonera', { ancho: 450, alto: 800, fondo: 500, cajones: 4 });
+modulo.tabla();        // lista de corte en texto (30 piezas, 10 líneas, 3.81 m²)
+modulo.validar();      // hallazgos del perfil Cortecloud/Madijal (opcional)
+
+// Las piezas se bridgean al motor con Pieza.toPartInput() (width=ancho, height=largo):
+const parts = modulo.resumen().map((pieza) => pieza.toPartInput());
+```
+
+En la demo, el panel **Módulos paramétricos** hace esto mismo y recalcula el layout. El
+reparto de cantos a lados absolutos del motor está **por revisar** (ver
+[`../docs/modulos-parametricos.md`](../docs/modulos-parametricos.md)).
+
+**d) Importar un JSON de Cortecloud** (`{"parts": [...]}`)
 
 ```js
 import { importCortecloud } from './src/engine/cortecloud.js';
@@ -70,7 +90,7 @@ const { parts, sheets, notes, skipped } = importCortecloud(json, { swap: false }
 `function` → etiqueta, `material` → material y medida de tablero, `c1/c2/l1/l2` → canto por
 lado, `machining` → pieza mecanizada. Todo eso está **por revisar** (ver `../docs/por-revisar.md`).
 
-**d) Exportar CSV** (capa del demo, no del motor)
+**e) Exportar CSV** (capa del demo, no del motor)
 
 ```js
 import { cutListCsv, placementsCsv } from './src/engine/csv.js';

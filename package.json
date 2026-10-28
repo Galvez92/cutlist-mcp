@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Optimizador de corte de tableros: motor TypeScript (optimizer-engine) + demo web (Vite)",
+  "description": "Optimizador de corte de tableros: motor TypeScript (optimizer-engine) + módulos paramétricos + demo web (Vite)",
   "license": "MIT",
   "engines": {
     "node": ">=20"
@@ -14,7 +14,9 @@
   "scripts": {
     "dev": "npm --workspace cutlist-demo run dev",
     "build": "npm --workspace cutlist-demo run build",
+    "preview": "tsx tools/preview/server.ts",
     "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

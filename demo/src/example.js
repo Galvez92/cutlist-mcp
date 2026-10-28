@@ -17,7 +17,7 @@ export function loadCortecloudExample(json = fixture, options = {}) {
   const total = parts.reduce((sum, part) => sum + part.qty, 0);
 
   const notice = [
-    `Fixture real de Cortecloud: ${parts.length} grupos / ${total} piezas${skipped.length ? ` (${skipped.length} omitidas)` : ''}.`,
+    `Ejemplo real del escritorio compacto (fixture de Cortecloud): ${parts.length} grupos / ${total} piezas${skipped.length ? ` (${skipped.length} omitidas)` : ''}.`,
     others.length > 0
       ? `El fixture usa ${sheets.length} materiales (${[first, ...others].map((sheet) => sheet.name).join(' · ')}): la demo optimiza un solo tablero.`
       : '',

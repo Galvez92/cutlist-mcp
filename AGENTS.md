@@ -17,7 +17,8 @@
   raíz: `demo`). No se usa imagen preconstruida, así que las ediciones del código se ven con
   recarga en vivo; no hace falta rehacer imágenes.
 - Pruebas: `docker compose -f docker-compose.base44.yml exec -T web npm test`
-  (Vitest; la suite cubre el motor en `tests/` y la demo en `demo/tests/`).
+  (Vitest; la suite cubre el motor en `tests/`, los módulos paramétricos en `tests/test_*` y
+  la demo en `demo/tests/`).
 - Hosts y orígenes: el compose pasa `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.${BASE44_SANDBOX_HOST_DOMAIN}`
   (Vite ≥ 6.1 lo agrega a `allowedHosts`); sin efecto cuando la variable no está definida.
   No hay hosts fijos en el código ni overrides condicionados a `BASE44_PREVIEW_MODE`: no hizo
@@ -26,11 +27,17 @@
   declarado en `demo/aliases.js` (lo comparten Vite y el `vitest.config.ts` de la raíz).
   El motor no tiene dependencias de ejecución; el PDF se genera con un escritor propio
   (`src/render/pdf-writer.ts`). `pdf-lib` es solo para los tests del motor.
+- Módulos paramétricos: `src/modules/` (rama `parametric-modules`). Generadores de cajonera,
+  clóset, cocina y librero (`Pieza`, `Modulo`, `PerfilRestricciones`), intérprete de ideas
+  escritas (`spec.ts`) y puente al motor (`Pieza.toPartInput()`,
+  `PerfilRestricciones.toConstraintProfile()`). Vista previa de desarrollo opcional en
+  `tools/preview/` (`npm run preview`). Ver `docs/modulos-parametricos.md`.
 - Demo: `demo/` (Vite, DOM nativo). Adaptadores del demo en `demo/src/engine/`:
   `cortecloud.js` (importador, no incluido en el motor), `csv.js` (exportación CSV,
   no incluida en el motor), `adapt.js` (conversión estado→motor), `constants.js`
   (MODES, DEFAULT_KERF).
 - Datos reales: el fixture de Cortecloud se importa directo desde `tests/fixtures/` (sin
-  copias). Lo no verificado está en `docs/por-revisar.md` con su fuente.
+  copias). Lo no verificado está en `docs/por-revisar.md` y `docs/modulos-parametricos.md`
+  con su fuente.
 - Si otra rama agrega un paquete al monorepo, decláralo en `workspaces` de la raíz y añade el
   servicio correspondiente a `docker-compose.base44.yml` con sus etiquetas `base44.*`.

@@ -2,6 +2,7 @@ import { PROFILES, optimize } from '@engine';
 import { DEFAULT_KERF, MODES } from './engine/constants.js';
 import { partsForEngine, profileForEngine, sheetForEngine } from './engine/adapt.js';
 import { loadCortecloudExample } from './example.js';
+import { createModulesPanel } from './ui/modules-panel.js';
 import { createPartsPanel } from './ui/parts-panel.js';
 import { createSheetPanel } from './ui/sheet-panel.js';
 import { createResultPanel } from './ui/result-panel.js';
@@ -22,7 +23,10 @@ export function createApp(root) {
   head.innerHTML = `
     <h1>cutlist-mcp · demo del optimizador de corte</h1>
     <p>Piezas y tablero en stock → layout optimizado, aprovechamiento y descargas SVG en pantalla, PDF y CSV.
-    La demo usa el motor de <code>optimizer-engine</code> (PR&nbsp;4); los formatos externos sin verificar quedan marcados <em>por revisar</em>.</p>
+    Genera el despiece de un módulo paramétrico (cajonera, clóset, cocina, librero) o carga el
+    ejemplo real del escritorio compacto (fixture de Cortecloud).
+    La demo usa el motor de <code>optimizer-engine</code> (PR&nbsp;4) y los módulos de
+    <code>parametric-modules</code>; lo no verificado queda marcado <em>por revisar</em>.</p>
   `;
 
   const grid = document.createElement('div');
@@ -34,10 +38,11 @@ export function createApp(root) {
 
   const partsPanel = createPartsPanel({ state, onChange: () => recompute(), onLoadExample: () => loadExample() });
   const sheetPanel = createSheetPanel({ state, onChange: () => recompute() });
+  const modulesPanel = createModulesPanel({ state, onGenerated: (result) => loadModule(result) });
   const resultPanel = createResultPanel({ state });
   const downloadPanel = createDownloadPanel({ state });
 
-  inputsColumn.append(partsPanel.element, sheetPanel.element);
+  inputsColumn.append(modulesPanel.element, partsPanel.element, sheetPanel.element);
   resultsColumn.append(resultPanel.element, downloadPanel.element);
   grid.append(inputsColumn, resultsColumn);
 
@@ -71,6 +76,15 @@ export function createApp(root) {
     state.sheet = { ...example.sheet, kerf: DEFAULT_KERF, stock: '' };
     partsPanel.render();
     partsPanel.setNotice(example.notice);
+    sheetPanel.sync();
+    recompute();
+  }
+
+  function loadModule(result) {
+    state.parts = result.parts;
+    state.sheet = { ...result.sheet, kerf: DEFAULT_KERF, stock: '' };
+    partsPanel.render();
+    partsPanel.setNotice(null);
     sheetPanel.sync();
     recompute();
   }

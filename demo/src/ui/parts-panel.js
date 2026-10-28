@@ -65,7 +65,7 @@ export function createPartsPanel({ state, onChange, onLoadExample }) {
     <header class="panel__head">
       <h2>1 · Piezas <span class="muted">(parts)</span></h2>
       <div class="panel__actions">
-        <button type="button" class="btn btn--ghost" data-action="example">Cargar fixture Cortecloud</button>
+        <button type="button" class="btn btn--ghost" data-action="example">Escritorio compacto (fixture)</button>
         <button type="button" class="btn" data-action="add">+ Pieza</button>
       </div>
     </header>
