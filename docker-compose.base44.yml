@@ -1,0 +1,30 @@
+# Entorno de desarrollo Base44 para cutlist-mcp.
+# La app corre desde el código montado (bind mount) con recarga automática:
+# los cambios en cutlist/, app/ y web/ se ven sin reconstruir la imagen.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    command:
+      - sh
+      - -ec
+      - exec python -m uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload --reload-dir /app/app --reload-dir /app/cutlist
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request;urllib.request.urlopen('http://127.0.0.1:3000/', timeout=3).read(1)
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: on-failure
