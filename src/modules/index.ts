@@ -1,9 +1,11 @@
 /** Registro de módulos paramétricos: cajonera, clóset, cocina y librero. */
 
 import type { Modulo } from "./modulo.js";
+import * as cajon from "./cajon.js";
 import * as cajonera from "./cajonera.js";
 import * as closet from "./closet.js";
 import * as cocina from "./cocina.js";
+import * as escritorio from "./escritorio.js";
 import * as librero from "./librero.js";
 import { ValueError } from "./parts.js";
 
@@ -58,6 +60,22 @@ const caj = (nombre: string, campo: string, tipo: TipoCampo, def: number | numbe
   default: def,
   descripcion,
 });
+
+const CAMPOS_CAJON: CampoParam[] = [
+  caj("ancho", "ancho", "float", 600.0, "Ancho exterior de la caja del cajón (mm)"),
+  caj("fondo", "fondo", "float", 500.0, "Profundidad del cajón, largo del lateral (mm)"),
+  caj("alto", "alto", "float", 150.0, "Alto del lateral del cajón (mm)"),
+  caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
+  caj("fondo_espesor", "fondoEspesor", "float", 3.0, "Espesor del panel del fondo (mm); 0 = sin fondo"),
+  caj("ranura_ancho", "ranuraAncho", "float", 6.7, "Ancho de la ranura del fondo (mm) — debe estar en las permitidas del perfil"),
+  caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde inferior (mm)"),
+  caj("ranura_profundidad", "ranuraProfundidad", "float", 10.0, "Profundidad de la ranura en la cara interior (mm)"),
+  caj("distancia_minifix", "distanciaMinifix", "float", 50.0, "Distancia de los minifix desde las orillas superior e inferior (mm)"),
+  caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
+  caj("material_fondo", "materialFondo", "texto", "MDF 3 mm", "Texto del material del fondo"),
+  caj("canto", "canto", "texto", "PVC 0.4 mm", "Texto del canto de las aristas vistas"),
+  caj("nombre", "nombre", "texto", "", "Nombre del módulo para el despiece"),
+];
 
 const CAMPOS_CAJONERA: CampoParam[] = [
   caj("ancho", "ancho", "float", 450.0, "Ancho exterior, de costado a costado (mm)"),
@@ -142,6 +160,27 @@ const CAMPOS_LIBRERO: CampoParam[] = [
   caj("nombre", "nombre", "texto", "", "Nombre del módulo para el despiece"),
 ];
 
+const CAMPOS_ESCRITORIO: CampoParam[] = [
+  caj("ancho", "ancho", "float", 1200.0, "Ancho exterior del escritorio (mm)"),
+  caj("fondo", "fondo", "float", 600.0, "Profundidad del escritorio (mm)"),
+  caj("alto", "alto", "float", 750.0, "Alto exterior total, piso a cara superior de la cubierta (mm)"),
+  caj("faldon", "faldon", "float", 100.0, "Alto del faldón frontal (mm) — mínimo 70"),
+  caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
+  caj("espesor_cubierta", "espesorCubierta", "float", 18.0, "Espesor del tablero de la cubierta (mm); 0 = igual al cuerpo"),
+  caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
+  caj("material_cubierta", "materialCubierta", "texto", "", "Texto del material de la cubierta; vacío = igual al cuerpo"),
+  caj("canto", "canto", "texto", "PVC 0.4 mm", "Texto del canto de las aristas vistas del cuerpo"),
+  caj("canto_cubierta", "cantoCubierta", "texto", "", "Texto del canto de la cubierta; vacío = igual al del cuerpo"),
+  caj("nombre", "nombre", "texto", "", "Nombre del módulo para el despiece"),
+];
+
+export const CAJON = new ModuloRegistrado(
+  "cajon",
+  "Cajón",
+  "Caja de cajón individual: fondo en ranura, armado con minifix, correderas al centro.",
+  CAMPOS_CAJON,
+  (params) => cajon.generar(params as cajon.ParamsCajon),
+);
 export const CAJONERA = new ModuloRegistrado(
   "cajonera",
   "Cajonera",
@@ -170,16 +209,27 @@ export const LIBRERO = new ModuloRegistrado(
   CAMPOS_LIBRERO,
   (params) => librero.generar(params as librero.ParamsLibrero),
 );
+export const ESCRITORIO = new ModuloRegistrado(
+  "escritorio",
+  "Escritorio",
+  "Escritorio con cubierta, costados y faldón ≥ 70 mm.",
+  CAMPOS_ESCRITORIO,
+  (params) => escritorio.generar(params as escritorio.ParamsEscritorio),
+);
 
 export const MODULOS: Record<string, ModuloRegistrado> = {
+  cajon: CAJON,
   cajonera: CAJONERA,
   closet: CLOSET,
   cocina: COCINA,
+  escritorio: ESCRITORIO,
   librero: LIBRERO,
 };
 
 /** Alias aceptados al nombrar un módulo en texto libre. */
 export const ALIAS: Record<string, string> = {
+  cajon: "cajon",
+  "cajón": "cajon",
   cajonera: "cajonera",
   cajonero: "cajonera",
   closet: "closet",
@@ -190,6 +240,8 @@ export const ALIAS: Record<string, string> = {
   "bajo mesada": "cocina",
   bajomesada: "cocina",
   "mueble bajo": "cocina",
+  escritorio: "escritorio",
+  mesa: "escritorio",
   librero: "librero",
   biblioteca: "librero",
   estanteria: "librero",

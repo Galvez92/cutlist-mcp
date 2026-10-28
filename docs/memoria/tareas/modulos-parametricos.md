@@ -11,8 +11,10 @@ Generadores paramétricos de cajonera, clóset, cocina y librero a partir de med
 - Entrada en la bitácora. ✔ `docs/memoria/bitacora/2026-10-27.md` y `2026-10-28.md`.
 
 ## Avance
-- **TypeScript** (porte desde el Python original): `src/modules/parts.ts`, `modulo.ts`, `profiles.ts`, `spec.ts` y `src/modules/` (cajonera, closet, cocina, librero) + registro en `index.ts`.
+- **TypeScript** (porte desde el Python original): `src/modules/parts.ts`, `modulo.ts`, `profiles.ts`, `spec.ts` y `src/modules/` (cajonera, closet, cocina, librero, **cajon**, **escritorio**) + registro en `index.ts`.
 - Tipos del motor de `optimizer-engine` (PR 4) en `src/types.ts`, `src/geometry.ts`, `src/errors.ts`; puente `Pieza.toPartInput()`/`toPart()` y `PerfilRestricciones.toConstraintProfile()`.
 - Vista previa de desarrollo en `tools/preview/` + `docker-compose.base44.yml` (puerto 3000 con tsx watch, servicio de pruebas vitest).
 - Documentación en `docs/modulos-parametricos.md`.
+- **Cajón** (`cajon.ts`): cajón individual con fondo en ranura, armado con minifix Ø15 (vertical, a ~50 mm de las orillas) + pines Ø9.525 (horizontal, por revisar), correderas al centro.
+- **Escritorio** (`escritorio.ts`): cubierta + 2 costados + faldón ≥ 70 mm + travesaño trasero.
 - Pendiente: mapeo de cantos a `c1/c2/l1/l2` de Cortecloud, reparto de aristas a lados absolutos del motor, ranura de trasera y enlace con las ramas `optimizer-engine` y `mcp-server`.
