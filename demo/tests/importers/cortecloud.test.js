@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CORTECLOUD_FIELDS, importCortecloud, optimize, parseEdgeBand, parseMaterial } from '@core/index.js';
+import { optimize } from '@engine';
+import {
+  CORTECLOUD_FIELDS,
+  importCortecloud,
+  parseEdgeBand,
+  parseMaterial,
+} from '../../src/engine/cortecloud.js';
 import { CORTECLOUD_FIXTURE, loadCortecloudExample } from '../../src/example.js';
+import { partsForEngine, sheetForEngine } from '../../src/engine/adapt.js';
 
 const edgeText = 'PVC 719L Roble Americano 0.4 x 22 mm REHAU ®';
 const materialText = 'Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)';
@@ -73,11 +80,18 @@ describe('importCortecloud', () => {
     expect(parts.map((part) => part.machined)).toEqual([false, true, false]);
   });
 
-  it('el largo de canto por pieza respeta los lados declarados', () => {
+  it('el canto se aplica al motor y se refleja en la lista de corte', () => {
     const { parts } = importCortecloud(json);
-    const layout = optimize({ parts: [parts[0]], sheets: [{ name: 'MDF', width: 2500, height: 1830 }] });
+    const layout = optimize({
+      parts: partsForEngine([parts[0]]),
+      sheets: [{ label: 'MDF', width: 2500, height: 1830, thickness: 18 }],
+    });
 
-    expect(layout.cutList[0].edgeLengthMm).toBe(600 + 732); // l1 + c1 con el texto de canto real
+    const row = layout.cutList[0];
+    // canto en left (0.4) y top (0.4): cutWidth - finishedWidth = 0.4 + 0 = 0.4 (solo top)
+    // Actually: left+right = 0.4 + 0 = 0.4, top+bottom = 0.4 + 0 = 0.4
+    expect(row.cutWidth - row.finishedWidth).toBeCloseTo(0.4, 5);
+    expect(row.cutHeight - row.finishedHeight).toBeCloseTo(0.4, 5);
   });
 
   it('agrupa tableros por material declarado', () => {

@@ -18,6 +18,9 @@ function type(selector, value) {
   return input;
 }
 
+/** Cuenta los rectángulos de pieza en el SVG (fill=hsl, exclusivo de piezas). */
+const pieceRects = () => count('[data-role="layout"] svg rect[fill^="hsl"]');
+
 describe('demo web', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -28,7 +31,8 @@ describe('demo web', () => {
 
     expect(count('tbody[data-role="rows"] tr')).toBe(21);
     expect(state.parts.reduce((sum, part) => sum + part.qty, 0)).toBe(30);
-    expect(count('[data-role="layout"] svg rect.piece')).toBe(30);
+    expect(state.layout.metrics.placed).toBe(30);
+    expect(pieceRects()).toBe(30);
     expect(query('[data-role="stat-sheets"]').textContent).not.toBe('');
     expect(query('[data-role="notice"]').textContent).toContain('por revisar');
     expect(query('button[data-action="pdf"]').disabled).toBe(false);
@@ -51,7 +55,7 @@ describe('demo web', () => {
     query('button[data-action="add"]').click();
     expect(count('tbody[data-role="rows"] tr')).toBe(22);
     expect(state.parts).toHaveLength(22);
-    expect(count('[data-role="layout"] svg rect.piece')).toBe(31);
+    expect(state.layout.metrics.placed).toBe(31);
 
     const lastRemove = document.querySelectorAll('button[data-action="remove"]')[21];
     lastRemove.click();
@@ -68,8 +72,10 @@ describe('demo web', () => {
 
     type(edgeInput, '1');
 
-    // 1 mm en los 4 lados: 2 × (600 + 732) mm de canto
-    expect(state.layout.cutList.find((entry) => entry.id === state.parts[0].id).edgeLengthMm).toBe(2 * (600 + 732));
+    // 1 mm en los 4 lados: cutWidth - finishedWidth = 2 (1+1)
+    const row = state.layout.cutList.find((entry) => entry.partId === state.parts[0].id);
+    expect(row.cutWidth - row.finishedWidth).toBe(2);
+    expect(row.cutHeight - row.finishedHeight).toBe(2);
   });
 
   it('muestra el error y desactiva las descargas si la entrada no es válida', () => {
@@ -79,7 +85,7 @@ describe('demo web', () => {
 
     const error = query('[data-role="error"]');
     expect(error.hidden).toBe(false);
-    expect(error.textContent).toMatch(/ancho inválido/);
+    expect(error.textContent).toMatch(/mayor que 0/);
     expect(query('button[data-action="pdf"]').disabled).toBe(true);
     expect(query('[data-role="layout"]').innerHTML).toContain('Sin layout');
   });
@@ -91,7 +97,7 @@ describe('demo web', () => {
     select.value = 'maxrects';
     select.dispatchEvent(new Event('input', { bubbles: true }));
     expect(state.mode).toBe('maxrects');
-    expect(count('[data-role="layout"] svg rect.piece')).toBe(30);
+    expect(state.layout.metrics.placed).toBe(30);
 
     const profile = query('#profile');
     profile.value = 'none';
@@ -113,7 +119,8 @@ describe('demo web', () => {
 
     expect(captured).toBeTruthy();
     const text = await captured.text();
-    expect(text).toContain('etiqueta,cantidad,ancho_mm');
+    expect(text).toContain('codigo');
+    expect(text).toContain('corte_ancho_mm');
     expect(text.split('\r\n').length).toBeGreaterThan(20);
   });
 });

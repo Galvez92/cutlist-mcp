@@ -3,15 +3,27 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Optimizador de corte de tableros open-source (motor, demo web, servidor MCP)",
+  "description": "Optimizador de corte de tableros: motor TypeScript (optimizer-engine) + demo web (Vite)",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
-    "core",
     "demo"
   ],
   "scripts": {
     "dev": "npm --workspace cutlist-demo run dev",
     "build": "npm --workspace cutlist-demo run build",
-    "test": "npm --workspace cutlist-demo run test"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "jsdom": "^30.1.3",
+    "pdf-lib": "^1.17.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   }
 }

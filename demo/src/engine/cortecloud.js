@@ -7,6 +7,10 @@
  *  - fixture: tests/fixtures/cortecloud/escritorio_D_simple.json
  *  - notas:   docs/memoria/MEMORIA.md (sección "Decisiones")
  * Todo lo inferido queda marcado aquí y en la UI como `por revisar`.
+ *
+ * Este importador es parte del demo, no del motor (optimizer-engine).
+ * Produce piezas y tableros en el formato interno del demo; `adapt.js` los
+ * convierte al formato del motor.
  */
 
 export const CORTECLOUD_SOURCE = {
@@ -15,7 +19,6 @@ export const CORTECLOUD_SOURCE = {
   verified: false,
 };
 
-/** Tabla campo → uso en el motor, con estado de verificación. */
 export const CORTECLOUD_FIELDS = [
   { field: 'parts[].quantity', mapsTo: 'cantidad', verified: true },
   { field: 'parts[].c', mapsTo: 'alto (mm)', verified: false },
@@ -26,8 +29,6 @@ export const CORTECLOUD_FIELDS = [
   { field: 'parts[].c1/c2/l1/l2', mapsTo: 'canto por lado (convención provisional)', verified: false },
   { field: 'parts[].machining', mapsTo: 'pieza mecanizada (booleano)', verified: false },
 ];
-
-const NUMBER = /(\d+(?:[.,]\d+)?)/;
 
 function toNumber(text) {
   const value = Number(String(text ?? '').replace(',', '.'));
@@ -61,8 +62,6 @@ export function parseMaterial(text) {
 }
 
 const edgeSides = (part) => ({
-  // Convención provisional: cada lado se nombra por el eje que recorre, así el
-  // largo total de canto es exacto aunque la posición física no esté verificada.
   left: Boolean(part.c1),
   right: Boolean(part.c2),
   top: Boolean(part.l1),
@@ -75,7 +74,7 @@ const edgeThickness = (part) => {
 };
 
 /**
- * Convierte un JSON de Cortecloud en piezas y tableros del motor.
+ * Convierte un JSON de Cortecloud en piezas y tableros del demo.
  * `swap` intercambia c/l (por si la convención de ejes es la contraria).
  */
 export function importCortecloud(json, { swap = false, grain = 'none' } = {}) {

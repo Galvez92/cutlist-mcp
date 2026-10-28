@@ -1,4 +1,5 @@
-import { MODES, PROFILES } from '@core/index.js';
+import { PROFILES } from '@engine';
+import { MODES } from '../engine/constants.js';
 import { readNumber } from './dom.js';
 
 const MODE_OPTIONS = [
@@ -13,9 +14,12 @@ export function createSheetPanel({ state, onChange }) {
   const modeOptions = MODE_OPTIONS.map(
     (option) => `<option value="${option.value}">${option.label}</option>`,
   ).join('');
-  const profileOptions = Object.entries(PROFILES)
-    .map(([id, profile]) => `<option value="${id}">${profile ? profile.label : 'sin perfil'}</option>`)
-    .join('');
+  const profileOptions = [
+    '<option value="none">sin perfil</option>',
+    ...Object.entries(PROFILES).map(
+      ([id, profile]) => `<option value="${id}">${profile.name}</option>`,
+    ),
+  ].join('');
 
   section.innerHTML = `
     <header class="panel__head">

@@ -6,7 +6,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    // El motor vive en ../core y el fixture real en ../tests/fixtures, fuera de demo/.
+    // El motor vive en ../src (TypeScript) y el fixture real en ../tests/fixtures.
     fs: { allow: [repoRoot] },
   },
   resolve: { alias },

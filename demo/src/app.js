@@ -1,5 +1,6 @@
-import { PROFILES, optimize } from '@core/index.js';
-import { DEFAULT_KERF } from '@core/profile.js';
+import { PROFILES, optimize } from '@engine';
+import { DEFAULT_KERF, MODES } from './engine/constants.js';
+import { partsForEngine, profileForEngine, sheetForEngine } from './engine/adapt.js';
 import { loadCortecloudExample } from './example.js';
 import { createPartsPanel } from './ui/parts-panel.js';
 import { createSheetPanel } from './ui/sheet-panel.js';
@@ -10,7 +11,7 @@ export function createApp(root) {
   const state = {
     parts: [],
     sheet: { name: '', width: '', height: '', thickness: '', kerf: DEFAULT_KERF, stock: '' },
-    mode: 'guillotine',
+    mode: MODES.GUILLOTINE,
     profileId: 'cortecloud-madijal',
     layout: null,
     error: null,
@@ -21,7 +22,7 @@ export function createApp(root) {
   head.innerHTML = `
     <h1>cutlist-mcp · demo del optimizador de corte</h1>
     <p>Piezas y tablero en stock → layout optimizado, aprovechamiento y descargas SVG en pantalla, PDF y CSV.
-    La demo usa el motor de <code>core/</code>; los formatos externos sin verificar quedan marcados <em>por revisar</em>.</p>
+    La demo usa el motor de <code>optimizer-engine</code> (PR&nbsp;4); los formatos externos sin verificar quedan marcados <em>por revisar</em>.</p>
   `;
 
   const grid = document.createElement('div');
@@ -43,23 +44,22 @@ export function createApp(root) {
   const footer = document.createElement('p');
   footer.className = 'footer';
   footer.innerHTML =
-    'Motor: <code>core/src</code> · Formatos externos por revisar: <code>docs/por-revisar.md</code> · Licencia MIT';
+    'Motor: <code>src/</code> (optimizer-engine, PR&nbsp;4) · Formatos externos por revisar: <code>docs/por-revisar.md</code> · Licencia MIT';
 
   root.append(head, grid, footer);
 
   function recompute() {
     try {
       state.layout = optimize({
-        parts: state.parts,
-        sheets: [{ ...state.sheet }],
-        kerf: state.sheet.kerf,
-        mode: state.mode,
-        profile: PROFILES[state.profileId] ?? null,
+        parts: partsForEngine(state.parts),
+        sheets: [sheetForEngine(state.sheet)],
+        algorithm: state.mode,
+        profile: profileForEngine(state.profileId),
       });
       state.error = null;
     } catch (error) {
       state.layout = null;
-      state.error = Array.isArray(error.issues) ? error.issues.join(' · ') : error.message;
+      state.error = error.message;
     }
     resultPanel.update();
     downloadPanel.update();

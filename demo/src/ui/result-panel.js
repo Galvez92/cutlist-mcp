@@ -1,4 +1,4 @@
-import { renderLayoutSvg } from '@core/index.js';
+import { renderLayoutSvg } from '@engine';
 import { escapeHtml } from './dom.js';
 
 const round = (value) => Math.round(value * 100) / 100;
@@ -33,18 +33,18 @@ export function createResultPanel({ state }) {
 
     if (!result) {
       stats.innerHTML = '';
-      layout.innerHTML = renderLayoutSvg(null);
+      layout.innerHTML = '<p class="muted">Sin layout</p>';
       lists.innerHTML = '';
       return;
     }
 
     stats.innerHTML = [
-      chip('Tableros', { role: 'stat-sheets', text: result.stats.sheetsUsed }),
-      chip('Aprovechamiento', { role: 'stat-yield', text: `${result.stats.yieldPct}%` }),
-      chip('Piezas', { role: 'stat-pieces', text: `${result.stats.piecesPlaced}/${result.stats.piecesRequested}` }),
-      chip('Sobrante', { role: 'stat-waste', text: `${round(result.stats.wasteArea / 1e6)} m²` }),
-      chip('Kerf', { role: 'stat-kerf', text: `${result.kerf} mm` }),
-      chip('Modo', { role: 'stat-mode', text: result.mode }),
+      chip('Tableros', { role: 'stat-sheets', text: result.metrics.sheetsUsed }),
+      chip('Aprovechamiento', { role: 'stat-yield', text: `${result.metrics.yieldPct}%` }),
+      chip('Piezas', { role: 'stat-pieces', text: `${result.metrics.placed}/${result.metrics.partInstances}` }),
+      chip('Sobrante', { role: 'stat-waste', text: `${round(result.metrics.wasteArea / 1e6)} m²` }),
+      chip('Kerf', { role: 'stat-kerf', text: `${state.sheet.kerf} mm` }),
+      chip('Modo', { role: 'stat-mode', text: result.algorithm }),
     ].join('');
 
     layout.innerHTML = renderLayoutSvg(result);
@@ -61,15 +61,15 @@ function renderLists(result) {
     blocks.push(`<div class="list" data-role="unplaced">
       <h3>Sin colocar (${result.unplaced.length})</h3>
       <ul>${result.unplaced
-        .map((piece) => `<li>${escapeHtml(piece.label)} ${round(piece.width)}×${round(piece.height)} mm — ${escapeHtml(piece.reason)}</li>`)
+        .map((piece) => `<li>${escapeHtml(piece.label)} — ${escapeHtml(piece.detail)}</li>`)
         .join('')}</ul>
     </div>`);
   }
 
-  if (result.warnings.length) {
+  if (result.issues.length) {
     blocks.push(`<div class="list" data-role="warnings">
-      <h3>Por revisar · avisos del perfil (${result.warnings.length})</h3>
-      <ul>${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>
+      <h3>Por revisar · avisos del perfil (${result.issues.length})</h3>
+      <ul>${result.issues.map((issue) => `<li>${escapeHtml(issue.message)}</li>`).join('')}</ul>
     </div>`);
   }
 

@@ -1,5 +1,6 @@
-import { cutListCsv, placementsCsv, CSV_MIME, CUTLIST_BASENAME, PLACEMENTS_BASENAME } from '@core/index.js';
-import { layoutToPdf, PDF_MIME, PDF_BASENAME } from '@core/pdf.js';
+import { cutListCsv, placementsCsv, CSV_MIME, CUTLIST_BASENAME, PLACEMENTS_BASENAME } from './engine/csv.js';
+import { renderLayoutPdf } from '@engine';
+import { PDF_MIME, PDF_BASENAME } from './engine/constants.js';
 
 /** Marca de tiempo local YYYYMMDD-HHMM (para nombres de archivo). */
 export function timeStamp(date = new Date()) {
@@ -33,6 +34,6 @@ export function downloadPlacementsCsv(layout) {
 }
 
 export async function downloadPdf(layout) {
-  const bytes = await layoutToPdf(layout);
+  const bytes = renderLayoutPdf(layout);
   downloadBytes(exportFileName(PDF_BASENAME, 'pdf'), bytes, PDF_MIME);
 }

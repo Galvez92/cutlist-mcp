@@ -2,8 +2,8 @@ import { escapeHtml, readNumber } from './dom.js';
 
 export const GRAIN_OPTIONS = [
   { value: 'none', label: 'sin veta' },
-  { value: 'length', label: 'veta en el alto' },
-  { value: 'width', label: 'veta en el ancho' },
+  { value: 'horizontal', label: 'veta horizontal' },
+  { value: 'vertical', label: 'veta vertical' },
 ];
 
 export function createEmptyPart(index = 1) {

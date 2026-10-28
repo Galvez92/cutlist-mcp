@@ -3,11 +3,11 @@
  * (tests/fixtures/cortecloud/escritorio_D_simple.json).
  *
  * POR REVISAR: la lectura del formato es provisional, ver
- * core/src/importers/cortecloud.js y docs/por-revisar.md.
+ * demo/src/engine/cortecloud.js y docs/por-revisar.md.
  */
 
 import fixture from '../../tests/fixtures/cortecloud/escritorio_D_simple.json';
-import { importCortecloud } from '@core/index.js';
+import { importCortecloud } from './engine/cortecloud.js';
 
 export const CORTECLOUD_FIXTURE = fixture;
 
