@@ -182,6 +182,31 @@ describe('optimizar_corte · no-guillotina (MaxRects)', () => {
   });
 });
 
+describe('optimizar_corte · veta (grain)', () => {
+  it('rota una pieza con veta sobre un tablero sin veta (comportamiento del motor nuevo)', () => {
+    const resultado = optimizar(
+      piezas([{ id: 'p1', nombre: 'Costado con veta', largo: 1500, ancho: 400, veta: true }]),
+      tableros([{ id: 't1', largo: 1000, ancho: 2000, kerf: KERF }])
+    );
+    const colocacion = resultado.hojas[0]?.colocaciones[0];
+    assert.ok(colocacion, 'la pieza debería estar colocada');
+    assert.equal(colocacion.rotada, true);
+    assert.equal(colocacion.largo, 400);
+    assert.equal(colocacion.ancho, 1500);
+    assert.deepEqual(problemasDeHoja(resultado.hojas[0]!, KERF), []);
+  });
+
+  it('no rota una pieza con veta cuando permitirRotacion es false', () => {
+    const resultado = optimizar(
+      piezas([{ id: 'p1', nombre: 'Costado con veta', largo: 1500, ancho: 400, veta: true }]),
+      tableros([{ id: 't1', largo: 1000, ancho: 2000, kerf: KERF }]),
+      { permitirRotacion: false }
+    );
+    assert.equal(resultado.hojas.length, 0);
+    assert.equal(resultado.resumen.unidadesSobrantes, 1);
+  });
+});
+
 describe('optimizar_corte · invariantes del layout', () => {
   it('las colocaciones conservan las medidas de la pieza (rotada o no)', () => {
     const entrada = piezas([{ id: 'p1', nombre: 'Pieza', largo: 700, ancho: 300, cantidad: 3 }]);

@@ -6,11 +6,12 @@ import { registrarCrearModulo } from './tools/crearModulo';
 import { registrarExportar } from './tools/exportar';
 import { registrarListarPiezas } from './tools/listarPiezas';
 import { registrarOptimizarCorte } from './tools/optimizarCorte';
+import { registrarValidarDespiece } from './tools/validarDespiece';
 
 export const NOMBRE_SERVIDOR = 'cutlist-mcp';
 export const VERSION_SERVIDOR = '0.1.0';
 
-export const NOMBRES_HERRAMIENTAS = ['crear_modulo', 'listar_piezas', 'optimizar_corte', 'exportar'] as const;
+export const NOMBRES_HERRAMIENTAS = ['crear_modulo', 'listar_piezas', 'optimizar_corte', 'exportar', 'validar_despiece'] as const;
 
 /** Construye una instancia nueva (una por conexión o por request, según el transporte). */
 export function crearServidor(): McpServer {
@@ -20,6 +21,7 @@ export function crearServidor(): McpServer {
   registrarListarPiezas(servidor);
   registrarOptimizarCorte(servidor);
   registrarExportar(servidor);
+  registrarValidarDespiece(servidor);
 
   return servidor;
 }

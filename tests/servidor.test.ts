@@ -47,7 +47,7 @@ describe('servidor MCP por Streamable HTTP', () => {
     await handler.close();
   });
 
-  it('expone las cuatro herramientas con su esquema de entrada', async () => {
+  it('expone las cinco herramientas con su esquema de entrada', async () => {
     const { tools } = await cliente.listTools();
     assert.deepEqual(
       tools.map(t => t.name).sort(),
@@ -166,6 +166,47 @@ describe('servidor MCP por Streamable HTTP', () => {
       arguments: { formato: 'promob', piezas: [] }
     });
     assert.equal(formatoDesconocido.isError, true);
+  });
+
+  it('validar_despiece acepta piezas válidas sin errores', async () => {
+    const respuesta = await cliente.callTool({
+      name: 'validar_despiece',
+      arguments: { piezas: [{ id: 'p1', nombre: 'Costado', largo: 700, ancho: 400 }] }
+    });
+    assert.ok(!respuesta.isError, texto(respuesta));
+    const datos = estructura(respuesta);
+    assert.equal(datos.perfil, 'cortecloud-madijal');
+    assert.equal(datos.estado, 'por revisar');
+    assert.equal(datos.valido, true);
+    const hallazgos = datos.hallazgos as { severity: string; code: string }[];
+    const errores = hallazgos.filter(h => h.severity === 'error');
+    assert.equal(errores.length, 0);
+    assert.ok(hallazgos.some(h => h.code === 'perfil-por-revisar'));
+    assert.ok(texto(respuesta).includes('por revisar'));
+  });
+
+  it('validar_despiece detecta pieza bajo el mínimo de corte', async () => {
+    const respuesta = await cliente.callTool({
+      name: 'validar_despiece',
+      arguments: { piezas: [{ id: 'p1', nombre: 'Taco', largo: 50, ancho: 100 }] }
+    });
+    assert.ok(!respuesta.isError, texto(respuesta));
+    const datos = estructura(respuesta);
+    assert.equal(datos.valido, false);
+    const hallazgos = datos.hallazgos as { severity: string; code: string }[];
+    assert.ok(hallazgos.some(h => h.code === 'pieza-bajo-minimo' && h.severity === 'error'));
+  });
+
+  it('validar_despiece detecta pieza sobre el máximo', async () => {
+    const respuesta = await cliente.callTool({
+      name: 'validar_despiece',
+      arguments: { piezas: [{ id: 'p1', nombre: 'Mega', largo: 3000, ancho: 2000 }] }
+    });
+    assert.ok(!respuesta.isError, texto(respuesta));
+    const datos = estructura(respuesta);
+    assert.equal(datos.valido, false);
+    const hallazgos = datos.hallazgos as { severity: string; code: string }[];
+    assert.ok(hallazgos.some(h => h.code === 'pieza-sobre-maximo' && h.severity === 'error'));
   });
 
   it('una herramienta inexistente falla a nivel de protocolo', async () => {

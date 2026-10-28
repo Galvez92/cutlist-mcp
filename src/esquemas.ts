@@ -71,6 +71,10 @@ export const optimizarCorteSchema = z.object({
   ...opcionesOptimizacionShape
 });
 
+export const validarDespieceSchema = z.object({
+  piezas: z.array(piezaSchema).min(1).describe('Piezas a validar contra el perfil Cortecloud/Madijal.')
+});
+
 export const exportarSchema = z.object({
   formato: z
     .enum(IDS_FORMATOS)
