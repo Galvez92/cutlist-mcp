@@ -12,9 +12,17 @@ perfil Cortecloud/Madijal: 2500 x 1830 x 18 mm.
 Todos los problemas se informan como `ValueError` con el número de la pieza que
 falla, para que la vista previa muestre el motivo en lugar de un traceback.
 
-por revisar: la muestra real no trae veta y todos los `machining` vienen vacíos,
-así que esos campos todavía no se importan. El kerf no viene en el archivo: se
-usa 4 mm como valor de trabajo.
+Del objeto `machining` de cada pieza se importan sólo las medidas que el perfil
+Cortecloud/Madijal restringe: el `diameter` de cada barreno (`verticalDrills` y
+`horizontalDrills`) y el `width` de cada ranura (`furrowMachining` y
+`furrowMachiningPair`). Las ranuras y barrenos fuera del perfil no se rechazan
+aquí: quedan en la pieza y `Constraints` los reporta como avisos.
+
+por revisar: la muestra real no trae veta, así que ese campo no se importa.
+Todos los `horizontalDrills` de la muestra están vacíos y
+`furrowMachiningPair` siempre es `null`: de esos dos se asume que repiten la
+forma de `verticalDrills` y `furrowMachining` (mismo `diameter`/`width`). El
+kerf no viene en el archivo: se usa 4 mm como valor de trabajo.
 """
 
 from __future__ import annotations
@@ -25,7 +33,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .models import EdgeBanding, Part, Sheet
+from .models import EdgeBanding, Machining, Part, Sheet
 
 FIXTURE = (
     Path(__file__).resolve().parent.parent
@@ -127,6 +135,7 @@ def _row_to_part(row: dict, index: int, material: str) -> Part:
                 l1=_edge(row, "l1", index),
                 l2=_edge(row, "l2", index),
             ),
+            machining=_machining(row, index),
         )
     except ValueError as error:
         raise ValueError(f"pieza {index}: {error}") from error
@@ -167,6 +176,69 @@ def _edge(row: dict, key: str, index: int) -> str | None:
     if not isinstance(raw, str):
         raise ValueError(f"pieza {index}: canto {key!r} inválido: {raw!r}")
     return raw.strip() or None
+
+
+def _machining(row: dict, index: int) -> Machining | None:
+    """Ranuras y barrenos de la pieza (`machining` del archivo)."""
+    raw = row.get("machining")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError(f"pieza {index}: «machining» debe ser un objeto o null")
+    machining = Machining(
+        vertical_drills=_drill_diameters(raw, "verticalDrills", index),
+        horizontal_drills=_drill_diameters(raw, "horizontalDrills", index),
+        slots=_slot_widths(raw, index),
+    )
+    return None if machining.is_empty else machining
+
+
+def _drill_diameters(raw: dict, key: str, index: int) -> tuple[float, ...]:
+    drills = raw.get(key)
+    if drills is None:
+        return ()
+    if not isinstance(drills, list):
+        raise ValueError(f"pieza {index}: «{key}» debe ser una lista")
+    return tuple(
+        _positive(drill.get("diameter"), index, f"diámetro de barreno en «{key}»")
+        for drill in _objects(drills, key, index)
+    )
+
+
+def _slot_widths(raw: dict, index: int) -> tuple[float, ...]:
+    widths: list[float] = []
+    for key in ("furrowMachining", "furrowMachiningPair"):
+        furrow = raw.get(key)
+        if furrow is None:
+            continue
+        entries = furrow if isinstance(furrow, list) else [furrow]
+        for entry in _objects(entries, key, index):
+            widths.append(
+                _positive(
+                    entry.get("width"),
+                    index,
+                    f"ancho de ranura en «{key}» (forma por revisar)",
+                )
+            )
+    return tuple(widths)
+
+
+def _objects(entries: list, key: str, index: int) -> list[dict]:
+    objects: list[dict] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError(f"pieza {index}: cada elemento de «{key}» debe ser un objeto")
+        objects.append(entry)
+    return objects
+
+
+def _positive(raw, index: int, what: str) -> float:
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        raise ValueError(f"pieza {index}: {what} inválido: {raw!r}")
+    value = float(raw)
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"pieza {index}: {what} inválido: {raw!r}")
+    return value
 
 
 def _sheet_for(material: str) -> Sheet:

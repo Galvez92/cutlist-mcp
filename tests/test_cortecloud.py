@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from cutlist.cortecloud import FALLBACK_DIMENSIONS, load_fixture, parse_cortecloud_json
+from cutlist.models import Constraints
 
 
 def row(**overrides):
@@ -61,6 +62,27 @@ class FixtureTest(unittest.TestCase):
 
     def test_la_veta_no_se_inventa(self):
         self.assertTrue(all(not part.grain for group in self.groups for part in group.parts))
+
+    def test_importa_barrenos_y_ranuras(self):
+        parts = {part.label: part for group in self.groups for part in group.parts}
+        pasacables = parts["Cubierta izquierda (pasacables Ø35)"]
+        self.assertEqual(pasacables.machining.vertical_drills, (35.0,))
+        self.assertEqual(pasacables.machining.horizontal_drills, ())
+        self.assertEqual(pasacables.machining.slots, ())
+
+        repisa = parts["Repisa flotante R1 roble (soporte oculto HyM 00105412 + LED)"]
+        self.assertEqual(repisa.machining.vertical_drills, (8.0,))
+        self.assertEqual(repisa.machining.slots, (9.7,))
+
+    def test_el_perfil_no_reporta_el_mecanizado_del_fixture(self):
+        for group in self.groups:
+            for part in group.parts:
+                problems = [
+                    problem
+                    for problem in Constraints().violations(part)
+                    if "ranura" in problem or "barreno" in problem
+                ]
+                self.assertEqual(problems, [], part.label)
 
 
 class ParseTest(unittest.TestCase):
@@ -285,6 +307,86 @@ class MalformedInputTest(unittest.TestCase):
         self.assertEqual(len(groups), 2)
         self.assertEqual(groups[1].sheet.width, 2440.0)
         self.assertEqual(groups[1].sheet.height, 1220.0)
+
+
+class MachiningParseTest(unittest.TestCase):
+    """Ranuras y barrenos dentro de `machining`."""
+
+    def machining(self, **overrides):
+        groups = parse_cortecloud_json(payload(row(machining=overrides)))
+        return groups[0].parts[0].machining
+
+    def test_importa_diametros_y_anchos(self):
+        machining = self.machining(
+            verticalDrills=[{"diameter": 35, "depth": 18, "bolthole": False}],
+            horizontalDrills=[{"diameter": 8}],
+            furrowMachining={"width": 9.7, "depth": 8, "face": "i"},
+            furrowMachiningPair={"width": 5.7},
+        )
+        self.assertEqual(machining.vertical_drills, (35.0,))
+        self.assertEqual(machining.horizontal_drills, (8.0,))
+        self.assertEqual(machining.slots, (9.7, 5.7))
+
+    def test_machining_vacio_es_sin_mecanizado(self):
+        self.assertIsNone(self.machining())
+        self.assertIsNone(
+            self.machining(verticalDrills=[], horizontalDrills=[], furrowMachining=None)
+        )
+
+    def test_ranura_en_lista(self):
+        """`furrowMachining`/`furrowMachiningPair` como lista: forma por revisar."""
+        machining = self.machining(furrowMachining=[{"width": 6.2}, {"width": 7}])
+        self.assertEqual(machining.slots, (6.2, 7.0))
+
+    def test_machining_que_no_es_objeto(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(machining="taladro")))
+        self.assertIn("pieza 1", str(ctx.exception))
+        self.assertIn("machining", str(ctx.exception))
+
+    def test_barrenos_que_no_son_lista(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(machining={"verticalDrills": {}})))
+        self.assertIn("verticalDrills", str(ctx.exception))
+
+    def test_barreno_que_no_es_objeto(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(machining={"horizontalDrills": [8]})))
+        self.assertIn("objeto", str(ctx.exception))
+
+    def test_barreno_sin_diametro(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(
+                payload(row(machining={"verticalDrills": [{"depth": 18}]}))
+            )
+        self.assertIn("diámetro de barreno", str(ctx.exception))
+
+    def test_barreno_con_diametro_invalido(self):
+        for value in (0, -5, "8", True, None):
+            with self.assertRaises(ValueError) as ctx:
+                parse_cortecloud_json(
+                    payload(row(machining={"verticalDrills": [{"diameter": value}]}))
+                )
+            self.assertIn("diámetro de barreno", str(ctx.exception))
+
+    def test_ranura_sin_ancho(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(
+                payload(row(machining={"furrowMachining": {"depth": 8}}))
+            )
+        self.assertIn("ancho de ranura", str(ctx.exception))
+
+    def test_ranura_que_no_es_objeto(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(machining={"furrowMachining": 8})))
+        self.assertIn("furrowMachining", str(ctx.exception))
+
+    def test_el_error_indica_la_pieza_que_falla(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(
+                payload(row(), row(machining={"verticalDrills": [{}]}))
+            )
+        self.assertIn("pieza 2", str(ctx.exception))
 
 
 if __name__ == "__main__":

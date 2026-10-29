@@ -1,6 +1,6 @@
 import unittest
 
-from cutlist.models import Constraints, Part, Sheet
+from cutlist.models import Constraints, Machining, Part, Sheet
 from cutlist.optimizer import optimize
 from tests.support import assert_layouts_valid
 
@@ -54,6 +54,17 @@ class OptimizeTest(unittest.TestCase):
         result = optimize([Part(50, 300, label="tirante")], [Sheet(2500, 1830)],
                           constraints=Constraints())
         self.assertTrue(any("mínimo de corte" in warning for warning in result.warnings))
+
+    def test_avisos_de_ranuras_y_barrenos_del_perfil(self):
+        part = Part(
+            600,
+            732,
+            label="tapa",
+            machining=Machining(slots=(8.0,), vertical_drills=(6.0,)),
+        )
+        result = optimize([part], [Sheet(2500, 1830)], constraints=Constraints())
+        self.assertTrue(any("ranura de 8 mm" in warning for warning in result.warnings))
+        self.assertTrue(any("barreno vertical Ø6 mm" in warning for warning in result.warnings))
 
     def test_sin_perfil_no_hay_avisos_de_restricciones(self):
         result = optimize([Part(50, 300)], [Sheet(2500, 1830)])

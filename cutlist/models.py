@@ -12,6 +12,17 @@ from typing import Iterator
 
 EPS = 1e-9
 
+# Tolerancia al comparar medidas de mecanizado con las del perfil (en mm).
+MACHINING_TOLERANCE = 1e-6
+
+
+def _is_allowed(value: float, allowed: tuple[float, ...]) -> bool:
+    return any(abs(value - candidate) <= MACHINING_TOLERANCE for candidate in allowed)
+
+
+def _allowed_text(allowed: tuple[float, ...]) -> str:
+    return "/".join(f"{value:g}" for value in allowed)
+
 
 @dataclass(frozen=True)
 class EdgeBanding:
@@ -32,6 +43,24 @@ class EdgeBanding:
 
 
 @dataclass(frozen=True)
+class Machining:
+    """Mecanizado de una pieza, tomado de `machining` de Cortecloud.
+
+    Sólo se guardan las medidas que el perfil Cortecloud/Madijal restringe:
+    el diámetro (mm) de cada barreno y el ancho (mm) de cada ranura
+    (`furrowMachining`). El resto de los campos del archivo no se usan.
+    """
+
+    vertical_drills: tuple[float, ...] = ()
+    horizontal_drills: tuple[float, ...] = ()
+    slots: tuple[float, ...] = ()
+
+    @property
+    def is_empty(self) -> bool:
+        return not (self.vertical_drills or self.horizontal_drills or self.slots)
+
+
+@dataclass(frozen=True)
 class Part:
     """Pieza a cortar.
 
@@ -46,6 +75,7 @@ class Part:
     label: str = ""
     edges: EdgeBanding | None = None
     material: str = ""
+    machining: Machining | None = None
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
@@ -100,6 +130,9 @@ class Constraints:
     min_machined_length: float = 250.0
     max_piece_width: float = 2480.0
     max_piece_height: float = 1810.0
+    slot_widths: tuple[float, ...] = (5.7, 6.2, 6.7, 7.0, 9.7, 12.7, 15.7, 18.7, 25.7)
+    horizontal_drill_diameters: tuple[float, ...] = (3.0, 8.0)
+    vertical_drill_diameters: tuple[float, ...] = (3.0, 5.0, 8.0, 10.0, 15.0, 20.0, 35.0)
 
     def violations(self, part: Part) -> list[str]:
         """Restricciones que la pieza no cumple (lista vacía si cumple todas)."""
@@ -126,6 +159,33 @@ class Constraints:
                 f"pieza mecanizada menor a {self.min_machined_length:g} mm: "
                 f"{long_side:g} mm en «{part.label or 'sin nombre'}»"
             )
+        problems.extend(self._machining_violations(part))
+        return problems
+
+    def _machining_violations(self, part: Part) -> list[str]:
+        """Ranuras y barrenos del mecanizado que el perfil no admite."""
+        machining = part.machining
+        if machining is None:
+            return []
+
+        name = part.label or "sin nombre"
+        problems: list[str] = []
+        for width in machining.slots:
+            if not _is_allowed(width, self.slot_widths):
+                problems.append(
+                    f"ranura de {width:g} mm no permitida en «{name}» "
+                    f"(permitidas: {_allowed_text(self.slot_widths)} mm)"
+                )
+        for label, diameters, allowed in (
+            ("barreno horizontal", machining.horizontal_drills, self.horizontal_drill_diameters),
+            ("barreno vertical", machining.vertical_drills, self.vertical_drill_diameters),
+        ):
+            for diameter in diameters:
+                if not _is_allowed(diameter, allowed):
+                    problems.append(
+                        f"{label} Ø{diameter:g} mm no permitido en «{name}» "
+                        f"(permitidos: {_allowed_text(allowed)} mm)"
+                    )
         return problems
 
 
