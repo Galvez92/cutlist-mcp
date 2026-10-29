@@ -4,7 +4,7 @@ import { after, before, describe, it } from 'node:test';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 
-import { crearServidor, NOMBRES_HERRAMIENTAS } from '../src/servidor';
+import { crearServidor, NOMBRES_HERRAMIENTAS } from '../src/servidor.js';
 
 type Respuesta = Awaited<ReturnType<Client['callTool']>>;
 

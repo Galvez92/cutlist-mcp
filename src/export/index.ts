@@ -6,12 +6,12 @@
  * junto con la fuente consultada (regla 5 de AGENTS.md).
  */
 
-import type { ResultadoOptimizacion } from '../core/adaptador';
-import type { Pieza } from '../core/tipos';
-import { exportarCortecloud } from './cortecloud';
-import { exportarCsv } from './csv';
-import { exportarDxf } from './dxf';
-import { exportarSvg } from './svg';
+import type { ResultadoOptimizacion } from '../core/adaptador.js';
+import type { Pieza } from '../core/tipos.js';
+import { exportarCortecloud } from './cortecloud.js';
+import { exportarCsv } from './csv.js';
+import { exportarDxf } from './dxf.js';
+import { exportarSvg } from './svg.js';
 
 export type EstadoFormato = 'verificado' | 'por revisar';
 

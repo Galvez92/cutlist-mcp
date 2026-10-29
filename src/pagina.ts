@@ -1,6 +1,6 @@
 /** Página de presentación del servidor MCP (sólo informativa, sin estado). */
 
-import { catalogoFormatos } from './export';
+import { catalogoFormatos } from './export/index.js';
 
 const HERRAMIENTAS = [
   {

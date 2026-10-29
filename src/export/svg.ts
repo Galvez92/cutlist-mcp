@@ -4,8 +4,8 @@
  * estructura y por parseo XML en las pruebas.
  */
 
-import type { ResultadoOptimizacion } from '../core/adaptador';
-import { componerLienzo } from './disposicion';
+import type { ResultadoOptimizacion } from '../core/adaptador.js';
+import { componerLienzo } from './disposicion.js';
 
 const ETIQUETA_MINIMA = 120;
 

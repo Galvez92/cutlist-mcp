@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { resumirPiezas } from '../src/core/listar';
-import { generarModulo } from '../src/core/modulos';
-import type { Pieza } from '../src/core/tipos';
+import { resumirPiezas } from '../src/core/listar.js';
+import { generarModulo } from '../src/core/modulos.js';
+import type { Pieza } from '../src/core/tipos.js';
 
 const CANTO = 'PVC 719L Roble Americano 0.4 x 22 mm REHAU';
 

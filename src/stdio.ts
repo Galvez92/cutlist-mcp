@@ -7,7 +7,7 @@
 
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 
-import { crearServidor } from './servidor';
+import { crearServidor } from './servidor.js';
 
 void serveStdio(() => crearServidor(), {
   onerror: error => console.error('cutlist-mcp: error en stdio:', error.message)

@@ -2,11 +2,11 @@
 
 import { McpServer } from '@modelcontextprotocol/server';
 
-import { registrarCrearModulo } from './tools/crearModulo';
-import { registrarExportar } from './tools/exportar';
-import { registrarListarPiezas } from './tools/listarPiezas';
-import { registrarOptimizarCorte } from './tools/optimizarCorte';
-import { registrarValidarDespiece } from './tools/validarDespiece';
+import { registrarCrearModulo } from './tools/crearModulo.js';
+import { registrarExportar } from './tools/exportar.js';
+import { registrarListarPiezas } from './tools/listarPiezas.js';
+import { registrarOptimizarCorte } from './tools/optimizarCorte.js';
+import { registrarValidarDespiece } from './tools/validarDespiece.js';
 
 export const NOMBRE_SERVIDOR = 'cutlist-mcp';
 export const VERSION_SERVIDOR = '0.1.0';

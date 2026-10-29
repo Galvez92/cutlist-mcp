@@ -1,8 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import { formatearPiezas, resumirPiezas } from '../core/listar';
-import { listaPiezasSchema } from '../esquemas';
-import { ejecutar, normalizarPiezas } from './comun';
+import { formatearPiezas, resumirPiezas } from '../core/listar.js';
+import { listaPiezasSchema } from '../esquemas.js';
+import { ejecutar, normalizarPiezas } from './comun.js';
 
 export function registrarListarPiezas(servidor: McpServer): void {
   servidor.registerTool(

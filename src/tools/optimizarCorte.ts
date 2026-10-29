@@ -1,8 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import { optimizar } from '../core/adaptador';
-import { optimizarCorteSchema } from '../esquemas';
-import { ejecutar, normalizarPiezas, normalizarTableros, textoOptimizacion } from './comun';
+import { optimizar } from '../core/adaptador.js';
+import { optimizarCorteSchema } from '../esquemas.js';
+import { ejecutar, normalizarPiezas, normalizarTableros, textoOptimizacion } from './comun.js';
 
 export function registrarOptimizarCorte(servidor: McpServer): void {
   servidor.registerTool(

@@ -1,7 +1,7 @@
 /** Utilidades compartidas por las herramientas MCP. */
 
-import type { ResultadoOptimizacion } from '../core/adaptador';
-import { type Pieza, type PiezaEntrada, type Tablero, type TableroEntrada, normalizarPieza, normalizarTablero, redondear } from '../core/tipos';
+import type { ResultadoOptimizacion } from '../core/adaptador.js';
+import { type Pieza, type PiezaEntrada, type Tablero, type TableroEntrada, normalizarPieza, normalizarTablero, redondear } from '../core/tipos.js';
 
 export type ResultadoHerramienta = {
   content: { type: 'text'; text: string }[];

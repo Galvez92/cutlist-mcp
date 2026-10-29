@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
-import { optimizar } from '../src/core/adaptador';
-import { normalizarPieza, normalizarTablero, type Pieza } from '../src/core/tipos';
-import { buscarFormato, catalogoFormatos, IDS_FORMATOS, idsFormatos } from '../src/export';
-import { exportarCortecloud } from '../src/export/cortecloud';
-import { CABECERA_CSV, exportarCsv } from '../src/export/csv';
-import { exportarDxf } from '../src/export/dxf';
-import { exportarSvg } from '../src/export/svg';
+import { optimizar } from '../src/core/adaptador.js';
+import { normalizarPieza, normalizarTablero, type Pieza } from '../src/core/tipos.js';
+import { buscarFormato, catalogoFormatos, IDS_FORMATOS, idsFormatos } from '../src/export/index.js';
+import { exportarCortecloud } from '../src/export/cortecloud.js';
+import { CABECERA_CSV, exportarCsv } from '../src/export/csv.js';
+import { exportarDxf } from '../src/export/dxf.js';
+import { exportarSvg } from '../src/export/svg.js';
 
 const RUTA_FIXTURE = new URL('./fixtures/cortecloud/escritorio_D_simple.json', import.meta.url);
 

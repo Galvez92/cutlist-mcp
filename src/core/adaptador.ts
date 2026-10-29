@@ -7,9 +7,9 @@
  * al formato que esperan las herramientas y los exportadores del MCP.
  */
 
-import { optimize } from '../engine/optimize';
-import type { AlgorithmOption, LayoutResult, PartInput, Placement, SheetInput, SheetLayout, UnplacedPart } from '../engine/types';
-import { redondear, type Pieza, type Tablero } from './tipos';
+import { optimize } from '../engine/optimize.js';
+import type { AlgorithmOption, LayoutResult, PartInput, Placement, SheetInput, SheetLayout, UnplacedPart } from '../engine/types.js';
+import { redondear, type Pieza, type Tablero } from './tipos.js';
 
 // ── Tipos del resultado MCP (los que esperan herramientas y exportadores) ──
 

@@ -4,7 +4,7 @@ import { describe, it } from 'node:test';
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 
-import { NOMBRES_HERRAMIENTAS } from '../src/servidor';
+import { NOMBRES_HERRAMIENTAS } from '../src/servidor.js';
 
 describe('servidor MCP por stdio', () => {
   it('se levanta como proceso hijo y responde una llamada', async () => {

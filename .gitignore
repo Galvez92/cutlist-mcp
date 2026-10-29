@@ -1,9 +1,11 @@
 node_modules/
 dist/
+*.tsbuildinfo
+.vite/
 coverage/
 *.log
+.DS_Store
 .env
 .env.*
 !.env.base44-defaults
-.DS_Store
 .salidas/

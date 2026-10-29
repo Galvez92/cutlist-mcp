@@ -2,10 +2,10 @@
 
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import { CORTECLOUD_MADIJAL_PROFILE, normalizeParts, validateParts } from '../engine';
-import type { PartInput, ProfileIssue } from '../engine';
-import { validarDespieceSchema } from '../esquemas';
-import { ejecutar, normalizarPiezas } from './comun';
+import { CORTECLOUD_MADIJAL_PROFILE, normalizeParts, validateParts } from '../engine/index.js';
+import type { PartInput, ProfileIssue } from '../engine/index.js';
+import { validarDespieceSchema } from '../esquemas.js';
+import { ejecutar, normalizarPiezas } from './comun.js';
 
 export function registrarValidarDespiece(servidor: McpServer): void {
   servidor.registerTool(

@@ -17,7 +17,7 @@ import {
   ESPESOR_POR_DEFECTO,
   SIN_CANTOS,
   redondear
-} from './tipos';
+} from './tipos.js';
 
 export const TIPOS_MODULO = ['cajonera', 'closet', 'cocina', 'librero'] as const;
 export type TipoModulo = (typeof TIPOS_MODULO)[number];

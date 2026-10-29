@@ -3,7 +3,7 @@
  * Separador coma, una línea por pieza, cabecera fija, comillas dobles cuando el campo lo necesita.
  */
 
-import type { Pieza } from '../core/tipos';
+import type { Pieza } from '../core/tipos.js';
 
 export const CABECERA_CSV = [
   'id',

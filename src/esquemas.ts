@@ -2,8 +2,8 @@
 
 import * as z from 'zod/v4';
 
-import { TIPOS_MODULO } from './core/modulos';
-import { IDS_FORMATOS } from './export';
+import { TIPOS_MODULO } from './core/modulos.js';
+import { IDS_FORMATOS } from './export/index.js';
 
 const canto = z.string().nullable();
 

@@ -12,7 +12,7 @@
  * `machining` (barrenos y ranuras) **no** se genera: por revisar.
  */
 
-import type { Pieza } from '../core/tipos';
+import type { Pieza } from '../core/tipos.js';
 
 export interface ParteCortecloud {
   quantity: number;

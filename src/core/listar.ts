@@ -1,6 +1,6 @@
 /** Resumen y validación de una lista de piezas. */
 
-import { areaM2, type Pieza, redondear } from './tipos';
+import { areaM2, type Pieza, redondear } from './tipos.js';
 
 export interface ResumenPiezas {
   lineas: number;

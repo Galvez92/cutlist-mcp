@@ -15,8 +15,8 @@ import { createServer as crearServidorHttp, type IncomingMessage, type ServerRes
 import { hostHeaderValidation, originValidation, toNodeHandler } from '@modelcontextprotocol/node';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 
-import { paginaPresentacion } from './pagina';
-import { crearServidor } from './servidor';
+import { paginaPresentacion } from './pagina.js';
+import { crearServidor } from './servidor.js';
 
 const puerto = Number(process.env.PORT ?? 3000);
 const anfitrion = process.env.HOST ?? '0.0.0.0';

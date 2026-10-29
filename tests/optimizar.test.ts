@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import type { Colocacion, HojaOptimizada } from '../src/core/adaptador';
-import { optimizar } from '../src/core/adaptador';
-import { normalizarPieza, normalizarTablero, type PiezaEntrada, type TableroEntrada } from '../src/core/tipos';
+import type { Colocacion, HojaOptimizada } from '../src/core/adaptador.js';
+import { optimizar } from '../src/core/adaptador.js';
+import { normalizarPieza, normalizarTablero, type PiezaEntrada, type TableroEntrada } from '../src/core/tipos.js';
 
 const KERF = 3;
 const EPS = 1e-6;

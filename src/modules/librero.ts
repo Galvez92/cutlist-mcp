@@ -1,0 +1,223 @@
+/**
+ * Librero (estantería de libros) paramétrico.
+ *
+ * Geometría (mm, medidas exteriores)
+ * ----------------------------------
+ * - ``ancho``, ``alto`` y ``fondo`` exteriores (costado a costado).
+ * - Caja: 2 costados de ``alto x fondo`` (con canto frontal y canto en la arista
+ * superior, porque la tapa va entre costados), tapa y base entre costados,
+ * repisas entre costados y trasera de 3 mm clavada al dorso (espesor de trasera
+ * según ARAUCO, serie Cómo Hacer 17).
+ * - Repisas repartidas en el interior o en alturas explícitas; con
+ * ``repisasMoviles`` los costados llevan barrenos Ø5 (criterio de ARAUCO #6).
+ *
+ * *Por revisar*: los valores por omisión de ``fondo`` (300 mm) y de la altura útil
+ * entre repisas se tomaron de guías de taller ("un librero de 30 a 35 cm de
+ * profundidad y la misma separación entre entrepaños": https://www.instagram.com/p/B7RItFOH3XF/),
+ * no de un documento técnico; la luz máxima entre apoyos tampoco tiene fuente
+ * verificada y por eso el perfil no la avisa salvo que se configure
+ * (``PerfilRestricciones.luzMaxRepisaAviso``). Ajuste esas medidas antes de
+ * fabricar.
+ */
+
+import { Accesorio, Modulo } from "./modulo.js";
+import {
+  CANTO_DEFAULT,
+  MATERIAL_DEFAULT,
+  MATERIAL_TRASERA_DEFAULT,
+  barrenosRepisa,
+  exigirPositivo,
+  posicionesRepisas,
+} from "./common.js";
+import { Cantos, Mecanizado, Pieza, ValueError } from "./parts.js";
+
+export const CAMPOS: Record<string, string> = {
+  ancho: "Ancho exterior, de costado a costado (mm)",
+  alto: "Alto exterior total (mm)",
+  fondo: "Profundidad del costado (mm) — por revisar",
+  repisas: "Cantidad de repisas (si no se dan posiciones explícitas)",
+  posiciones_repisas: "Alturas de repisa sobre el piso interior (mm)",
+  repisas_moviles: "Perforar los costados para soportes de repisa (Ø5)",
+  espesor: "Espesor del tablero del cuerpo (mm)",
+  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  material: "Texto del material del cuerpo (como en el despiece)",
+  material_trasera: "Texto del material de la trasera",
+  canto: "Texto del canto de las aristas vistas del cuerpo",
+  nombre: "Nombre del módulo para el despiece",
+};
+
+export interface ParamsLibrero {
+  ancho?: number;
+  alto?: number;
+  fondo?: number;
+  repisas?: number;
+  posicionesRepisas?: number[] | null;
+  repisasMoviles?: boolean;
+  espesor?: number;
+  traseraEspesor?: number;
+  material?: string;
+  materialTrasera?: string;
+  canto?: string;
+  nombre?: string;
+}
+
+export const DEFAULTS_LIBRERO = {
+  ancho: 800.0,
+  alto: 2000.0,
+  fondo: 300.0,
+  repisas: 4,
+  posicionesRepisas: null as number[] | null,
+  repisasMoviles: false,
+  espesor: 18.0,
+  traseraEspesor: 3.0,
+  material: MATERIAL_DEFAULT,
+  materialTrasera: MATERIAL_TRASERA_DEFAULT,
+  canto: CANTO_DEFAULT,
+  nombre: "",
+};
+
+export function generar(params: ParamsLibrero = {}): Modulo {
+  const p = { ...DEFAULTS_LIBRERO, ...params };
+  exigirPositivo({ ancho: p.ancho, alto: p.alto, fondo: p.fondo, espesor: p.espesor });
+  if (p.repisas < 0) {
+    throw new ValueError("la cantidad de repisas no puede ser negativa");
+  }
+  if (p.traseraEspesor >= p.fondo) {
+    throw new ValueError("la trasera no puede ocupar toda la profundidad");
+  }
+
+  const material = p.material;
+  const canto = p.canto;
+  const nombre = p.nombre || `Librero ${p.ancho.toFixed(0)}x${p.alto.toFixed(0)}x${p.fondo.toFixed(0)}`;
+  const anchoInterior = p.ancho - 2 * p.espesor;
+  if (anchoInterior <= 0) {
+    throw new ValueError("el ancho exterior no deja interior entre costados");
+  }
+
+  const interiorDesde = p.espesor;
+  const interiorHasta = p.alto - p.espesor;
+  const alturasRepisas =
+    p.posicionesRepisas !== null
+      ? [...p.posicionesRepisas]
+      : posicionesRepisas(p.repisas, interiorDesde, interiorHasta);
+  for (const posicion of alturasRepisas) {
+    if (!(interiorDesde < posicion && posicion < interiorHasta)) {
+      throw new ValueError(
+        `la repisa a ${posicion.toFixed(0)} mm queda fuera del interior del módulo`,
+      );
+    }
+  }
+
+  const comun = { espesor: p.espesor, material, modulo: nombre };
+  const mecanizadoCostado = p.repisasMoviles ? barrenosRepisa(alturasRepisas) : new Mecanizado();
+  let funcionCostado = "Costado — canto frontal y canto en la arista superior";
+  if (mecanizadoCostado.barrenos.length) {
+    funcionCostado += ", con barrenos Ø5 para repisas móviles";
+  }
+
+  const piezas: Pieza[] = [
+    new Pieza({
+      nombre: "Costado",
+      largo: p.alto,
+      ancho: p.fondo,
+      cantidad: 2,
+      rol: "costado",
+      cantos: new Cantos(canto, undefined, canto),
+      mecanizado: mecanizadoCostado,
+      funcion: funcionCostado,
+      ...comun,
+    }),
+    new Pieza({
+      nombre: "Base",
+      largo: p.fondo,
+      ancho: anchoInterior,
+      rol: "base",
+      cantos: new Cantos(undefined, undefined, canto),
+      funcion: "Base entre costados — canto en la arista frontal",
+      ...comun,
+    }),
+    new Pieza({
+      nombre: "Tapa",
+      largo: p.fondo,
+      ancho: anchoInterior,
+      rol: "tapa",
+      cantos: new Cantos(undefined, undefined, canto),
+      funcion: "Tapa entre costados — canto en la arista frontal",
+      ...comun,
+    }),
+  ];
+
+  if (alturasRepisas.length) {
+    piezas.push(
+      new Pieza({
+        nombre: "Repisa",
+        largo: p.fondo,
+        ancho: anchoInterior,
+        cantidad: alturasRepisas.length,
+        rol: "repisa",
+        cantos: new Cantos(undefined, undefined, canto),
+        funcion: "Repisa entre costados — canto en la arista frontal",
+        ...comun,
+      }),
+    );
+  }
+  if (p.traseraEspesor > 0) {
+    piezas.push(
+      new Pieza({
+        nombre: "Trasera",
+        largo: p.alto,
+        ancho: p.ancho,
+        espesor: p.traseraEspesor,
+        material: p.materialTrasera,
+        rol: "trasera",
+        veta: "indiferente",
+        funcion: "Trasera clavada al dorso del módulo (rigidiza el librero)",
+        modulo: nombre,
+      }),
+    );
+  }
+
+  const notas: string[] = [
+    "Tapa y base entre costados: las aristas superiores de los costados quedan a la vista.",
+  ];
+  if (!alturasRepisas.length) {
+    notas.push("Librero sin repisas.");
+  } else if (p.posicionesRepisas === null) {
+    notas.push("Repisas repartidas parejas en el interior del módulo.");
+  } else {
+    notas.push("Repisas en las alturas pedidas.");
+  }
+  if (alturasRepisas.length) {
+    notas.push(
+      "Alturas de repisa sobre el piso interior (mm): " +
+        alturasRepisas.map((h) => (h - p.espesor).toFixed(0)).join(", "),
+    );
+  }
+  if (p.traseraEspesor <= 0) {
+    notas.push("Sin trasera: el librero necesita muro o rigidización adicional.");
+  }
+
+  const accesorios: Accesorio[] = [
+    new Accesorio("Tornillo 4 x 50 mm", 1, "Armado de costados, base y tapa"),
+  ];
+  if (p.repisasMoviles && alturasRepisas.length) {
+    accesorios.push(
+      new Accesorio("Soporte de repisa Ø5", 4 * alturasRepisas.length, "Cuatro soportes por repisa"),
+    );
+  }
+
+  return new Modulo(
+    "librero",
+    nombre,
+    {
+      ancho: p.ancho,
+      alto: p.alto,
+      fondo: p.fondo,
+      repisas: alturasRepisas.length,
+      ancho_interior: anchoInterior,
+    },
+    piezas,
+    accesorios,
+    notas,
+  );
+}

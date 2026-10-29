@@ -1,10 +1,10 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import type { ResultadoOptimizacion } from '../core/adaptador';
-import { optimizar } from '../core/adaptador';
-import { exportarSchema } from '../esquemas';
-import { buscarFormato, catalogoFormatos, idsFormatos } from '../export';
-import { ejecutar, normalizarPiezas, normalizarTableros } from './comun';
+import type { ResultadoOptimizacion } from '../core/adaptador.js';
+import { optimizar } from '../core/adaptador.js';
+import { exportarSchema } from '../esquemas.js';
+import { buscarFormato, catalogoFormatos, idsFormatos } from '../export/index.js';
+import { ejecutar, normalizarPiezas, normalizarTableros } from './comun.js';
 
 export function describirCatalogo(): string {
   return catalogoFormatos()

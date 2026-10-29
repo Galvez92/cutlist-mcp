@@ -1,9 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import { formatearPiezas, resumirPiezas } from '../core/listar';
-import { generarModulo } from '../core/modulos';
-import { parametrosModuloSchema } from '../esquemas';
-import { ejecutar } from './comun';
+import { formatearPiezas, resumirPiezas } from '../core/listar.js';
+import { generarModulo } from '../core/modulos.js';
+import { parametrosModuloSchema } from '../esquemas.js';
+import { ejecutar } from './comun.js';
 
 export function registrarCrearModulo(servidor: McpServer): void {
   servidor.registerTool(
