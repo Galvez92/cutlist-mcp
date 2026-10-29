@@ -117,6 +117,43 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(data["yield_percent"], 100.0)
 
+    def test_varios_stocks_uno_por_material(self):
+        status, data = self._post(
+            "/api/optimize",
+            {
+                "csv": "ancho,alto,material\n600,732,Roble\n500,400,Moscato\n",
+                "stocks": [
+                    {"material": "Roble", "width": 600, "height": 732, "kerf": 0},
+                    {"material": "Moscato", "width": 500, "height": 400, "kerf": 0},
+                ],
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual([m["material"] for m in data["materials"]], ["Roble", "Moscato"])
+        self.assertEqual(data["unplaced"], [])
+        self.assertEqual(len(data["stocks"]), 2)
+        self.assertEqual(data["sheet"]["material"], "Roble")
+        self.assertEqual(data["yield_percent"], 100.0)
+
+    def test_material_sin_stock_queda_sin_ubicar(self):
+        status, data = self._post(
+            "/api/optimize",
+            {
+                "csv": "ancho,alto,material\n600,732,Pino\n",
+                "stocks": [{"material": "Roble", "width": 2500, "height": 1830}],
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["unplaced"]), 1)
+        self.assertTrue(any("Pino" in warning for warning in data["warnings"]))
+
+    def test_stocks_invalidos_devuelven_400(self):
+        for stocks in ([], "Roble"):
+            with self.subTest(stocks=stocks):
+                with self.assertRaises(urllib.error.HTTPError) as ctx:
+                    self._post("/api/optimize", {"csv": "ancho,alto\n600,732\n", "stocks": stocks})
+                self.assertEqual(ctx.exception.code, 400)
+
     def test_csv_invalido_devuelve_400(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self._post("/api/optimize", {"csv": "alto\n732\n"})

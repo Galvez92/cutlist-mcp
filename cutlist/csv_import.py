@@ -12,6 +12,8 @@ alto  | height | h | c | largo    medida 2 en mm (obligatoria)
 cantidad | quantity | qty | q    unidades (por defecto 1, entero positivo)
 veta | grain                     sí/no: impide girar la pieza
 etiqueta | label | nombre | pieza nombre de la pieza
+material | stock                 material de la pieza (el motor lo corta del
+                                 stock de ese material; ver `cutlist/stock.py`)
 c1, c2, l1, l2                   cantos, texto libre (opcional)
 
 Datos tal como los exporta una planilla (Google Sheets, Excel)
@@ -48,6 +50,7 @@ ALIASES: dict[str, set[str]] = {
         "quantity": {"cantidad", "quantity", "qty", "q", "cant"},
         "grain": {"veta", "grain"},
         "label": {"etiqueta", "label", "nombre", "pieza", "function"},
+        "material": {"material", "stock"},
         "c1": {"c1"},
         "c2": {"c2"},
         "l1": {"l1"},
@@ -132,6 +135,9 @@ def _row_to_part(row: dict, columns: dict[str, str], line: int) -> Part:
             quantity=_quantity(row, columns),
             grain=_grain(row, columns),
             label=(_clean(row.get(columns["label"])) or "") if "label" in columns else "",
+            material=(_clean(row.get(columns["material"])) or "")
+            if "material" in columns
+            else "",
             edges=_edges(row, columns),
         )
     except ValueError as error:

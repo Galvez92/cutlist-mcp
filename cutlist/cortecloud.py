@@ -51,6 +51,11 @@ class MaterialGroup:
     parts: list[Part]
 
     @property
+    def sheets(self) -> list[Sheet]:
+        """El tablero derivado del texto del material."""
+        return [self.sheet]
+
+    @property
     def piece_count(self) -> int:
         return sum(part.quantity for part in self.parts)
 
@@ -76,7 +81,7 @@ def parse_cortecloud_json(text: str) -> list[MaterialGroup]:
         material = str(row.get("material") or "").strip()
         if not material:
             raise ValueError(f"pieza {index}: falta «material»")
-        grouped.setdefault(material, []).append(_row_to_part(row, index))
+        grouped.setdefault(material, []).append(_row_to_part(row, index, material))
 
     return [
         MaterialGroup(material=material, sheet=_sheet_for(material), parts=parts)
@@ -104,7 +109,7 @@ def load_fixture(path: str | Path = FIXTURE) -> list[MaterialGroup]:
     return parse_cortecloud_json(text)
 
 
-def _row_to_part(row: dict, index: int) -> Part:
+def _row_to_part(row: dict, index: int, material: str) -> Part:
     width = _measure(row, "l", index)  # l = ancho
     height = _measure(row, "c", index)  # c = largo
     quantity = _quantity(row, index)
@@ -115,6 +120,7 @@ def _row_to_part(row: dict, index: int) -> Part:
             height=height,
             quantity=quantity,
             label=str(row.get("function") or "").strip(),
+            material=material,
             edges=EdgeBanding(
                 c1=_edge(row, "c1", index),
                 c2=_edge(row, "c2", index),
@@ -173,4 +179,5 @@ def _sheet_for(material: str) -> Sheet:
         thickness=float(thickness.group(1)) if thickness else fallback_thickness,
         kerf=DEFAULT_KERF,
         label=material,
+        material=material,
     )

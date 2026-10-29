@@ -16,6 +16,7 @@
 - Pruebas, siempre dentro del contenedor (el host no tiene Python):
   `docker compose -f docker-compose.base44.yml exec -T web python -m unittest discover -s tests -t .`
 - `server.py --reload` reinicia el proceso cuando cambia un `.py`, así que las ediciones se ven sin rebuild ni reinicio manual.
-- La página `/` muestra el resultado sobre el fixture real de `tests/fixtures/cortecloud/` y permite pegar un CSV propio. La API es `/api/health`, `/api/demo?algorithm=guillotine|nonguillotine`, `/api/example` y `POST /api/optimize` (`{"csv": "...", "algorithm": "...", "sheet": {...}}`).
+- La página `/` muestra el resultado sobre el fixture real de `tests/fixtures/cortecloud/` y permite pegar un CSV propio. La API es `/api/health`, `/api/demo?algorithm=guillotine|nonguillotine`, `/api/example` y `POST /api/optimize` (`{"csv": "...", "algorithm": "...", "sheet": {...}}` o, con varios tipos de stock, `"stocks": [{"material", "width", "height", "thickness", "kerf"}, ...]`).
+- `cutlist/stock.py` asigna cada pieza al stock de su `material` (varios stocks por material permitidos; un stock sin material es comodín; si no hay stock del material, la pieza queda sin ubicar con un aviso). `{"sheet": ...}` sin `material` sigue siendo comodín para todo.
 - El CSV es un formato **propio de cutlist-mcp** (documentado en `cutlist/csv_import.py`), no el de Cortecloud ni el de otro programa.
 - El fixture de Cortecloud se importa en `cutlist/cortecloud.py`: agrupa las piezas por el texto `material` y cada material se corta de su propio tablero (`cutlist/materials.py`). Faltan los demás formatos de la tarea `formatos-import-export`.

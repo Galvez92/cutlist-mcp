@@ -11,6 +11,8 @@ Rutas:
   GET  /api/example        CSV de ejemplo para la caja de texto de la página
   POST /api/optimize       optimiza el CSV enviado en el cuerpo JSON:
                            {"csv": "...", "algorithm": "...", "sheet": {...}}
+                           o, con varios tipos de stock, "stocks": [{...}, ...]
+                           (cada pieza se corta del stock de su material).
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ from cutlist.csv_import import EXAMPLE_CSV, parse_parts_csv
 from cutlist.materials import optimize_by_material
 from cutlist.models import Constraints, Sheet
 from cutlist.optimizer import ALGORITHMS
+from cutlist.stock import optimize_with_stock
 from cutlist.svg import render_svg
 
 ROOT = Path(__file__).resolve().parent
@@ -48,20 +51,22 @@ def demo_payload(algorithm: str) -> dict:
     return payload
 
 
-def csv_payload(csv_text: str, algorithm: str, sheet_data: dict) -> dict:
-    """Optimiza las piezas de un CSV genérico sobre el stock indicado."""
+def csv_payload(
+    csv_text: str, algorithm: str, sheet_data: dict, stocks_data=None
+) -> dict:
+    """Optimiza el CSV asignando cada pieza al stock de su material."""
     if algorithm not in ALGORITHMS:
         return {"error": f"algoritmo desconocido: {algorithm}"}
 
-    sheet = _sheet_from_request(sheet_data)
+    sheets = _sheets_from_request(sheet_data, stocks_data)
     parts = parse_parts_csv(csv_text)
-    payload = _payload([MaterialGroup(material=sheet.label, sheet=sheet, parts=parts)], algorithm)
-    payload["sheet"] = {
-        "width": sheet.width,
-        "height": sheet.height,
-        "thickness": sheet.thickness,
-        "kerf": sheet.kerf,
-    }
+    optimization = optimize_with_stock(
+        parts, sheets, algorithm=algorithm, constraints=Constraints(), max_sheets=MAX_SHEETS
+    )
+    payload = optimization.to_dict()
+    payload["svg"] = render_svg(optimization.result)
+    payload["stocks"] = [_sheet_dict(sheet) for sheet in sheets]
+    payload["sheet"] = payload["stocks"][0]
     payload["source"] = "csv"
     return payload
 
@@ -75,15 +80,50 @@ def _payload(groups: list[MaterialGroup], algorithm: str) -> dict:
     return payload
 
 
-def _sheet_from_request(data: dict) -> Sheet:
-    """Stock del cuerpo JSON; por defecto 2500×1830×18 mm con kerf de 4 mm."""
+def _sheets_from_request(sheet_data: dict, stocks_data) -> list[Sheet]:
+    """Catálogo de stocks del cuerpo JSON: una lista `stocks` o un `sheet` único."""
+    if stocks_data is None:
+        return [_sheet_from_request(sheet_data)]
+    if not isinstance(stocks_data, list):
+        raise ValueError("«stocks» debe ser una lista de objetos")
+    if not stocks_data:
+        raise ValueError("«stocks» está vacío")
+    sheets = []
+    for index, data in enumerate(stocks_data, start=1):
+        if not isinstance(data, dict):
+            raise ValueError(f"stock {index}: se espera un objeto")
+        material = str(data.get("material") or "").strip()
+        sheets.append(
+            _sheet_from_request(
+                data, material=material, label=material or f"Stock {index}"
+            )
+        )
+    return sheets
+
+
+def _sheet_from_request(
+    data: dict, material: str = "", label: str = "Stock indicado"
+) -> Sheet:
+    """Un stock del cuerpo JSON; por defecto 2500×1830×18 mm con kerf de 4 mm."""
     return Sheet(
         width=float(data.get("width", 2500)),
         height=float(data.get("height", 1830)),
         thickness=float(data.get("thickness", 18)),
         kerf=float(data.get("kerf", 4)),
-        label="Stock indicado",
+        label=label,
+        material=material,
     )
+
+
+def _sheet_dict(sheet: Sheet) -> dict:
+    return {
+        "material": sheet.material,
+        "label": sheet.label,
+        "width": sheet.width,
+        "height": sheet.height,
+        "thickness": sheet.thickness,
+        "kerf": sheet.kerf,
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -136,6 +176,7 @@ class Handler(BaseHTTPRequestHandler):
                 str(body.get("csv", "")),
                 str(body.get("algorithm", "guillotine")),
                 body.get("sheet") or {},
+                body.get("stocks"),
             )
         except (ValueError, TypeError) as error:
             self._json({"error": str(error)}, status=400)

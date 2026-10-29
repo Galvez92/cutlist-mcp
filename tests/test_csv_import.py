@@ -41,6 +41,18 @@ class CsvImportTest(unittest.TestCase):
         self.assertIsNone(parts[0].edges.l1)
         self.assertIsNone(parse_parts_csv("ancho,alto\n600,732\n")[0].edges)
 
+    def test_columna_material(self):
+        parts = parse_parts_csv("ancho,alto,material\n600,732,Roble\n564,700,\n")
+        self.assertEqual(parts[0].material, "Roble")
+        self.assertEqual(parts[1].material, "")
+
+    def test_material_con_alias_stock(self):
+        parts = parse_parts_csv("ancho,alto,stock\n600,732,MDF blanco\n")
+        self.assertEqual(parts[0].material, "MDF blanco")
+
+    def test_sin_columna_material(self):
+        self.assertEqual(parse_parts_csv("ancho,alto\n600,732\n")[0].material, "")
+
     def test_varias_filas(self):
         parts = parse_parts_csv("ancho,alto\n600,732\n564,732\n300,400\n")
         self.assertEqual([part.width for part in parts], [600.0, 564.0, 300.0])

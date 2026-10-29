@@ -47,7 +47,9 @@ def optimize(
         raise ValueError(f"max_sheets inválido: {max_sheets}")
 
     pack = ALGORITHMS[algorithm]
-    pending = sorted(_expand(parts), key=lambda piece: (-piece.part.max_side, -piece.part.area))
+    pending = sorted(
+        expand_pieces(parts), key=lambda piece: (-piece.part.max_side, -piece.part.area)
+    )
     layouts: list[SheetLayout] = []
 
     while pending and len(layouts) < max_sheets:
@@ -78,7 +80,8 @@ def optimize(
     )
 
 
-def _expand(parts: Sequence[Part]) -> list[Piece]:
+def expand_pieces(parts: Sequence[Part]) -> list[Piece]:
+    """Una `Piece` por unidad física de cada pieza."""
     pieces: list[Piece] = []
     for part in parts:
         for _ in range(part.quantity):

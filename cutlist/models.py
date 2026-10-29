@@ -45,6 +45,7 @@ class Part:
     grain: bool = False
     label: str = ""
     edges: EdgeBanding | None = None
+    material: str = ""
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
@@ -74,6 +75,7 @@ class Sheet:
     thickness: float = 18.0
     kerf: float = 4.0
     label: str = ""
+    material: str = ""
 
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
@@ -252,6 +254,7 @@ class OptimizationResult:
                 {
                     "index": layout.index,
                     "label": layout.sheet.label,
+                    "material": layout.sheet.material,
                     "width": layout.sheet.width,
                     "height": layout.sheet.height,
                     "thickness": layout.sheet.thickness,

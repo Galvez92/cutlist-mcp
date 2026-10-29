@@ -1,17 +1,28 @@
 """Optimización por material.
 
 Cada material se corta de su propio tablero, así que se optimiza grupo por grupo
-y luego se juntan los tableros en un solo resultado (el que se pinta).
+y luego se juntan los tableros en un solo resultado (el que se pinta). Un grupo
+puede tener varios stocks del mismo material (medidas distintas): el optimizador
+los usa en orden hasta colocar todas las piezas.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Protocol, Sequence
 
-from .cortecloud import MaterialGroup
-from .models import Constraints, OptimizationResult, SheetLayout
+from .models import Constraints, OptimizationResult, Part, Sheet, SheetLayout
 from .optimizer import optimize
+
+
+class MaterialGroupLike(Protocol):
+    """Grupo de piezas de un mismo material con los stocks donde se cortan."""
+
+    material: str
+    parts: list[Part]
+
+    @property
+    def sheets(self) -> list[Sheet]: ...
 
 
 @dataclass(frozen=True)
@@ -44,12 +55,12 @@ class MaterialOptimization:
 
 
 def optimize_by_material(
-    groups: Sequence[MaterialGroup],
+    groups: Sequence[MaterialGroupLike],
     algorithm: str = "guillotine",
     constraints: Constraints | None = None,
     max_sheets: int = 30,
 ) -> MaterialOptimization:
-    """Optimiza cada grupo sobre su tablero y devuelve el resultado unido."""
+    """Optimiza cada grupo sobre sus stocks y devuelve el resultado unido."""
     layouts: list[SheetLayout] = []
     unplaced = []
     cut_rows = []
@@ -59,7 +70,7 @@ def optimize_by_material(
     for group in groups:
         result = optimize(
             group.parts,
-            [group.sheet],
+            list(group.sheets),
             algorithm=algorithm,
             constraints=constraints,
             max_sheets=max_sheets,

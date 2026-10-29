@@ -3,6 +3,7 @@ import unittest
 from cutlist.cortecloud import MaterialGroup
 from cutlist.materials import optimize_by_material
 from cutlist.models import Constraints, Part, Sheet
+from cutlist.stock import StockGroup
 
 
 def group(material, parts, sheet=None):
@@ -57,6 +58,22 @@ class OptimizeByMaterialTest(unittest.TestCase):
         self.assertEqual(optimization.result.layouts[0].algorithm, "nonguillotine")
         with self.assertRaises(ValueError):
             optimize_by_material([group("A", [Part(60, 60)])], algorithm="otro")
+
+    def test_un_material_puede_usar_varios_stocks(self):
+        optimization = optimize_by_material(
+            [
+                StockGroup(
+                    material="A",
+                    sheets=[
+                        Sheet(200, 100, kerf=0, material="A"),
+                        Sheet(200, 100, kerf=0, material="A"),
+                    ],
+                    parts=[Part(200, 100, material="A", quantity=2)],
+                )
+            ]
+        )
+        self.assertEqual(len(optimization.result.layouts), 2)
+        self.assertEqual(optimization.materials[0].sheets_used, 2)
 
     def test_to_dict_incluye_los_materiales(self):
         payload = optimize_by_material([group("A", [Part(50, 50)])]).to_dict()
