@@ -9,16 +9,25 @@ Columnas reconocidas
 --------------------
 ancho | width | w | l            medida 1 en mm (obligatoria)
 alto  | height | h | c | largo    medida 2 en mm (obligatoria)
-cantidad | quantity | qty | q    unidades (por defecto 1)
+cantidad | quantity | qty | q    unidades (por defecto 1, entero positivo)
 veta | grain                     sí/no: impide girar la pieza
 etiqueta | label | nombre | pieza nombre de la pieza
 c1, c2, l1, l2                   cantos, texto libre (opcional)
+
+Datos tal como los exporta una planilla (Google Sheets, Excel)
+--------------------------------------------------------------
+Se tolera el BOM UTF-8, los finales de línea CRLF, los campos entrecomillados
+con comas, saltos de línea o comillas escapadas, y las filas o columnas vacías
+que agregan los exportadores. Un texto pegado con tabulaciones (lo que copia
+Google Sheets al portapapeles) se rechaza con un mensaje explícito, porque
+mezclaría todas las columnas en una sola.
 """
 
 from __future__ import annotations
 
 import csv
 import io
+import math
 import unicodedata
 
 from .models import EdgeBanding, Part
@@ -54,7 +63,7 @@ LABELS = {
     "label": "etiqueta",
 }
 
-TRUE_VALUES = {"1", "si", "s", "true", "t", "yes", "y", "x"}
+TRUE_VALUES = {"1", "si", "s", "true", "t", "yes", "y", "x", "verdadero"}
 
 EXAMPLE_CSV = """ancho,alto,cantidad,veta,etiqueta
 600,732,2,no,Pata costado exterior acento der
@@ -66,18 +75,28 @@ EXAMPLE_CSV = """ancho,alto,cantidad,veta,etiqueta
 
 def parse_parts_csv(text: str) -> list[Part]:
     """Convierte el texto de un CSV en piezas del motor."""
-    lines = [line for line in text.splitlines() if line.strip()]
-    if len(lines) < 2:
+    text = (text or "").lstrip("\ufeff").strip()
+    if not text:
         raise ValueError("el CSV necesita una fila de encabezados y al menos una pieza")
 
-    delimiter = ";" if lines[0].count(";") > lines[0].count(",") else ","
-    reader = csv.DictReader(io.StringIO("\n".join(lines)), delimiter=delimiter)
+    header = text.splitlines()[0]
+    if "\t" in header:
+        raise ValueError(
+            "el texto está separado por tabulaciones: exporta el CSV con comas o punto y coma"
+        )
+
+    delimiter = ";" if header.count(";") > header.count(",") else ","
+    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
     columns = _map_columns(reader.fieldnames or [])
 
-    return [
-        _row_to_part(row, columns, line_number)
-        for line_number, row in enumerate(reader, start=2)
-    ]
+    parts: list[Part] = []
+    for row in reader:
+        if _is_blank(row):
+            continue
+        parts.append(_row_to_part(row, columns, reader.line_num))
+    if not parts:
+        raise ValueError("el CSV no tiene piezas")
+    return parts
 
 
 def _map_columns(fieldnames: list[str]) -> dict[str, str]:
@@ -97,49 +116,68 @@ def _map_columns(fieldnames: list[str]) -> dict[str, str]:
     return columns
 
 
+def _is_blank(row: dict) -> bool:
+    """Fila sin ningún dato: las planillas suelen dejarlas al final."""
+    cells: list = []
+    for value in row.values():
+        cells.extend(value if isinstance(value, list) else [value])
+    return all(not str(cell or "").strip() for cell in cells)
+
+
 def _row_to_part(row: dict, columns: dict[str, str], line: int) -> Part:
-    quantity = 1
-    if "quantity" in columns:
-        raw = _clean(row.get(columns["quantity"]))
-        if raw:
-            quantity = int(_number(raw, "cantidad", line))
-
-    grain = False
-    if "grain" in columns:
-        grain = _normalize(_clean(row.get(columns["grain"])) or "") in TRUE_VALUES
-
-    edge_values = {
-        key: _clean(row.get(columns[key]))
-        for key in ("c1", "c2", "l1", "l2")
-        if key in columns
-    }
-    edges = EdgeBanding(**edge_values) if any(edge_values.values()) else None
-
-    label = _clean(row.get(columns["label"])) or "" if "label" in columns else ""
-
     try:
         return Part(
-            width=_number(row.get(columns["width"]), "ancho", line),
-            height=_number(row.get(columns["height"]), "alto", line),
-            quantity=quantity,
-            grain=grain,
-            label=label,
-            edges=edges,
+            width=_number(row.get(columns["width"]), "ancho"),
+            height=_number(row.get(columns["height"]), "alto"),
+            quantity=_quantity(row, columns),
+            grain=_grain(row, columns),
+            label=(_clean(row.get(columns["label"])) or "") if "label" in columns else "",
+            edges=_edges(row, columns),
         )
     except ValueError as error:
         raise ValueError(f"fila {line}: {error}") from error
 
 
-def _number(raw, field: str, line: int) -> float:
-    text = (raw or "").strip().replace(",", ".")
+def _quantity(row: dict, columns: dict[str, str]) -> int:
+    if "quantity" not in columns:
+        return 1
+    raw = _clean(row.get(columns["quantity"]))
+    if not raw:
+        return 1
+    value = _number(raw, "cantidad")
+    if value <= 0 or value != int(value):
+        raise ValueError(f"la cantidad debe ser un entero positivo: {raw!r}")
+    return int(value)
+
+
+def _grain(row: dict, columns: dict[str, str]) -> bool:
+    if "grain" not in columns:
+        return False
+    return _normalize(_clean(row.get(columns["grain"])) or "") in TRUE_VALUES
+
+
+def _edges(row: dict, columns: dict[str, str]) -> EdgeBanding | None:
+    values = {
+        key: _clean(row.get(columns[key]))
+        for key in ("c1", "c2", "l1", "l2")
+        if key in columns
+    }
+    return EdgeBanding(**values) if any(values.values()) else None
+
+
+def _number(raw, field: str) -> float:
+    text = (str(raw) if raw is not None else "").strip().replace(",", ".")
     if not text:
         raise ValueError(f"falta el valor de «{field}»")
     try:
-        return float(text)
+        value = float(text)
     except ValueError as error:
         raise ValueError(f"valor no numérico en «{field}»: {raw!r}") from error
+    if not math.isfinite(value):
+        raise ValueError(f"valor no finito en «{field}»: {raw!r}")
+    return value
 
 
 def _clean(raw) -> str | None:
-    value = (raw or "").strip()
+    value = str(raw).strip() if raw is not None else ""
     return value or None

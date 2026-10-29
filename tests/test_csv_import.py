@@ -76,5 +76,125 @@ class CsvImportTest(unittest.TestCase):
         self.assertGreater(result.yield_percent, 0)
 
 
+class PlanillaExportadaTest(unittest.TestCase):
+    """Datos tal como llegan de una planilla o de la API de Google Sheets."""
+
+    def test_bom_utf8_al_inicio(self):
+        parts = parse_parts_csv("\ufeffancho,alto\n600,732\n")
+        self.assertEqual((parts[0].width, parts[0].height), (600.0, 732.0))
+
+    def test_finales_de_linea_crlf(self):
+        parts = parse_parts_csv("ancho,alto\r\n600,732\r\n564,700\r\n")
+        self.assertEqual([part.width for part in parts], [600.0, 564.0])
+
+    def test_filas_vacias_al_final_se_ignoran(self):
+        parts = parse_parts_csv("ancho,alto\n600,732\n,,\n,,\n\n")
+        self.assertEqual(len(parts), 1)
+
+    def test_filas_vacias_en_el_medio_se_ignoran(self):
+        parts = parse_parts_csv("ancho,alto\n600,732\n,\n564,700\n")
+        self.assertEqual([part.width for part in parts], [600.0, 564.0])
+
+    def test_columnas_vacias_extra(self):
+        parts = parse_parts_csv("ancho,alto\n600,732,,\n")
+        self.assertEqual(parts[0].height, 732.0)
+
+    def test_celda_con_salto_de_linea_entre_comillas(self):
+        parts = parse_parts_csv('ancho,alto,etiqueta\n600,732,"Pata\nexterior"\n')
+        self.assertEqual(parts[0].label, "Pata\nexterior")
+
+    def test_comillas_escapadas(self):
+        parts = parse_parts_csv('ancho,alto,etiqueta\n600,732,"Costado ""der"""\n')
+        self.assertEqual(parts[0].label, 'Costado "der"')
+
+    def test_columna_extra_sin_encabezado(self):
+        parts = parse_parts_csv("ancho,alto\n600,732,observación\n")
+        self.assertEqual(parts[0].width, 600.0)
+
+    def test_columnas_desconocidas_se_ignoran(self):
+        parts = parse_parts_csv("Material,Ancho ,ALTO,Observaciones\nRoble,600,732,x\n")
+        self.assertEqual((parts[0].width, parts[0].height), (600.0, 732.0))
+
+    def test_numeros_como_texto(self):
+        parts = parse_parts_csv('ancho,alto,cantidad\n"600","732","2"\n')
+        self.assertEqual((parts[0].width, parts[0].height, parts[0].quantity), (600.0, 732.0, 2))
+
+    def test_cantidad_decimal_entera(self):
+        self.assertEqual(parse_parts_csv("ancho,alto,cantidad\n600,732,2.0\n")[0].quantity, 2)
+
+    def test_veta_como_booleano_de_la_api(self):
+        self.assertTrue(parse_parts_csv("ancho,alto,veta\n600,732,TRUE\n")[0].grain)
+        self.assertTrue(parse_parts_csv("ancho,alto,veta\n600,732,VERDADERO\n")[0].grain)
+
+    def test_texto_pegado_con_tabulaciones(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv("ancho\talto\n600\t732\n")
+        self.assertIn("tabulaciones", str(ctx.exception))
+
+    def test_solo_encabezados_y_filas_vacias(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv("ancho,alto\n,,\n")
+        self.assertIn("no tiene piezas", str(ctx.exception))
+
+
+class DatosMalFormadosTest(unittest.TestCase):
+    """Filas incompletas y valores imposibles de traducir a una pieza."""
+
+    def test_fila_truncada(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv("ancho,alto\n600,732\n564\n")
+        self.assertIn("fila 3", str(ctx.exception))
+        self.assertIn("alto", str(ctx.exception))
+
+    def test_medida_vacia(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv("ancho,alto\n600,\n")
+        self.assertIn("fila 2", str(ctx.exception))
+        self.assertIn("alto", str(ctx.exception))
+
+    def test_medida_no_finita(self):
+        for value in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError) as ctx:
+                    parse_parts_csv(f"ancho,alto\n{value},732\n")
+                self.assertIn("no finito", str(ctx.exception))
+                self.assertIn("fila 2", str(ctx.exception))
+
+    def test_medida_cero_o_negativa(self):
+        for value in ("0", "-600"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError) as ctx:
+                    parse_parts_csv(f"ancho,alto\n{value},732\n")
+                self.assertIn("fila 2", str(ctx.exception))
+
+    def test_cantidad_fraccionaria(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv("ancho,alto,cantidad\n600,732,2.5\n")
+        self.assertIn("entero positivo", str(ctx.exception))
+        self.assertIn("fila 2", str(ctx.exception))
+
+    def test_cantidad_cero_o_negativa(self):
+        for value in ("0", "-1"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError) as ctx:
+                    parse_parts_csv(f"ancho,alto,cantidad\n600,732,{value}\n")
+                self.assertIn("fila 2", str(ctx.exception))
+
+    def test_cantidad_no_numerica(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv("ancho,alto,cantidad\n600,732,dos\n")
+        self.assertIn("fila 2", str(ctx.exception))
+        self.assertIn("cantidad", str(ctx.exception))
+
+    def test_la_fila_del_error_cuenta_los_saltos_de_linea_entre_comillas(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_parts_csv('ancho,alto,etiqueta\n600,732,"Pata\nexterior"\nxx,400,"Tapa"\n')
+        self.assertIn("fila 4", str(ctx.exception))
+
+    def test_solo_espacios(self):
+        with self.assertRaises(ValueError):
+            parse_parts_csv("   \n\n")
+
+
 if __name__ == "__main__":
     unittest.main()
