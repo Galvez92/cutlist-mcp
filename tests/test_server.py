@@ -70,6 +70,55 @@ class ServerTest(unittest.TestCase):
             self._get("/nada")
         self.assertEqual(ctx.exception.code, 404)
 
+    def test_ejemplo_de_csv(self):
+        status, body = self._get("/api/example")
+        self.assertEqual(status, 200)
+        self.assertIn("ancho,alto", json.loads(body)["csv"])
+
+    def test_optimiza_un_csv(self):
+        status, data = self._post(
+            "/api/optimize", {"csv": "ancho,alto,cantidad\n600,732,2\n300,400\n"}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["piece_count"], 3)
+        self.assertEqual(data["unplaced"], [])
+        self.assertIn("<svg", data["svg"])
+        self.assertEqual(data["sheet"]["kerf"], 4.0)
+
+    def test_stock_personalizado(self):
+        status, data = self._post(
+            "/api/optimize",
+            {"csv": "ancho,alto\n1000,800\n", "sheet": {"width": 1000, "height": 800, "kerf": 0}},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["yield_percent"], 100.0)
+
+    def test_csv_invalido_devuelve_400(self):
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self._post("/api/optimize", {"csv": "alto\n732\n"})
+        self.assertEqual(ctx.exception.code, 400)
+        self.assertIn("ancho", json.loads(ctx.exception.read().decode("utf-8"))["error"])
+
+    def test_algoritmo_desconocido_en_post(self):
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self._post("/api/optimize", {"csv": "ancho,alto\n600,732\n", "algorithm": "nope"})
+        self.assertEqual(ctx.exception.code, 400)
+
+    def test_post_a_ruta_desconocida(self):
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self._post("/api/otra", {})
+        self.assertEqual(ctx.exception.code, 404)
+
+    def _post(self, path, payload):
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

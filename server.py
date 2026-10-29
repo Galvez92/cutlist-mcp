@@ -2,11 +2,14 @@
 """Servidor de vista previa del motor de corte (sólo biblioteca estándar).
 
 Rutas:
-  GET /                    página de vista previa
-  GET /api/health          {"status": "ok"}
-  GET /api/demo            optimiza el fixture real de Cortecloud y devuelve
+  GET  /                   página de vista previa
+  GET  /api/health         {"status": "ok"}
+  GET  /api/demo           optimiza el fixture real de Cortecloud y devuelve
                            JSON con los tableros, el aprovechamiento y el SVG
                            (?algorithm=guillotine|nonguillotine)
+  GET  /api/example        CSV de ejemplo para la caja de texto de la página
+  POST /api/optimize       optimiza el CSV enviado en el cuerpo JSON:
+                           {"csv": "...", "algorithm": "...", "sheet": {...}}
 """
 
 from __future__ import annotations
@@ -20,14 +23,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from cutlist.csv_import import EXAMPLE_CSV, parse_parts_csv
 from cutlist.demo import load_demo_parts
-from cutlist.models import Constraints
+from cutlist.models import Constraints, Sheet
 from cutlist.optimizer import ALGORITHMS, optimize
 from cutlist.svg import render_svg
 
 ROOT = Path(__file__).resolve().parent
 INDEX = ROOT / "web" / "index.html"
 MAX_SHEETS = 30
+MAX_BODY = 512_000
 
 
 def demo_payload(algorithm: str) -> dict:
@@ -36,6 +41,23 @@ def demo_payload(algorithm: str) -> dict:
         return {"error": f"algoritmo desconocido: {algorithm}"}
 
     parts, sheet = load_demo_parts()
+    payload = _payload(parts, sheet, algorithm)
+    payload["source"] = "tests/fixtures/cortecloud/escritorio_D_simple.json"
+    return payload
+
+
+def csv_payload(csv_text: str, algorithm: str, sheet_data: dict) -> dict:
+    """Optimiza las piezas de un CSV genérico sobre el stock indicado."""
+    if algorithm not in ALGORITHMS:
+        return {"error": f"algoritmo desconocido: {algorithm}"}
+
+    sheet = _sheet_from_request(sheet_data)
+    payload = _payload(parse_parts_csv(csv_text), sheet, algorithm)
+    payload["source"] = "csv"
+    return payload
+
+
+def _payload(parts, sheet, algorithm: str) -> dict:
     result = optimize(
         parts,
         [sheet],
@@ -45,7 +67,6 @@ def demo_payload(algorithm: str) -> dict:
     )
     payload = result.to_dict()
     payload["svg"] = render_svg(result)
-    payload["source"] = "tests/fixtures/cortecloud/escritorio_D_simple.json"
     payload["sheet"] = {
         "width": sheet.width,
         "height": sheet.height,
@@ -53,6 +74,17 @@ def demo_payload(algorithm: str) -> dict:
         "kerf": sheet.kerf,
     }
     return payload
+
+
+def _sheet_from_request(data: dict) -> Sheet:
+    """Stock del cuerpo JSON; por defecto 2500×1830×18 mm con kerf de 4 mm."""
+    return Sheet(
+        width=float(data.get("width", 2500)),
+        height=float(data.get("height", 1830)),
+        thickness=float(data.get("thickness", 18)),
+        kerf=float(data.get("kerf", 4)),
+        label="Stock indicado",
+    )
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -77,8 +109,38 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": f"{type(error).__name__}: {error}"}, status=500)
                 return
             self._json(payload, status=400 if "error" in payload else 200)
+        elif path == "/api/example":
+            self._json({"csv": EXAMPLE_CSV})
         else:
             self._send(404, "text/plain; charset=utf-8", b"no encontrado")
+
+    def do_POST(self) -> None:  # noqa: N802 (nombre impuesto por http.server)
+        if urlsplit(self.path).path != "/api/optimize":
+            self._send(404, "text/plain; charset=utf-8", b"no encontrado")
+            return
+
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > MAX_BODY:
+            self._json({"error": "cuerpo vacío o demasiado grande"}, status=400)
+            return
+
+        try:
+            body = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(body, dict):
+                raise ValueError("se espera un objeto JSON")
+            payload = csv_payload(
+                str(body.get("csv", "")),
+                str(body.get("algorithm", "guillotine")),
+                body.get("sheet") or {},
+            )
+        except (ValueError, TypeError) as error:
+            self._json({"error": str(error)}, status=400)
+            return
+        except Exception as error:  # noqa: BLE001 - se reporta en la vista
+            self._json({"error": f"{type(error).__name__}: {error}"}, status=500)
+            return
+
+        self._json(payload, status=400 if "error" in payload else 200)
 
     def _json(self, payload: dict, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")

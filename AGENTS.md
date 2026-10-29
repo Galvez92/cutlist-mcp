@@ -16,5 +16,6 @@
 - Pruebas, siempre dentro del contenedor (el host no tiene Python):
   `docker compose -f docker-compose.base44.yml exec -T web python -m unittest discover -s tests -t .`
 - `server.py --reload` reinicia el proceso cuando cambia un `.py`, así que las ediciones se ven sin rebuild ni reinicio manual.
-- La página `/` muestra el resultado sobre el fixture real de `tests/fixtures/cortecloud/`. La API es `/api/demo?algorithm=guillotine|nonguillotine` y `/api/health`.
+- La página `/` muestra el resultado sobre el fixture real de `tests/fixtures/cortecloud/` y permite pegar un CSV propio. La API es `/api/health`, `/api/demo?algorithm=guillotine|nonguillotine`, `/api/example` y `POST /api/optimize` (`{"csv": "...", "algorithm": "...", "sheet": {...}}`).
+- El CSV es un formato **propio de cutlist-mcp** (documentado en `cutlist/csv_import.py`), no el de Cortecloud ni el de otro programa.
 - El mapeo fixture → motor vive en `cutlist/demo.py` y es **provisional**: el importador completo es la tarea `formatos-import-export` y todavía no asigna materiales, por eso todo se optimiza sobre un único stock.

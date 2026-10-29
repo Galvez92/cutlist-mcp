@@ -44,6 +44,20 @@
   #warnings ul { margin: 6px 0 0; padding-left: 18px; }
   #layout { overflow-x: auto; }
   #layout svg { min-width: 640px; }
+  .custom { margin-top: 28px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  .custom h2 { margin: 0 0 4px; font-size: 16px; }
+  .custom p { margin: 0 0 10px; font-size: 13px; color: #475569; line-height: 1.5; }
+  textarea {
+    width: 100%; min-height: 150px; padding: 10px; resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+    border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a;
+  }
+  button {
+    font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px;
+    border: 1px solid #0f172a; border-radius: 8px; background: #0f172a; color: #fff;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: progress; }
 </style>
 </head>
 <body>
@@ -69,6 +83,21 @@
   <dl id="summary"></dl>
   <div id="warnings" hidden></div>
   <div id="layout"></div>
+
+  <section class="custom">
+    <h2>Probar con tu propio CSV</h2>
+    <p>
+      Formato propio de cutlist-mcp, aún <em>por revisar</em>: columnas
+      <code>ancho, alto, cantidad, veta, etiqueta</code> en milímetros
+      (también se aceptan <code>width</code>, <code>height</code>, <code>qty</code>,
+      <code>label</code>). Tablero fijo de 2500 × 1830 × 18 mm, kerf 4 mm.
+    </p>
+    <textarea id="csv" spellcheck="false" aria-label="Piezas en CSV"></textarea>
+    <div class="controls" style="margin-top: 10px;">
+      <button id="run" type="button">Optimizar CSV</button>
+      <span id="csv-status"></span>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -88,38 +117,46 @@
     return cell;
   }
 
+  function render(data) {
+    summary.replaceChildren(
+      metric("Aprovechamiento", `${data.yield_percent.toFixed(1)} %`),
+      metric("Tableros", data.sheets_used),
+      metric("Piezas", data.piece_count),
+      metric("Sin ubicar", data.unplaced.length)
+    );
+
+    if (data.warnings.length) {
+      const list = document.createElement("ul");
+      for (const text of data.warnings) {
+        const item = document.createElement("li");
+        item.textContent = text;
+        list.append(item);
+      }
+      warnings.replaceChildren(
+        document.createTextNode("Avisos del perfil de restricciones:"),
+        list
+      );
+      warnings.hidden = false;
+    } else {
+      warnings.hidden = true;
+      warnings.replaceChildren();
+    }
+
+    layout.innerHTML = data.svg;
+  }
+
+  async function request(url, options) {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    if (!response.ok || data.error) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
+  }
+
   async function load() {
     status.textContent = "optimizando…";
     try {
-      const response = await fetch(`/api/demo?algorithm=${encodeURIComponent(select.value)}`);
-      const data = await response.json();
-      if (!response.ok || data.error) throw new Error(data.error || `HTTP ${response.status}`);
-
-      summary.replaceChildren(
-        metric("Aprovechamiento", `${data.yield_percent.toFixed(1)} %`),
-        metric("Tableros", data.sheets_used),
-        metric("Piezas", data.piece_count),
-        metric("Sin ubicar", data.unplaced.length)
-      );
-
-      if (data.warnings.length) {
-        const list = document.createElement("ul");
-        for (const text of data.warnings) {
-          const item = document.createElement("li");
-          item.textContent = text;
-          list.append(item);
-        }
-        warnings.replaceChildren(
-          document.createTextNode("Avisos del perfil de restricciones:"),
-          list
-        );
-        warnings.hidden = false;
-      } else {
-        warnings.hidden = true;
-        warnings.replaceChildren();
-      }
-
-      layout.innerHTML = data.svg;
+      const data = await request(`/api/demo?algorithm=${encodeURIComponent(select.value)}`);
+      render(data);
       status.textContent = `${data.algorithm} · fuente: ${data.source}`;
     } catch (error) {
       status.textContent = `error: ${error.message}`;
@@ -129,8 +166,37 @@
     }
   }
 
+  async function runCsv() {
+    const button = document.getElementById("run");
+    const csvStatus = document.getElementById("csv-status");
+    button.disabled = true;
+    csvStatus.textContent = "optimizando…";
+    try {
+      const data = await request("/api/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          csv: document.getElementById("csv").value,
+          algorithm: select.value,
+        }),
+      });
+      render(data);
+      status.textContent =
+        `${data.algorithm} · tu CSV · ${data.sheet.width}×${data.sheet.height}×${data.sheet.thickness} mm, kerf ${data.sheet.kerf} mm`;
+      csvStatus.textContent = "listo";
+    } catch (error) {
+      csvStatus.textContent = `error: ${error.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  document.getElementById("run").addEventListener("click", runCsv);
   select.addEventListener("change", load);
   load();
+  fetch("/api/example")
+    .then((response) => response.json())
+    .then((data) => { document.getElementById("csv").value = data.csv; });
 </script>
 </body>
 </html>
