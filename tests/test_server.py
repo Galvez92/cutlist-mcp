@@ -47,9 +47,27 @@ class ServerTest(unittest.TestCase):
         self.assertNotIn("error", data)
         self.assertEqual(data["algorithm"], "guillotine")
         self.assertEqual(data["piece_count"], 30)
+        self.assertEqual(data["unplaced"], [])
         self.assertGreater(data["yield_percent"], 0)
         self.assertIn("<svg", data["svg"])
         self.assertEqual(data["sheets"][0]["width"], 2500.0)
+
+    def test_demo_agrupa_por_material(self):
+        status, body = self._get("/api/demo")
+        data = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["materials"]), 2)
+        self.assertEqual(
+            sorted(material["material"] for material in data["materials"]),
+            [
+                "Moscato 2 C 18 mm 771L ARAUCO (2500x1830)",
+                "Roble Americano 2 C 18 mm 719L ARAUCO (2500x1830)",
+            ],
+        )
+        self.assertEqual(sum(m["sheets_used"] for m in data["materials"]), data["sheets_used"])
+        self.assertEqual(sum(m["piece_count"] for m in data["materials"]), 30)
+        labels = {sheet["label"] for sheet in data["sheets"]}
+        self.assertEqual(len(labels), 2)
 
     def test_demo_con_algoritmo_no_guillotina(self):
         status, body = self._get("/api/demo?algorithm=nonguillotine")

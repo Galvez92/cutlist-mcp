@@ -23,10 +23,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from cutlist.cortecloud import MaterialGroup, load_fixture
 from cutlist.csv_import import EXAMPLE_CSV, parse_parts_csv
-from cutlist.demo import load_demo_parts
+from cutlist.materials import optimize_by_material
 from cutlist.models import Constraints, Sheet
-from cutlist.optimizer import ALGORITHMS, optimize
+from cutlist.optimizer import ALGORITHMS
 from cutlist.svg import render_svg
 
 ROOT = Path(__file__).resolve().parent
@@ -36,12 +37,11 @@ MAX_BODY = 512_000
 
 
 def demo_payload(algorithm: str) -> dict:
-    """Optimiza el fixture real y devuelve el resultado listo para la vista."""
+    """Optimiza el fixture real de Cortecloud, material por material."""
     if algorithm not in ALGORITHMS:
         return {"error": f"algoritmo desconocido: {algorithm}"}
 
-    parts, sheet = load_demo_parts()
-    payload = _payload(parts, sheet, algorithm)
+    payload = _payload(load_fixture(), algorithm)
     payload["source"] = "tests/fixtures/cortecloud/escritorio_D_simple.json"
     return payload
 
@@ -52,27 +52,24 @@ def csv_payload(csv_text: str, algorithm: str, sheet_data: dict) -> dict:
         return {"error": f"algoritmo desconocido: {algorithm}"}
 
     sheet = _sheet_from_request(sheet_data)
-    payload = _payload(parse_parts_csv(csv_text), sheet, algorithm)
-    payload["source"] = "csv"
-    return payload
-
-
-def _payload(parts, sheet, algorithm: str) -> dict:
-    result = optimize(
-        parts,
-        [sheet],
-        algorithm=algorithm,
-        constraints=Constraints(),
-        max_sheets=MAX_SHEETS,
-    )
-    payload = result.to_dict()
-    payload["svg"] = render_svg(result)
+    parts = parse_parts_csv(csv_text)
+    payload = _payload([MaterialGroup(material=sheet.label, sheet=sheet, parts=parts)], algorithm)
     payload["sheet"] = {
         "width": sheet.width,
         "height": sheet.height,
         "thickness": sheet.thickness,
         "kerf": sheet.kerf,
     }
+    payload["source"] = "csv"
+    return payload
+
+
+def _payload(groups: list[MaterialGroup], algorithm: str) -> dict:
+    optimization = optimize_by_material(
+        groups, algorithm=algorithm, constraints=Constraints(), max_sheets=MAX_SHEETS
+    )
+    payload = optimization.to_dict()
+    payload["svg"] = render_svg(optimization.result)
     return payload
 
 

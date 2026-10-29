@@ -12,7 +12,7 @@ Optimizador de corte de tableros open-source, independiente de Cortecloud, usabl
 ## Decisiones
 - Repo público, licencia MIT (2026-10-27).
 - Desarrollo con Base44 Base Code (modelo Auto gratis), una rama por área, PR en borrador. Hermes/opencode solo tareas mecánicas y revisión.
-- Formato Cortecloud conocido: JSON `{"parts":[...]}` con campos `quantity`, `c` (largo, mm), `l` (ancho, mm), `function`, `complement`, `material`, cantos `c1`,`c2`,`l1`,`l2` (texto del canto o null), `machining`. Muestra real: `tests/fixtures/cortecloud/escritorio_D_simple.json`. El importador de Cortecloud no vincula materiales automáticamente.
+- Formato Cortecloud conocido: JSON `{"parts":[...]}` con campos `quantity`, `c` (largo, mm), `l` (ancho, mm), `function`, `complement`, `material`, cantos `c1`,`c2`,`l1`,`l2` (texto del canto o null), `machining`. Muestra real: `tests/fixtures/cortecloud/escritorio_D_simple.json`. El importador (`cutlist/cortecloud.py`) agrupa las piezas por el texto `material` del archivo y toma de ahí las medidas del tablero; no valida códigos de material contra un catálogo.
 
 ## Perfil de restricciones de ejemplo (opcional): Cortecloud/Madijal
 Restricciones observadas en uso real (no son reglas del motor por defecto):

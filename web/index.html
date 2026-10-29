@@ -42,6 +42,11 @@
   #warnings { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px;
     background: #fffbeb; border: 1px solid #fcd34d; font-size: 13px; color: #78350f; }
   #warnings ul { margin: 6px 0 0; padding-left: 18px; }
+  #materials { display: grid; gap: 6px; margin: 0 0 18px; padding: 0; list-style: none; }
+  #materials li {
+    padding: 8px 10px; font-size: 13px; color: #334155;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  }
   #layout { overflow-x: auto; }
   #layout svg { min-width: 640px; }
   .custom { margin-top: 28px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
@@ -64,9 +69,8 @@
 <header>
   <h1>cutlist-mcp · motor de corte</h1>
   <p>
-    Muestra real de Cortecloud (escritorio D) optimizada sobre un tablero
-    2500 × 1830 × 18 mm con kerf de 4 mm. El motor no asigna materiales todavía:
-    todas las piezas se reparten sobre el mismo stock.
+    Muestra real de Cortecloud (escritorio D): cada material se corta de su propio
+    tablero de 2500 × 1830 × 18 mm, con kerf de 4 mm.
   </p>
 </header>
 <main>
@@ -82,6 +86,7 @@
 
   <dl id="summary"></dl>
   <div id="warnings" hidden></div>
+  <ul id="materials" hidden></ul>
   <div id="layout"></div>
 
   <section class="custom">
@@ -142,6 +147,23 @@
       warnings.replaceChildren();
     }
 
+    const materials = document.getElementById("materials");
+    if (data.materials && data.materials.length > 1) {
+      materials.replaceChildren(
+        ...data.materials.map((entry) => {
+          const item = document.createElement("li");
+          item.textContent =
+            `${entry.material} · ${entry.sheets_used} tablero(s) · ` +
+            `${entry.yield_percent.toFixed(1)} % · ${entry.piece_count} pieza(s)`;
+          return item;
+        })
+      );
+      materials.hidden = false;
+    } else {
+      materials.hidden = true;
+      materials.replaceChildren();
+    }
+
     layout.innerHTML = data.svg;
   }
 
@@ -163,6 +185,7 @@
       layout.replaceChildren();
       summary.replaceChildren();
       warnings.hidden = true;
+      document.getElementById("materials").hidden = true;
     }
   }
 

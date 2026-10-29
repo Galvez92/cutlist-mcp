@@ -1,5 +1,5 @@
 # Tarea: formatos-import-export
-**Rama:** `base44/setup-795946bb`  **Estado:** en progreso (CSV genérico listo; faltan Cortecloud, Promob, SketchUp/OpenCutList, Polyboard, Pro100 y DXF)
+**Rama:** `base44/setup-795946bb`  **Estado:** en progreso (Cortecloud y CSV genérico listos; faltan Promob, SketchUp/OpenCutList, Polyboard, Pro100 y DXF)
 
 ## Objetivo
 Importadores/exportadores: Cortecloud (fixture real en tests/fixtures/cortecloud), Promob, CSV genérico, SketchUp/OpenCutList, Polyboard, Pro100, DXF. Investigar documentación pública; lo no verificable = por revisar.

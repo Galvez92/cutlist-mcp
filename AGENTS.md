@@ -18,4 +18,4 @@
 - `server.py --reload` reinicia el proceso cuando cambia un `.py`, así que las ediciones se ven sin rebuild ni reinicio manual.
 - La página `/` muestra el resultado sobre el fixture real de `tests/fixtures/cortecloud/` y permite pegar un CSV propio. La API es `/api/health`, `/api/demo?algorithm=guillotine|nonguillotine`, `/api/example` y `POST /api/optimize` (`{"csv": "...", "algorithm": "...", "sheet": {...}}`).
 - El CSV es un formato **propio de cutlist-mcp** (documentado en `cutlist/csv_import.py`), no el de Cortecloud ni el de otro programa.
-- El mapeo fixture → motor vive en `cutlist/demo.py` y es **provisional**: el importador completo es la tarea `formatos-import-export` y todavía no asigna materiales, por eso todo se optimiza sobre un único stock.
+- El fixture de Cortecloud se importa en `cutlist/cortecloud.py`: agrupa las piezas por el texto `material` y cada material se corta de su propio tablero (`cutlist/materials.py`). Faltan los demás formatos de la tarea `formatos-import-export`.
