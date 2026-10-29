@@ -8,3 +8,13 @@
 6. No publiques releases, paquetes ni listados en marketplaces.
 7. Al terminar cada corrida agrega una entrada en `docs/memoria/bitacora/AAAA-MM-DD.md` (rama, qué hiciste, pruebas, pendientes).
 8. Incluye pruebas para todo lo que agregues.
+
+## Entorno de desarrollo (Base44) / Dev environment
+
+- Todo el código es Python con **sólo biblioteca estándar**: no hay `pip install`, ni base de datos, ni servicios externos, ni secretos que configurar.
+- Levantar / arrancar: `docker compose -f docker-compose.base44.yml up -d --build`. Sirve `server.py` en el puerto 3000 (interno 8000).
+- Pruebas, siempre dentro del contenedor (el host no tiene Python):
+  `docker compose -f docker-compose.base44.yml exec -T web python -m unittest discover -s tests -t .`
+- `server.py --reload` reinicia el proceso cuando cambia un `.py`, así que las ediciones se ven sin rebuild ni reinicio manual.
+- La página `/` muestra el resultado sobre el fixture real de `tests/fixtures/cortecloud/`. La API es `/api/demo?algorithm=guillotine|nonguillotine` y `/api/health`.
+- El mapeo fixture → motor vive en `cutlist/demo.py` y es **provisional**: el importador completo es la tarea `formatos-import-export` y todavía no asigna materiales, por eso todo se optimiza sobre un único stock.

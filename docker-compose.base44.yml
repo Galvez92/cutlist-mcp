@@ -1,0 +1,32 @@
+# Entorno de desarrollo de cutlist-mcp para Base44 / Base44 dev environment.
+#
+# El motor (`cutlist/`) y el servidor de vista previa (`server.py`) usan sólo la
+# biblioteca estándar de Python: no hay dependencias que instalar ni servicios
+# externos ni secretos. Por eso el servicio arranca desde el código montado, sin
+# imagen propia ni paso de instalación.
+
+services:
+  web:
+    image: python:3.12-slim
+    working_dir: /app
+    restart: on-failure
+    # `--reload` reinicia el proceso cuando cambia un .py (recarga en desarrollo).
+    command: ["python", "-u", "server.py", "--reload"]
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    volumes:
+      - .:/app
+    ports:
+      - "3000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    labels:
+      base44.project: "cutlist-mcp"
+      base44.kind: "web"
+      base44.port: "3000"

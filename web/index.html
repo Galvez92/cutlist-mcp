@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cutlist-mcp · motor de corte</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+  header { max-width: 1100px; margin: 0 auto 20px; }
+  h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0; color: #475569; font-size: 14px; line-height: 1.5; }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 16px; }
+  label { font-size: 13px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  select {
+    font: inherit; font-size: 13px; padding: 6px 10px;
+    border: 1px solid #cbd5e1; border-radius: 8px; background: #fff;
+  }
+  #status { font-size: 13px; color: #64748b; }
+  #summary { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; padding: 0; }
+  #summary div {
+    flex: 1 1 150px; padding: 10px 12px; border-radius: 10px;
+    background: #f8fafc; border: 1px solid #e2e8f0;
+  }
+  #summary dt { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+  #summary dd { margin: 4px 0 0; font-size: 18px; font-weight: 600; }
+  #warnings { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px;
+    background: #fffbeb; border: 1px solid #fcd34d; font-size: 13px; color: #78350f; }
+  #warnings ul { margin: 6px 0 0; padding-left: 18px; }
+  #layout { overflow-x: auto; }
+  #layout svg { min-width: 640px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>cutlist-mcp · motor de corte</h1>
+  <p>
+    Muestra real de Cortecloud (escritorio D) optimizada sobre un tablero
+    2500 × 1830 × 18 mm con kerf de 4 mm. El motor no asigna materiales todavía:
+    todas las piezas se reparten sobre el mismo stock.
+  </p>
+</header>
+<main>
+  <div class="controls">
+    <label for="algorithm">Algoritmo
+      <select id="algorithm">
+        <option value="guillotine">Guillotina</option>
+        <option value="nonguillotine">No guillotina (MaxRects)</option>
+      </select>
+    </label>
+    <span id="status">cargando…</span>
+  </div>
+
+  <dl id="summary"></dl>
+  <div id="warnings" hidden></div>
+  <div id="layout"></div>
+</main>
+
+<script>
+  const select = document.getElementById("algorithm");
+  const status = document.getElementById("status");
+  const summary = document.getElementById("summary");
+  const warnings = document.getElementById("warnings");
+  const layout = document.getElementById("layout");
+
+  function metric(label, value) {
+    const cell = document.createElement("div");
+    const dt = document.createElement("dt");
+    const dd = document.createElement("dd");
+    dt.textContent = label;
+    dd.textContent = value;
+    cell.append(dt, dd);
+    return cell;
+  }
+
+  async function load() {
+    status.textContent = "optimizando…";
+    try {
+      const response = await fetch(`/api/demo?algorithm=${encodeURIComponent(select.value)}`);
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || `HTTP ${response.status}`);
+
+      summary.replaceChildren(
+        metric("Aprovechamiento", `${data.yield_percent.toFixed(1)} %`),
+        metric("Tableros", data.sheets_used),
+        metric("Piezas", data.piece_count),
+        metric("Sin ubicar", data.unplaced.length)
+      );
+
+      if (data.warnings.length) {
+        const list = document.createElement("ul");
+        for (const text of data.warnings) {
+          const item = document.createElement("li");
+          item.textContent = text;
+          list.append(item);
+        }
+        warnings.replaceChildren(
+          document.createTextNode("Avisos del perfil de restricciones:"),
+          list
+        );
+        warnings.hidden = false;
+      } else {
+        warnings.hidden = true;
+        warnings.replaceChildren();
+      }
+
+      layout.innerHTML = data.svg;
+      status.textContent = `${data.algorithm} · fuente: ${data.source}`;
+    } catch (error) {
+      status.textContent = `error: ${error.message}`;
+      layout.replaceChildren();
+      summary.replaceChildren();
+      warnings.hidden = true;
+    }
+  }
+
+  select.addEventListener("change", load);
+  load();
+</script>
+</body>
+</html>
