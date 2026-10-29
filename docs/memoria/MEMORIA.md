@@ -13,6 +13,7 @@ Optimizador de corte de tableros open-source, independiente de Cortecloud, usabl
 - Repo público, licencia MIT (2026-10-27).
 - Desarrollo con Base44 Base Code (modelo Auto gratis), una rama por área, PR en borrador. Hermes/opencode solo tareas mecánicas y revisión.
 - Formato Cortecloud conocido: JSON `{"parts":[...]}` con campos `quantity`, `c` (largo, mm), `l` (ancho, mm), `function`, `complement`, `material`, cantos `c1`,`c2`,`l1`,`l2` (texto del canto o null), `machining`. Muestra real: `tests/fixtures/cortecloud/escritorio_D_simple.json`. El importador de Cortecloud no vincula materiales automáticamente.
+- Sistema de coordenadas de Cortecloud (verificado 2026-10-29 en la guía oficial de Serrabits): pieza vista por la cara interna; esquinas 0 superior izquierda, 1 inferior izquierda, 2 inferior derecha, 3 superior derecha. `c1` = segmento 0-1 (lado del largo, izquierda), `l1` = 1-2 (del ancho, inferior), `c2` = 2-3 (largo, derecha), `l2` = 3-0 (ancho, superior). `c` es el largo y `l` el ancho, en milímetros.
 
 ## Perfil de restricciones de ejemplo (opcional): Cortecloud/Madijal
 Restricciones observadas en uso real (no son reglas del motor por defecto):

@@ -78,6 +78,17 @@ export {
 export type { Lado, Veta, Ranura, Barreno, PiezaInit, Totales } from "./modules/parts.js";
 
 export {
+  ARISTA_DE_CORTECLOUD,
+  CORTECLOUD_FUENTES,
+  LADOS_CORTECLOUD,
+  SEGMENTOS_CORTECLOUD,
+  cantosACortecloud,
+  cantosDesdeCortecloud,
+  ladoACortecloud,
+} from "./modules/cortecloud.js";
+export type { CantosCortecloud, LadoCortecloud } from "./modules/cortecloud.js";
+
+export {
   PERFIL_CORTECLOUD_MADIJAL,
   PERFILES,
   PerfilRestricciones,

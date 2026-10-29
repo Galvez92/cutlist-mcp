@@ -17,4 +17,5 @@ Generadores paramétricos de cajonera, clóset, cocina y librero a partir de med
 - Documentación en `docs/modulos-parametricos.md`.
 - **Cajón** (`cajon.ts`): cajón individual con fondo en ranura, armado con minifix Ø15 (vertical, a ~50 mm de las orillas) + pines Ø9.525 (horizontal, por revisar), correderas al centro.
 - **Escritorio** (`escritorio.ts`): cubierta + 2 costados + faldón ≥ 70 mm + travesaño trasero.
-- Pendiente: mapeo de cantos a `c1/c2/l1/l2` de Cortecloud, reparto de aristas a lados absolutos del motor, ranura de trasera y enlace con las ramas `optimizer-engine` y `mcp-server`.
+- **Mapeo de cantos a Cortecloud** (`cortecloud.ts`): verificado contra la guía oficial de Serrabits (2026-10-29). `c1` = `largo_a` (segmento 0-1), `c2` = `largo_b` (2-3), `l1` = `ancho_b` (1-2, inferior) y `l2` = `ancho_a` (3-0, superior); el importador del demo tenía `l1`/`l2` invertidos y se corrigió.
+- Pendiente: confirmar el lado físico de cada canto con el taller (el JSON no declara la orientación del dibujo), ranura de trasera y enlace con las ramas `optimizer-engine` y `mcp-server`.

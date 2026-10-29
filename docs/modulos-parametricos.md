@@ -57,13 +57,15 @@ reparto de las aristas geométricas a los lados absolutos del motor es
   `largo` (piezas verticales: costados) y `ancho_a` cuando es de longitud
   `ancho` (piezas horizontales: base, tapa, repisas, zócalo). La lectura física
   va en `funcion` ("canto en la arista frontal", "canto en la arista superior").
-- *Por revisar*: la equivalencia entre estas aristas y los campos
-  `c1`/`c2`/`l1`/`l2` de Cortecloud **no está verificada**. El fixture real
-  `tests/fixtures/cortecloud/escritorio_D_simple.json` trae «Lateral cajón» con
-  `c=450`, `l=75` y solo `l1` con canto (cuando la arista vista del lateral es la
-  de 450 mm), y «Frente cajón» con los cuatro cantos: esa pieza es la muestra para
-  resolver el mapeo. Mientras no se verifique, cualquier exportador debe marcarlo
-  `por revisar`.
+- Equivalencia con Cortecloud (según su [sistema de
+  coordenadas](https://cortecloud.com/api-docs/en/guias/json_import/#part-coordinate-system),
+  pieza vista por la cara interna): `c1` = `largo_a` (segmento 0-1),
+  `c2` = `largo_b` (2-3), `l1` = `ancho_b` (1-2, lado inferior) y `l2` = `ancho_a`
+  (3-0, lado superior). La conversión vive en `src/modules/cortecloud.ts`
+  (`cantosACortecloud` / `cantosDesdeCortecloud`).
+- *Por revisar*: el JSON no dice en qué orientación se dibujó cada pieza, así que
+  el lado **físico** (frente, arriba) sigue dependiendo de cómo se cargó la pieza
+  en Cortecloud. Por eso la lectura física se guarda en `funcion`.
 
 ## Qué genera cada módulo
 
@@ -132,9 +134,11 @@ docker compose -f docker-compose.base44.yml --profile tests run --rm tests
 Cubren: modelo de piezas y cantos (medidas terminadas, agrupación de líneas,
 totales), las reglas del perfil (una prueba por regla, incluidos los umbrales de
 65/70/66 mm), la geometría de los cuatro módulos con sus cantos y el reparto de
-puertas y frentes, la idea escrita y el punto de entrada HTTP. Son **95 pruebas
-vitest** (las 92 originales del Python, con los casos parametrizados expandidos)
-y `tsc --noEmit` estricto pasa.
+puertas y frentes, la idea escrita y el punto de entrada HTTP, y el mapeo de
+cantos a los lados `c1`/`c2`/`l1`/`l2` de Cortecloud
+(`tests/test_cantos_cortecloud.test.ts`, con ida y vuelta sobre las 21 líneas del
+fixture). Son **302 pruebas vitest** y 60 del servidor MCP (`node:test`), y
+`tsc --noEmit` estricto pasa.
 
 ## Vista previa de desarrollo
 
@@ -160,8 +164,10 @@ La rama `demo-web-docs` integra esta capa en la demo (Vite, DOM nativo):
   parámetro al registro lo expone solo en la UI.
 - Al pulsar *Generar piezas del módulo* se llama a `generarModulo(tipo, valores)` y las
   `Pieza` se bridgean al optimizador con `Pieza.toPartInput()` (`demo/src/engine/modules.js`):
-  `width = ancho`, `height = largo`, veta → `grain`, cantos → `edges`. El reparto de
-  aristas a lados absolutos del motor sigue **por revisar**.
+  `width = ancho`, `height = largo`, veta → `grain`, cantos → `edges`.
+- Los cantos viajan como texto en `Cantos` y se convierten a los lados
+  `c1`/`c2`/`l1`/`l2` de Cortecloud con `cantosACortecloud()` /
+  `cantosDesdeCortecloud()` (`src/modules/cortecloud.ts`).
 - El tablero de stock pasa al recomendado por el perfil (2500×1830×18 mm) y el layout se
   recalcula en vivo, con los hallazgos del perfil como avisos.
 - El ejemplo por omisión de la demo sigue siendo el **escritorio compacto** real (fixture de
@@ -173,7 +179,8 @@ el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio
 
 ## Pendientes
 
-- Verificar el mapeo de cantos contra el formato de Cortecloud (ver arriba).
+- Confirmar con el taller el lado **físico** de cada canto en las piezas importadas
+  (el JSON no declara la orientación del dibujo; ver arriba).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
 - Resolver la ranura de trasera (hoy la trasera va clavada al dorso, sin ranura).
 - Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la

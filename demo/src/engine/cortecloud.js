@@ -1,12 +1,12 @@
 /**
  * Importador del formato Cortecloud (JSON `{"parts":[...]}`).
  *
- * POR REVISAR: no se encontró documentación pública oficial del formato; la
- * lectura se basa en la muestra real del repo y en las notas de
- * `docs/memoria/MEMORIA.md`:
+ * La estructura y el sistema de coordenadas salen de la guía oficial de
+ * Serrabits; el resto se contrasta con la muestra real del repo:
+ *  - guía oficial: https://cortecloud.com/api-docs/en/guias/json_import/
  *  - fixture: tests/fixtures/cortecloud/escritorio_D_simple.json
  *  - notas:   docs/memoria/MEMORIA.md (sección "Decisiones")
- * Todo lo inferido queda marcado aquí y en la UI como `por revisar`.
+ * Lo que sigue sin verificar queda marcado en la UI como `por revisar`.
  *
  * Este importador es parte del demo, no del motor (optimizer-engine).
  * Produce piezas y tableros en el formato interno del demo; `adapt.js` los
@@ -26,7 +26,7 @@ export const CORTECLOUD_FIELDS = [
   { field: 'parts[].function', mapsTo: 'etiqueta', verified: true },
   { field: 'parts[].complement', mapsTo: 'grupo/módulo (informativo)', verified: true },
   { field: 'parts[].material', mapsTo: 'material y medida de tablero (heurística)', verified: false },
-  { field: 'parts[].c1/c2/l1/l2', mapsTo: 'canto por lado (convención provisional)', verified: false },
+  { field: 'parts[].c1/c2/l1/l2', mapsTo: 'canto por lado (C1/C2 largo izq./der., L1 abajo, L2 arriba)', verified: true },
   { field: 'parts[].machining', mapsTo: 'pieza mecanizada (booleano)', verified: false },
 ];
 
@@ -61,11 +61,15 @@ export function parseMaterial(text) {
   };
 }
 
+// Sistema de coordenadas documentado por Cortecloud (pieza vista por la cara
+// interna): C1 = segmento 0-1 (lado izquierdo del largo), C2 = 2-3 (derecho),
+// L1 = 1-2 (lado inferior del ancho) y L2 = 3-0 (superior).
+// https://cortecloud.com/api-docs/en/guias/json_import/
 const edgeSides = (part) => ({
   left: Boolean(part.c1),
   right: Boolean(part.c2),
-  top: Boolean(part.l1),
-  bottom: Boolean(part.l2),
+  bottom: Boolean(part.l1),
+  top: Boolean(part.l2),
 });
 
 const edgeThickness = (part) => {
@@ -142,7 +146,7 @@ export function importCortecloud(json, { swap = false, grain = 'none' } = {}) {
     'por revisar: no hay documentación pública oficial del formato Cortecloud; lectura basada en la muestra real del repo.',
     'por revisar: `c` se toma como alto y `l` como ancho (intercambiable desde la demo).',
     'por revisar: la medida y el espesor del tablero se infieren del texto de `material`.',
-    'por revisar: el canto usa la convención c1/c2 = lados del largo, l1/l2 = lados del ancho; el largo total es exacto, la posición física no está verificada.',
+    'canto: convención documentada por Cortecloud — C1/C2 son los lados del largo (izquierda/derecha) y L1/L2 los del ancho (abajo/arriba); el lado físico depende de cómo se dibujó la pieza.',
     'el formato no declara veta: las piezas se importan sin veta (pueden girar).',
   ];
 
