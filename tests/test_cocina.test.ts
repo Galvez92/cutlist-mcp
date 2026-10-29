@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { bisagrasPorPuerta } from "../src/modules/bisagras.js";
 import { generar } from "../src/modules/cocina.js";
 import type { Modulo } from "../src/modules/modulo.js";
 import type { Pieza } from "../src/modules/parts.js";
@@ -83,6 +84,50 @@ describe("cocina · frentes", () => {
 
   it("puertas y cajones no se mezclan", () => {
     expect(() => generar({ puertas: 1, cajones: 1 })).toThrow(/puertas o cajones/);
+  });
+});
+
+describe("cocina · bisagras (guía verificada)", () => {
+  function bisagras(modulo: Modulo): number {
+    return modulo.accesorios.find((a) => a.nombre === "Bisagra")!.cantidad;
+  }
+
+  it("sigue los tramos 2/3/4/5 de la guía de Hettich por alto de puerta", () => {
+    // altoPuerta = alto - zócalo (100) - juego (3)
+    const casos: [number, number][] = [
+      [1003, 2], // puerta de 900 mm
+      [1004, 3], // puerta de 901 mm
+      [1700, 3], // puerta de 1597 mm
+      [1800, 4], // puerta de 1697 mm
+      [2200, 5], // puerta de 2097 mm
+      [2500, 5], // puerta de 2397 mm
+    ];
+    for (const [alto, esperado] of casos) {
+      const modulo = generar({ alto, puertas: 1 });
+      expect([alto, bisagras(modulo)], `alto ${alto}`).toEqual([alto, esperado]);
+    }
+  });
+
+  it("usa la misma tabla que el clóset", () => {
+    const modulo = generar({ alto: 2200, puertas: 1 });
+    const puerta = buscar(modulo, "Puerta");
+    expect(bisagras(modulo)).toBe(bisagrasPorPuerta(puerta.largo));
+    expect(bisagras(modulo)).toBe(5);
+  });
+
+  it("avisa cuando las puertas superan el alto de la guía", () => {
+    const modulo = generar({ alto: 2600, puertas: 1 });
+    expect(bisagras(modulo)).toBe(5);
+    expect(
+      modulo.notas.some((n) => n.includes("la guía de bisagras llega a 2400 mm")),
+    ).toBe(true);
+  });
+
+  it("avisa cuando las puertas superan el ancho de la guía", () => {
+    const modulo = generar({ ancho: 1400, puertas: 1 });
+    expect(
+      modulo.notas.some((n) => n.includes("vale hasta 600 mm por hoja")),
+    ).toBe(true);
   });
 });
 

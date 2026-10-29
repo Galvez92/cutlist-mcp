@@ -34,7 +34,7 @@ verificados el 2026-10-29, y bisagras del clóset (cantidad, revelado y copa) el
 | Kerf por defecto 4 mm | ninguna | Valor de partida editable en la demo; debe ajustarse al disco de la máquina. |
 | Descuento de canto en el perfil | `docs/memoria/MEMORIA.md` | El mínimo se compara contra el lado terminado (lado corto − 2 × canto). Aproximación. |
 | Un `Kerf` único por corrida | decisión de diseño | El motor usa un solo kerf; no modela kerf distinto por sentido de corte. |
-| Cantidad de bisagras por peso de puerta | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | Blum da 2 bisagras para 4–6 kg y 3 para 6–12 kg; el clóset solo cuenta por alto de puerta y no calcula el peso. |
+| Cantidad de bisagras por peso de puerta | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | Blum da 2 bisagras para 4–6 kg y 3 para 6–12 kg; el clóset y la cocina solo cuentan por alto de puerta y no calculan el peso. |
 | Cantidad de bisagras con puertas de más de 600 mm de ancho | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | La tabla vale hasta 600 mm de ancho por hoja (Blum suma una bisagra entre 600 y 650 mm). Sobre eso el módulo avisa y deja la cantidad a revisar con el fabricante. |
 | Traslape de 30 mm y juego de guía de 45 mm de las correderas | ninguna (los catálogos de correderas fijan su propio traslape y juego) | Valores de taller ajustables; hay que confirmarlos contra el sistema de correderas elegido. |
 

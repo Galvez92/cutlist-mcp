@@ -20,6 +20,8 @@
  * 3 mm y zócalo (frente y dos laterales).
  * - Frente: puertas cubrientes o, si ``cajones > 0``, frentes de cajón (no se
  * combinan puertas y cajones en el mismo módulo).
+ * - Bisagras: cantidad por puerta con la misma guía verificada del clóset
+ *   (``bisagrasPorPuerta()``, catálogos Hettich *Sensys* y Blum CLIP top).
  */
 
 import { Accesorio, Modulo } from "./modulo.js";
@@ -35,6 +37,11 @@ import {
   frentes,
   repartir,
 } from "./common.js";
+import {
+  ALTO_MAXIMO_BISAGRAS,
+  ANCHO_MAXIMO_GUIA_BISAGRAS,
+  bisagrasPorPuerta,
+} from "./bisagras.js";
 import { Cantos, Pieza, ValueError } from "./parts.js";
 
 export const CAMPOS: Record<string, string> = {
@@ -315,14 +322,28 @@ export function generar(params: ParamsCocina = {}): Modulo {
         modulo: nombre,
       }),
     );
-    const bisagras = altoPuerta <= 900 ? 2 : 3;
+    const bisagras = bisagrasPorPuerta(altoPuerta);
     accesorios.push(
-      new Accesorio("Bisagra", bisagras * p.puertas, "Cantidad por alto de puerta — por revisar con el herraje"),
+      new Accesorio(
+        "Bisagra",
+        bisagras * p.puertas,
+        `Según el alto de puerta, guía de Hettich Sensys (2/3/4/5 bisagras hasta 900/1600/2000/2400 mm): ${bisagras} por puerta`,
+      ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));
     notas.push(
       `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (por revisar).`,
     );
+    if (altoPuerta > ALTO_MAXIMO_BISAGRAS) {
+      notas.push(
+        `Puertas de ${altoPuerta.toFixed(0)} mm de alto: la guía de bisagras llega a ${ALTO_MAXIMO_BISAGRAS.toFixed(0)} mm; revisar la cantidad con el fabricante.`,
+      );
+    }
+    if (anchoPuerta > ANCHO_MAXIMO_GUIA_BISAGRAS) {
+      notas.push(
+        `Puertas de ${anchoPuerta.toFixed(1)} mm de ancho: la guía de bisagras vale hasta ${ANCHO_MAXIMO_GUIA_BISAGRAS.toFixed(0)} mm por hoja; revisar la cantidad con el fabricante.`,
+      );
+    }
   }
 
   return new Modulo(
