@@ -39,7 +39,7 @@
   clóset, cocina y librero (`Pieza`, `Modulo`, `PerfilRestricciones`), intérprete de ideas
   escritas (`spec.ts`) y puente al motor (`Pieza.toPartInput()`,
   `PerfilRestricciones.toConstraintProfile()`). Vista previa de desarrollo opcional en
-  `tools/preview/` (`npm run preview`). Ver `docs/modulos-parametricos.md`.
+  `tools/preview/` (`npm run preview`; vista del motor con pedido de ejemplo en `npm run preview:motor`, `tools/preview/motor.ts`). Ver `docs/modulos-parametricos.md`.
 - Demo: `demo/` (Vite, DOM nativo). Adaptadores del demo en `demo/src/engine/`:
   `cortecloud.js` (importador, no incluido en el motor), `csv.js` (exportación CSV,
   no incluida en el motor), `adapt.js` (conversión estado→motor), `constants.js`
