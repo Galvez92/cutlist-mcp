@@ -1,5 +1,7 @@
 import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from cutlist.cortecloud import FALLBACK_DIMENSIONS, load_fixture, parse_cortecloud_json
 
@@ -117,6 +119,172 @@ class ParseTest(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             parse_cortecloud_json(payload(row(c=0)))
         self.assertIn("pieza 1", str(ctx.exception))
+
+
+class LoadFixtureTest(unittest.TestCase):
+    """Errores al leer el archivo, no al interpretarlo."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.dir = Path(temp.name)
+
+    def test_archivo_inexistente(self):
+        with self.assertRaises(ValueError) as ctx:
+            load_fixture(self.dir / "no-existe.json")
+        self.assertIn("no se encontró", str(ctx.exception))
+        self.assertIn("no-existe.json", str(ctx.exception))
+
+    def test_ruta_que_es_un_directorio(self):
+        with self.assertRaises(ValueError) as ctx:
+            load_fixture(self.dir)
+        self.assertIn("directorio", str(ctx.exception))
+
+    def test_archivo_que_no_es_utf8(self):
+        path = self.dir / "latin1.json"
+        path.write_bytes(b'{"parts": [{"material": "\xff\xfe", "c": 10, "l": 10}]}')
+        with self.assertRaises(ValueError) as ctx:
+            load_fixture(path)
+        self.assertIn("UTF-8", str(ctx.exception))
+
+    def test_archivo_vacio(self):
+        path = self.dir / "vacio.json"
+        path.write_text("", encoding="utf-8")
+        with self.assertRaises(ValueError) as ctx:
+            load_fixture(path)
+        self.assertIn("JSON", str(ctx.exception))
+
+    def test_acepta_ruta_como_texto(self):
+        path = self.dir / "ok.json"
+        path.write_text(payload(row(quantity="3")), encoding="utf-8")
+        self.assertEqual(load_fixture(str(path))[0].piece_count, 3)
+
+    def test_el_error_no_expone_un_traceback_de_io(self):
+        with self.assertRaises(ValueError) as ctx:
+            load_fixture(self.dir / "otro.json")
+        self.assertIsInstance(ctx.exception.__cause__, FileNotFoundError)
+
+
+class MalformedInputTest(unittest.TestCase):
+    """Datos mal formados dentro del JSON."""
+
+    def test_raiz_que_no_es_objeto(self):
+        for text in ("[]", '"texto"', "null", "42"):
+            with self.assertRaises(ValueError) as ctx:
+                parse_cortecloud_json(text)
+            self.assertIn("parts", str(ctx.exception))
+
+    def test_parts_que_no_es_lista(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json('{"parts": {"c": 10, "l": 10}}')
+        self.assertIn("parts", str(ctx.exception))
+
+    def test_pieza_que_no_es_objeto(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json('{"parts": [["c", 10]]}')
+        self.assertIn("pieza 1", str(ctx.exception))
+
+    def test_pieza_nula(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json('{"parts": [null]}')
+        self.assertIn("pieza 1", str(ctx.exception))
+
+    def test_material_en_blanco(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(material="   ")))
+        self.assertIn("material", str(ctx.exception))
+
+    def test_material_nulo(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(material=None)))
+        self.assertIn("material", str(ctx.exception))
+
+    def test_el_error_indica_que_pieza_falla(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(), row(), row(c=None)))
+        self.assertIn("pieza 3", str(ctx.exception))
+
+    def test_medida_con_unidades(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(c="732 mm")))
+        self.assertIn("medida inválida", str(ctx.exception))
+
+    def test_medida_vacia(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(l="")))
+        self.assertIn("medida inválida", str(ctx.exception))
+
+    def test_medida_no_finita(self):
+        for value in ("NaN", "Infinity", float("inf"), float("nan")):
+            with self.assertRaises(ValueError) as ctx:
+                parse_cortecloud_json(payload(row(c=value)))
+            self.assertIn("no finita", str(ctx.exception))
+
+    def test_medida_booleana(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(l=True)))
+        self.assertIn("no es un número", str(ctx.exception))
+
+    def test_medida_cero_o_negativa(self):
+        for value in (0, -600):
+            with self.assertRaises(ValueError) as ctx:
+                parse_cortecloud_json(payload(row(l=value)))
+            self.assertIn("pieza 1", str(ctx.exception))
+
+    def test_cantidad_no_numerica(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(quantity="dos")))
+        self.assertIn("cantidad inválida", str(ctx.exception))
+
+    def test_cantidad_fraccionaria(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(quantity=2.5)))
+        self.assertIn("entera", str(ctx.exception))
+
+    def test_cantidad_negativa(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(quantity=-2)))
+        self.assertIn("pieza 1", str(ctx.exception))
+
+    def test_cantidad_booleana(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(quantity=True)))
+        self.assertIn("cantidad inválida", str(ctx.exception))
+
+    def test_cantidad_como_texto_es_valida(self):
+        groups = parse_cortecloud_json(payload(row(quantity="4")))
+        self.assertEqual(groups[0].piece_count, 4)
+
+    def test_cantidad_ausente_vale_uno(self):
+        sin_cantidad = {key: value for key, value in row().items() if key != "quantity"}
+        groups = parse_cortecloud_json(payload(sin_cantidad))
+        self.assertEqual(groups[0].piece_count, 1)
+
+    def test_cantidad_nula(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(quantity=None)))
+        self.assertIn("cantidad inválida", str(ctx.exception))
+
+    def test_canto_que_no_es_texto(self):
+        with self.assertRaises(ValueError) as ctx:
+            parse_cortecloud_json(payload(row(c2=4)))
+        self.assertIn("canto", str(ctx.exception))
+
+    def test_canto_en_blanco_es_sin_canto(self):
+        groups = parse_cortecloud_json(payload(row(c1="   ", l1=" PVC 719L ")))
+        self.assertIsNone(groups[0].parts[0].edges.c1)
+        self.assertEqual(groups[0].parts[0].edges.l1, "PVC 719L")
+
+    def test_materiales_con_medidas_distintas_son_grupos_distintos(self):
+        groups = parse_cortecloud_json(
+            payload(
+                row(material="Roble 18 mm (2500x1830)"),
+                row(material="Roble 18 mm (2440x1220)"),
+            )
+        )
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(groups[1].sheet.width, 2440.0)
+        self.assertEqual(groups[1].sheet.height, 1220.0)
 
 
 if __name__ == "__main__":
