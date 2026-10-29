@@ -1,0 +1,13 @@
+{
+  "name": "cutlist-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Demo web (Vite) del motor de corte de tableros cutlist-mcp",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}

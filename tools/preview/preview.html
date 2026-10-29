@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Módulos paramétricos · cutlist-mcp</title>
+<style>
+  :root {
+    --tinta: #1b1f24;
+    --gris: #5b6673;
+    --linea: #dfe3e8;
+    --fondo: #f6f7f9;
+    --acento: #2f6f4f;
+    --error: #a3271f;
+    --aviso: #8a5b00;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--tinta);
+    background: var(--fondo);
+  }
+  header {
+    padding: 18px 22px;
+    background: #fff;
+    border-bottom: 1px solid var(--linea);
+  }
+  h1 { margin: 0 0 4px; font-size: 19px; }
+  header p { margin: 0; color: var(--gris); font-size: 13px; }
+  main {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    gap: 18px;
+    padding: 18px 22px 40px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section {
+    background: #fff;
+    border: 1px solid var(--linea);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  h2 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--gris); }
+  label { display: block; margin-bottom: 10px; font-size: 12px; color: var(--gris); }
+  label span { display: block; margin-bottom: 3px; }
+  input[type=number], input[type=text], select {
+    width: 100%; padding: 6px 8px; font-size: 13px; color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 5px; background: #fff;
+  }
+  input[type=checkbox] { margin-right: 6px; }
+  .fila { display: flex; gap: 10px; }
+  .fila label { flex: 1; }
+  button {
+    width: 100%; padding: 9px; font-size: 14px; font-weight: 600; color: #fff;
+    background: var(--acento); border: 0; border-radius: 6px; cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { color: var(--gris); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip {
+    font-size: 12px; padding: 4px 9px; border-radius: 999px;
+    background: var(--fondo); border: 1px solid var(--linea); color: var(--gris);
+  }
+  .chip b { color: var(--tinta); }
+  ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+  .hallazgos .error { color: var(--error); }
+  .hallazgos .aviso { color: var(--aviso); }
+  .vacio { color: var(--gris); font-size: 13px; }
+  #idea { margin-top: 10px; }
+  code { background: var(--fondo); padding: 1px 4px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Módulos paramétricos</h1>
+  <p>Medidas e ideas → piezas con cantos y veta. Perfil de restricciones opcional (Cortecloud/Madijal de la MEMORIA). Vista previa de desarrollo, no es la demo web del proyecto.</p>
+</header>
+
+<main>
+  <div>
+    <section>
+      <h2>Medidas</h2>
+      <label><span>Módulo</span><select id="tipo"></select></label>
+      <div id="campos"></div>
+      <button id="calcular">Calcular piezas</button>
+      <div id="idea">
+        <h2 style="margin-top:14px">O idea escrita</h2>
+        <label><span>Ej.: <code>cajonera ancho=450 alto=800 fondo=500 cajones=4</code></span>
+          <input type="text" id="texto" placeholder="librero ancho=800 alto=2000 fondo=300 repisas=4">
+        </label>
+        <button id="calcular-idea">Calcular idea</button>
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <section>
+      <h2>Lista de piezas</h2>
+      <div class="chips" id="totales"></div>
+      <div id="piezas" class="vacio">Elige un módulo y calcula.</div>
+    </section>
+    <section style="margin-top:18px">
+      <h2>Accesorios y notas</h2>
+      <div id="accesorios" class="vacio">—</div>
+      <div id="notas"></div>
+    </section>
+    <section style="margin-top:18px">
+      <h2>Perfil de restricciones</h2>
+      <div id="perfil" class="vacio">—</div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let modulos = [];
+let perfil = null;
+
+async function cargar() {
+  const [m, p] = await Promise.all([fetch("api/modulos").then((r) => r.json()), fetch("api/perfil").then((r) => r.json())]);
+  modulos = m.modulos;
+  perfil = p;
+  $("tipo").innerHTML = modulos.map((mod) => `<option value="${mod.tipo}">${esc(mod.titulo)}</option>`).join("");
+  $("tipo").onchange = pintarCampos;
+  pintarCampos();
+}
+
+function actual() { return modulos.find((mod) => mod.tipo === $("tipo").value); }
+
+function pintarCampos() {
+  const mod = actual();
+  $("campos").innerHTML = mod.campos.map((campo) => {
+    const id = `p_${campo.nombre}`;
+    const ayuda = esc(campo.descripcion || campo.nombre);
+    if (campo.tipo === "bool") {
+      return `<label><input type="checkbox" id="${id}" ${campo.default ? "checked" : ""}> ${ayuda}</label>`;
+    }
+    if (campo.tipo === "texto") {
+      return `<label title="${ayuda}"><span>${esc(campo.nombre)}</span><input type="text" id="${id}" value="${esc(campo.default ?? "")}"></label>`;
+    }
+    if (campo.tipo === "lista") {
+      const v = campo.default ? esc(JSON.stringify(campo.default)) : "";
+      return `<label title="${ayuda}"><span>${esc(campo.nombre)} (JSON)</span><input type="text" id="${id}" value="${v}" placeholder="[100, 400]"></label>`;
+    }
+    const valor = campo.default === null || campo.default === undefined ? "" : campo.default;
+    return `<label title="${ayuda}"><span>${esc(campo.nombre)}</span><input type="number" step="0.4" id="${id}" value="${esc(valor)}"></label>`;
+  }).join("");
+}
+
+function valores() {
+  const datos = {};
+  for (const campo of actual().campos) {
+    const el = $(`p_${campo.nombre}`);
+    if (!el) continue;
+    if (campo.tipo === "bool") { datos[campo.nombre] = el.checked; continue; }
+    const texto = el.value.trim();
+    if (texto === "") { if (campo.tipo !== "texto") datos[campo.nombre] = null; else datos[campo.nombre] = ""; continue; }
+    if (campo.tipo === "lista") datos[campo.nombre] = JSON.parse(texto);
+    else if (campo.tipo === "int") datos[campo.nombre] = parseInt(texto, 10);
+    else if (campo.tipo === "float" || campo.tipo === "float_opcional") datos[campo.nombre] = parseFloat(texto);
+    else datos[campo.nombre] = texto;
+  }
+  return datos;
+}
+
+async function pedir(ruta, cuerpo) {
+  const respuesta = await fetch(ruta, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+  return respuesta.json();
+}
+
+async function calcular() {
+  try {
+    const datos = await pedir("api/previsualizar", { tipo: $("tipo").value, params: valores() });
+    pintar(datos);
+  } catch (error) {
+    $("piezas").innerHTML = `<p class="vacio">Revisa los valores: ${esc(error.message)}</p>`;
+  }
+}
+
+async function calcularIdea() {
+  const datos = await pedir("api/idea", { texto: $("texto").value });
+  if (datos.error) { $("piezas").innerHTML = `<p class="vacio">${esc(datos.error)}</p>`; return; }
+  if (datos.tipo !== $("tipo").value) { $("tipo").value = datos.tipo; pintarCampos(); }
+  pintar(datos);
+}
+
+function pintar(datos) {
+  const t = datos.totales;
+  $("totales").innerHTML = `<span class="chip"><b>${esc(datos.nombre)}</b></span>
+    <span class="chip"><b>${t.unidades}</b> piezas</span>
+    <span class="chip"><b>${t.lineas}</b> líneas</span>
+    <span class="chip"><b>${t.area_m2.toFixed(2)}</b> m²</span>`;
+
+  const filas = datos.piezas.map((p) => {
+    const cantos = Object.keys(p.cantos);
+    const material = cantos.length ? Object.values(p.cantos)[0] : "";
+    const meca = p.mecanizado ? ` · ${p.mecanizado.barrenos.length} barrenos, ${p.mecanizado.ranuras.length} ranuras` : "";
+    const terminado = (p.largo_terminado !== p.largo || p.ancho_terminado !== p.ancho)
+      ? `${p.largo_terminado.toFixed(1)} x ${p.ancho_terminado.toFixed(1)}`
+      : "—";
+    return `<tr>
+      <td class="num">${p.cantidad}</td>
+      <td class="num">${p.largo.toFixed(1)}</td>
+      <td class="num">${p.ancho.toFixed(1)}</td>
+      <td class="num">${p.espesor}</td>
+      <td class="num">${esc(terminado)}</td>
+      <td>${cantos.length}${cantos.length ? " · " + esc(cantos.join(", ")) : ""}<br><span class="vacio">${esc(material)}</span></td>
+      <td>${esc(p.material)}</td>
+      <td>${esc(p.funcion)}${esc(meca)}</td>
+    </tr>`;
+  }).join("");
+  $("piezas").innerHTML = `<table>
+    <thead><tr><th>Cant</th><th>Largo</th><th>Ancho</th><th>Esp</th><th>Terminado</th><th>Cantos</th><th>Material</th><th>Función</th></tr></thead>
+    <tbody>${filas}</tbody></table>`;
+
+  $("accesorios").innerHTML = datos.accesorios.length
+    ? `<ul>${datos.accesorios.map((a) => `<li>${esc(a.nombre)}${a.cantidad ? ` × ${a.cantidad}` : ""}${a.nota ? ` — ${esc(a.nota)}` : ""}</li>`).join("")}</ul>`
+    : `<p class="vacio">Sin accesorios.</p>`;
+  $("notas").innerHTML = datos.notas.length ? `<ul>${datos.notas.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : "";
+
+  const h = datos.hallazgos;
+  const lista = h.detalle.length
+    ? `<ul>${h.detalle.map((d) => `<li class="${d.nivel}"><b>${d.nivel}</b> · ${esc(d.pieza)}: ${esc(d.mensaje)}</li>`).join("")}</ul>`
+    : `<p class="vacio">Sin hallazgos: el módulo respeta el perfil.</p>`;
+  $("perfil").innerHTML = `<p class="vacio">Perfil <b>${esc(datos.perfil)}</b> — mínimo de corte ${perfil.pieza_min_corte} mm (recomendado ${perfil.pieza_min_recomendada}), pieza máxima ${perfil.pieza_max.join(" x ")}, tablero ${perfil.tablero.join(" x ")}.</p>
+    <div class="hallazgos">${lista}</div>`;
+}
+
+$("calcular").onclick = calcular;
+$("calcular-idea").onclick = calcularIdea;
+cargar();
+</script>
+</body>
+</html>

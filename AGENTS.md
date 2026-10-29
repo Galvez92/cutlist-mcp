@@ -9,14 +9,43 @@
 7. Al terminar cada corrida agrega una entrada en `docs/memoria/bitacora/AAAA-MM-DD.md` (rama, qué hiciste, pruebas, pendientes).
 8. Incluye pruebas para todo lo que agregues.
 
-## Entorno local (Base44)
+## Entorno de desarrollo del sandbox (Base44) / Dev environment
 
-- El motor (`src/`) es TypeScript **sin dependencias de ejecución**. Las de desarrollo (`typescript`, `tsx`, `vitest`, `pdf-lib` para validar el PDF en las pruebas) están en `package.json` y las instala el contenedor al arrancar.
-- Levantar: `docker compose -f docker-compose.base44.yml up -d` (servicio `web`, puerto 3000). El servicio corre `npm install` y luego `tsx tools/preview/server.ts`.
-- `node_modules` es un volumen Docker, no un directorio del repo. El código se monta por bind mount, así que los cambios se aplican sin reconstruir la imagen.
-- Pruebas y tipos (dentro del contenedor, nunca en el host):
-  - `docker compose -f docker-compose.base44.yml exec -T web npm test`
-  - `docker compose -f docker-compose.base44.yml exec -T web npm run typecheck`
-- `http://localhost:3000` sirve `tools/preview/server.ts`: una vista de desarrollo que ejecuta el motor sobre un pedido de EJEMPLO (`/`, `/health`, `/layout.svg`, `/layout.pdf`, `/layout.json`). No es la demo web final (esa va en su rama); sirve para ver y verificar el motor.
-- El kerf no tiene valor por defecto: si no se pasa en la petición, es 0. La memoria no documenta el kerf de ninguna máquina.
-- `tests/fixtures/cortecloud/` son datos reales de un pedido. Lo que no está verificado contra una fuente pública se marca `por revisar` (ver el perfil en `src/profiles.ts`).
+- Arrancar: `docker compose -f docker-compose.base44.yml up -d` (un solo servicio `web`;
+  Vite queda en el puerto público 3000). Parar: `... down` (sin `-v`, no borres volúmenes).
+- El compose monta el repo en `/app` y ejecuta `npm install` al arrancar (npm workspaces en la
+  raíz: `demo`). No se usa imagen preconstruida, así que las ediciones del código se ven con
+  recarga en vivo; no hace falta rehacer imágenes.
+- Pruebas: `docker compose -f docker-compose.base44.yml exec -T web npm test`
+  (Vitest; la suite cubre el motor en `tests/`, los módulos paramétricos en `tests/test_*` y
+  la demo en `demo/tests/`).
+- Node: `jsdom` 30.1.3 arrastra `undici` 8.12.3, que exige Node ≥ 22.19; con Node 20 los
+  workers de jsdom (`demo/tests/app/*.test.js`) no arrancan
+  (`TypeError: Cannot read properties of undefined (reading 'bind')` en
+  `undici/lib/interceptor/decompress.js`). `package.json` declara el mismo rango que jsdom
+  (`^22.22.2 || ^24.15.0 || >=26.0.0`), `.nvmrc` fija `22.23.4` y
+  `.github/workflows/ci.yml` lo usa (`node-version-file: .nvmrc`) para correr `npm ci`,
+  `npm test` y `npm run typecheck`. La imagen `node:22-bookworm-slim` del compose sigue la
+  línea 22 LTS, así que también cumple; si actualizas jsdom, revisa estos tres valores.
+- Hosts y orígenes: el compose pasa `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.${BASE44_SANDBOX_HOST_DOMAIN}`
+  (Vite ≥ 6.1 lo agrega a `allowedHosts`); sin efecto cuando la variable no está definida.
+  No hay hosts fijos en el código ni overrides condicionados a `BASE44_PREVIEW_MODE`: no hizo
+  falta tocar configuración compartida para el sandbox.
+- Motor: `src/` (TypeScript, rama `optimizer-engine`, PR #4). Alias `@engine` → `src/`
+  declarado en `demo/aliases.js` (lo comparten Vite y el `vitest.config.ts` de la raíz).
+  El motor no tiene dependencias de ejecución; el PDF se genera con un escritor propio
+  (`src/render/pdf-writer.ts`). `pdf-lib` es solo para los tests del motor.
+- Módulos paramétricos: `src/modules/` (rama `parametric-modules`). Generadores de cajonera,
+  clóset, cocina y librero (`Pieza`, `Modulo`, `PerfilRestricciones`), intérprete de ideas
+  escritas (`spec.ts`) y puente al motor (`Pieza.toPartInput()`,
+  `PerfilRestricciones.toConstraintProfile()`). Vista previa de desarrollo opcional en
+  `tools/preview/` (`npm run preview`; vista del motor con pedido de ejemplo en `npm run preview:motor`, `tools/preview/motor.ts`). Ver `docs/modulos-parametricos.md`.
+- Demo: `demo/` (Vite, DOM nativo). Adaptadores del demo en `demo/src/engine/`:
+  `cortecloud.js` (importador, no incluido en el motor), `csv.js` (exportación CSV,
+  no incluida en el motor), `adapt.js` (conversión estado→motor), `constants.js`
+  (MODES, DEFAULT_KERF).
+- Datos reales: el fixture de Cortecloud se importa directo desde `tests/fixtures/` (sin
+  copias). Lo no verificado está en `docs/por-revisar.md` y `docs/modulos-parametricos.md`
+  con su fuente.
+- Si otra rama agrega un paquete al monorepo, decláralo en `workspaces` de la raíz y añade el
+  servicio correspondiente a `docker-compose.base44.yml` con sus etiquetas `base44.*`.
