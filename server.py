@@ -3,6 +3,7 @@
 
 Rutas:
   GET  /                   página de vista previa
+  GET  /favicon.svg        icono de la página (también en /favicon.ico)
   GET  /api/health         {"status": "ok"}
   GET  /api/demo           optimiza el fixture real de Cortecloud y devuelve
                            JSON con los tableros, el aprovechamiento y el SVG
@@ -32,6 +33,7 @@ from cutlist.svg import render_svg
 
 ROOT = Path(__file__).resolve().parent
 INDEX = ROOT / "web" / "index.html"
+FAVICON = ROOT / "web" / "favicon.svg"
 MAX_SHEETS = 30
 MAX_BODY = 512_000
 
@@ -96,6 +98,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, "text/html; charset=utf-8", INDEX.read_bytes())
             except FileNotFoundError:
                 self._send(500, "text/plain; charset=utf-8", b"falta web/index.html")
+        elif path in ("/favicon.ico", "/favicon.svg"):
+            try:
+                self._send(200, "image/svg+xml", FAVICON.read_bytes())
+            except FileNotFoundError:
+                self._send(404, "text/plain; charset=utf-8", b"sin favicon")
         elif path == "/api/health":
             self._json({"status": "ok"})
         elif path == "/api/demo":

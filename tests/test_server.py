@@ -38,7 +38,13 @@ class ServerTest(unittest.TestCase):
         status, body = self._get("/")
         self.assertEqual(status, 200)
         self.assertIn("cutlist-mcp", body)
-        self.assertIn("algorithm", body)
+        self.assertIn('rel="icon"', body)
+
+    def test_favicon(self):
+        for path in ("/favicon.svg", "/favicon.ico"):
+            status, body = self._get(path)
+            self.assertEqual(status, 200, path)
+            self.assertIn("<svg", body)
 
     def test_demo_devuelve_metricas_y_svg(self):
         status, body = self._get("/api/demo?algorithm=guillotine")
