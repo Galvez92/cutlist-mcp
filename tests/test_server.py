@@ -40,6 +40,20 @@ class ServerTest(unittest.TestCase):
         self.assertIn("cutlist-mcp", body)
         self.assertIn('rel="icon"', body)
 
+    def test_pagina_tiene_editor_de_stocks(self):
+        status, body = self._get("/")
+        self.assertEqual(status, 200)
+        for marker in (
+            'id="stocks"',
+            'id="add-stock"',
+            'id="reset-stocks"',
+            "Agregar stock",
+            "readStocks()",
+            "stocks,",
+        ):
+            self.assertIn(marker, body)
+        self.assertIn("2500", body)  # stock por defecto: 2500 × 1830 × 18, kerf 4
+
     def test_favicon(self):
         for path in ("/favicon.svg", "/favicon.ico"):
             status, body = self._get(path)

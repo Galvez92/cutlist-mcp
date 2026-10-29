@@ -64,6 +64,25 @@
     cursor: pointer;
   }
   button:disabled { opacity: .6; cursor: progress; }
+  button.ghost { background: #fff; color: #0f172a; border-color: #cbd5e1; }
+  .stocks { margin-top: 16px; }
+  .stocks h2 { margin: 0 0 4px; font-size: 15px; }
+  .stocks p { margin: 0 0 10px; font-size: 13px; color: #475569; line-height: 1.5; }
+  #stocks { display: grid; gap: 10px; margin-bottom: 12px; }
+  .stock {
+    display: grid; gap: 8px; align-items: end;
+    grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+    padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc;
+  }
+  .stock label {
+    display: grid; gap: 4px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .04em; color: #64748b;
+  }
+  .stock input {
+    width: 100%; font: inherit; font-size: 13px; padding: 6px 8px;
+    border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a;
+  }
+  .stock button { padding: 6px 10px; background: #fff; color: #b91c1c; border-color: #fecaca; }
 </style>
 </head>
 <body>
@@ -94,11 +113,27 @@
     <h2>Probar con tu propio CSV</h2>
     <p>
       Formato propio de cutlist-mcp, aún <em>por revisar</em>: columnas
-      <code>ancho, alto, cantidad, veta, etiqueta</code> en milímetros
+      <code>ancho, alto, cantidad, veta, etiqueta, material</code> en milímetros
       (también se aceptan <code>width</code>, <code>height</code>, <code>qty</code>,
-      <code>label</code>). Tablero fijo de 2500 × 1830 × 18 mm, kerf 4 mm.
+      <code>label</code>, <code>stock</code>). Las piezas se cortan de los stocks de abajo.
     </p>
     <textarea id="csv" spellcheck="false" aria-label="Piezas en CSV"></textarea>
+
+    <div class="stocks">
+      <h2>Stocks (tableros)</h2>
+      <p>
+        Cada pieza se corta del stock de su <code>material</code> (columna opcional
+        del CSV). Un stock sin material es comodín: acepta cualquier pieza. Puedes
+        repetir un mismo material con medidas distintas y el optimizador usa los
+        stocks en el orden de esta lista.
+      </p>
+      <div id="stocks"></div>
+      <div class="controls">
+        <button id="add-stock" type="button" class="ghost">Agregar stock</button>
+        <button id="reset-stocks" type="button" class="ghost">Restablecer</button>
+      </div>
+    </div>
+
     <div class="controls" style="margin-top: 10px;">
       <button id="run" type="button">Optimizar CSV</button>
       <span id="csv-status"></span>
@@ -175,6 +210,117 @@
     return data;
   }
 
+  /* Editor de stocks: catálogo de tableros por material que usa el optimizador. */
+  const stockList = document.getElementById("stocks");
+  const STOCK_STORAGE = "cutlist.stocks.v1";
+  const DEFAULT_STOCK = { material: "", width: "2500", height: "1830", thickness: "18", kerf: "4" };
+  const STOCK_FIELDS = [
+    ["material", "Material", "comodín"],
+    ["width", "Ancho mm", ""],
+    ["height", "Alto mm", ""],
+    ["thickness", "Espesor mm", ""],
+    ["kerf", "Kerf mm", ""],
+  ];
+
+  function addStockRow(stock = {}) {
+    const values = { ...DEFAULT_STOCK, ...stock };
+    const row = document.createElement("div");
+    row.className = "stock";
+    for (const [field, label, placeholder] of STOCK_FIELDS) {
+      const cell = document.createElement("label");
+      cell.textContent = label;
+      const input = document.createElement("input");
+      input.type = field === "material" ? "text" : "number";
+      if (field === "kerf") input.min = "0";
+      if (field === "width" || field === "height" || field === "thickness") input.min = "0.1";
+      if (field !== "material") input.step = "any";
+      input.placeholder = placeholder;
+      input.value = values[field] ?? "";
+      input.dataset.field = field;
+      cell.append(input);
+      row.append(cell);
+    }
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Quitar";
+    remove.addEventListener("click", () => {
+      row.remove();
+      saveStocks();
+    });
+    row.append(remove);
+    row.addEventListener("input", saveStocks);
+    stockList.append(row);
+    return row;
+  }
+
+  function collectStocks() {
+    return [...stockList.querySelectorAll(".stock")].map((row) => {
+      const values = {};
+      for (const input of row.querySelectorAll("input[data-field]")) {
+        values[input.dataset.field] = input.value.trim();
+      }
+      return values;
+    });
+  }
+
+  function readStocks() {
+    const rows = collectStocks();
+    if (!rows.length) throw new Error("agrega al menos un stock para optimizar");
+    return rows.map((row, index) => {
+      const name = row.material ? `«${row.material}»` : `stock ${index + 1}`;
+      const measure = (field, label, allowZero = false) => {
+        const text = String(row[field] ?? "").replace(",", ".");
+        const value = Number(text);
+        const valid = text && Number.isFinite(value) && (allowZero ? value >= 0 : value > 0);
+        if (!valid) {
+          throw new Error(
+            `${name}: ${label} debe ser un número ${allowZero ? "igual o mayor a 0" : "mayor a 0"}`
+          );
+        }
+        return value;
+      };
+      return {
+        material: row.material || "",
+        width: measure("width", "ancho"),
+        height: measure("height", "alto"),
+        thickness: measure("thickness", "espesor"),
+        kerf: measure("kerf", "kerf", true),
+      };
+    });
+  }
+
+  function saveStocks() {
+    try {
+      localStorage.setItem(STOCK_STORAGE, JSON.stringify(collectStocks()));
+    } catch (error) {
+      /* sin almacenamiento: la lista sigue en pantalla */
+    }
+  }
+
+  function renderStockList(stocks) {
+    stockList.replaceChildren();
+    (stocks.length ? stocks : [DEFAULT_STOCK]).forEach((stock) => addStockRow(stock));
+  }
+
+  function loadStocks() {
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(STOCK_STORAGE) || "null");
+    } catch (error) {
+      saved = null;
+    }
+    renderStockList(Array.isArray(saved) ? saved : []);
+  }
+
+  document.getElementById("add-stock").addEventListener("click", () => {
+    addStockRow().querySelector("input").focus();
+    saveStocks();
+  });
+  document.getElementById("reset-stocks").addEventListener("click", () => {
+    renderStockList([DEFAULT_STOCK]);
+    saveStocks();
+  });
+
   async function load() {
     status.textContent = "optimizando…";
     try {
@@ -196,17 +342,19 @@
     button.disabled = true;
     csvStatus.textContent = "optimizando…";
     try {
+      const stocks = readStocks();
       const data = await request("/api/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           csv: document.getElementById("csv").value,
           algorithm: select.value,
+          stocks,
         }),
       });
       render(data);
       status.textContent =
-        `${data.algorithm} · tu CSV · ${data.sheet.width}×${data.sheet.height}×${data.sheet.thickness} mm, kerf ${data.sheet.kerf} mm`;
+        `${data.algorithm} · tu CSV · ${data.sheets_used} tablero(s) de ${stocks.length} stock(s)`;
       csvStatus.textContent = "listo";
     } catch (error) {
       csvStatus.textContent = `error: ${error.message}`;
@@ -217,6 +365,7 @@
 
   document.getElementById("run").addEventListener("click", runCsv);
   select.addEventListener("change", load);
+  loadStocks();
   load();
   fetch("/api/example")
     .then((response) => response.json())
