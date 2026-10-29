@@ -1,18 +1,67 @@
 /**
- * cutlist-mcp · módulos paramétricos (TypeScript).
+ * cutlist-mcp · motor de optimización de corte de tableros + módulos paramétricos.
  *
- * API pública: tipos del motor de optimización (`src/types.ts`), utilidades
- * geométricas, piezas/cantos/veta, perfiles de restricciones, generadores de
- * módulos (cajonera, clóset, cocina, librero) e intérprete de ideas escritas.
+ * API pública: tipos, `optimize`, lista de corte, etiquetas, perfiles de
+ * restricciones y salidas SVG/PDF (motor de `optimizer-engine`, PR #4), más la
+ * capa de módulos paramétricos (cajonera, clóset, cocina, librero) y su puente
+ * al motor.
  *
  * La pieza paramétrica se bridgea al motor con `Pieza.toPartInput()`/
  * `Pieza.toPart()` y el perfil con `PerfilRestricciones.toConstraintProfile()`.
  */
 
+// ── Motor de optimización (optimizer-engine) ────────────────────────────────
 export * from "./types.js";
 export { OptimizeError } from "./errors.js";
-export { EPS, formatMm, formatPct, edgeSummary, emptyEdges, finishedDimensions } from "./geometry.js";
+export {
+  EDGE_SIDE_NAMES,
+  EPS,
+  edgeSummary,
+  emptyEdges,
+  finishedDimensions,
+  formatMm,
+  formatPct,
+  grainInSheet,
+  hasBanding,
+  isCompatibleGrain,
+  isRotatable,
+  sheetSideOfPartEdge,
+} from "./geometry.js";
+export { optimize, compareAttempts } from "./optimize.js";
+export { buildCutList, formatCutListText } from "./cutlist.js";
+export { buildLabels, labelForPlacement } from "./labels.js";
+export {
+  CORTECLOUD_MADIJAL_PROFILE,
+  PROFILES,
+  sheetsFromProfile,
+  validateParts,
+} from "./profiles.js";
+export { guillotineAlgorithm } from "./optimizer/guillotine.js";
+export { maxRectsAlgorithm } from "./optimizer/maxrects.js";
+export {
+  insetRect,
+  rectArea,
+  rectContains,
+  rectsIntersect,
+} from "./optimizer/rect.js";
+export type { Rect } from "./optimizer/rect.js";
+export type {
+  Fit,
+  PackContext,
+  PackItem,
+  SheetAlgorithm,
+} from "./optimizer/algorithm.js";
+export { ORDERINGS, orderingByName, sortItems } from "./optimizer/order.js";
+export type { Ordering } from "./optimizer/order.js";
+export { buildJobs, packJob } from "./optimizer/pack.js";
+export type { Job, JobItem, PackJobOptions } from "./optimizer/pack.js";
+export { normalizeParts, normalizeSheets } from "./optimizer/normalize.js";
+export { renderLayoutSvg, renderSheetSvg } from "./render/svg.js";
+export type { SvgRenderOptions } from "./render/svg.js";
+export { renderLayoutPdf } from "./render/pdf.js";
+export type { PdfRenderOptions } from "./render/pdf.js";
 
+// ── Módulos paramétricos (parametric-modules) ───────────────────────────────
 export {
   CANTO_ESPESOR_DEFAULT,
   ESPESOR_DEFAULT,
@@ -48,9 +97,11 @@ export { Accesorio, Modulo } from "./modules/modulo.js";
 export {
   MODULOS,
   ALIAS,
+  CAJON,
   CAJONERA,
   CLOSET,
   COCINA,
+  ESCRITORIO,
   LIBRERO,
   ModuloRegistrado,
   construirParams,
@@ -59,6 +110,10 @@ export {
 } from "./modules/index.js";
 export type { CampoParam, CampoUi, TipoCampo } from "./modules/index.js";
 
+export { generar as generarCajon } from "./modules/cajon.js";
+export type { ParamsCajon } from "./modules/cajon.js";
+export { generar as generarEscritorio } from "./modules/escritorio.js";
+export type { ParamsEscritorio } from "./modules/escritorio.js";
 export { generar as generarCajonera } from "./modules/cajonera.js";
 export type { ParamsCajonera } from "./modules/cajonera.js";
 export { generar as generarCloset } from "./modules/closet.js";

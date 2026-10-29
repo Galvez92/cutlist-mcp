@@ -1,56 +1,83 @@
-# Entorno de desarrollo de cutlist-mcp (Base44).
+# Entorno de desarrollo Base44 para cutlist-mcp.
 #
-# Esta rama entrega la capa de módulos paramétricos en TypeScript, que es una
-# biblioteca. Para que el entorno tenga un punto de entrada visible en el puerto
-# 3000, `web` sirve una vista previa de desarrollo con el servidor de
-# `tools/preview/server.ts` (Node + tsx, sin framework).
+# Levanta la demo web (Vite) desde el código clonado del repo, no desde una imagen
+# preconstruida: el repo se monta en /app y las dependencias se instalan al arrancar
+# (`npm install` en la raíz del monorepo, con el lockfile versionado).
 #
-# Ambos servicios montan el repositorio y no construyen imagen: cualquier edición
-# del código se ve al instante, sin rebuild. `tsx watch` recarga el servidor al
-# cambiar archivos; si no refresca, `docker compose restart web`.
-
-name: cutlist-mcp
-
+#   docker compose -f docker-compose.base44.yml up -d
+#   docker compose -f docker-compose.base44.yml exec -T web npm test
+#
 services:
   web:
-    image: node:22-slim
+    # Imagen de runtime (no la imagen publicada del proyecto) para que cada edición
+    # del código se vea con recarga en vivo.
+    image: node:22-bookworm-slim
     working_dir: /app
     command:
       - sh
       - -ec
-      - npm install --no-audit --no-fund && exec ./node_modules/.bin/tsx watch tools/preview/server.ts
+      - |
+        npm install --no-audit --no-fund --prefer-offline
+        exec npm run dev
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    environment:
+      - BASE44_PREVIEW_MODE
+      # Vite 6.1+ acepta hosts extra de este variable (el subdominio del sandbox rota).
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.${BASE44_SANDBOX_HOST_DOMAIN}
+    ports:
+      - "3000:5173" # única entrada pública: el servidor de desarrollo de Vite
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"fetch('http://127.0.0.1:5173/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    restart: on-failure
+    labels:
+      - base44.project=Demo web (optimizador de corte)
+      - base44.kind=web
+      - base44.port=3000
+
+  # Servidor MCP (rama mcp-server): / informativa y /mcp por Streamable HTTP, puerto público 3001.
+  mcp:
+    image: node:22
+    working_dir: /app
+    command: ["sh", "-ec", "npm install --no-audit --no-fund --prefer-offline && exec npm run dev:http"]
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "3001:3000"
     environment:
       - PORT=3000
       - HOST=0.0.0.0
-    volumes:
-      - ./:/app
-    ports:
-      - "3000:3000"
+      # El preview del sandbox llega con otro Host/Origin; el servidor sólo los
+      # acepta cuando BASE44_PREVIEW_MODE vale exactamente "1" (ver src/http.ts).
+      - BASE44_PREVIEW_MODE
+      - BASE44_PUBLIC_HOST_SUFFIX
+      - BASE44_SANDBOX_HOST_DOMAIN
     restart: on-failure
-    labels:
-      base44.project: "cutlist-mcp (vista previa de módulos paramétricos)"
-      base44.kind: web
-      base44.port: "3000"
     healthcheck:
-      # Usa una ruta que ya existe (no se agregan endpoints para el chequeo).
       test:
-        - CMD
-        - node
-        - -e
-        - "const h=require('http');const r=h.get('http://127.0.0.1:3000/api/modulos',s=>{process.exit(s.statusCode===200?0:1)}).on('error',()=>process.exit(1));"
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
       interval: 15s
       timeout: 5s
-      start_period: 20s
-      retries: 3
+      retries: 5
+      start_period: 90s
+    labels:
+      base44.project: "cutlist-mcp (servidor MCP)"
+      base44.kind: "api"
+      base44.port: "3001"
+      base44.docs: "/"
 
-  tests:
-    # Servicio de una sola corrida: vitest sobre el código montado.
-    #   docker compose -f docker-compose.base44.yml --profile tests run --rm tests
-    image: node:22-slim
-    working_dir: /app
-    command: ["sh", "-ec", "npm install --no-audit --no-fund && exec ./node_modules/.bin/vitest run"]
-    environment:
-      - CI=true
-    volumes:
-      - ./:/app
-    profiles: ["tests"]
+volumes:
+  node_modules:

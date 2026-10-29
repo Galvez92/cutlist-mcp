@@ -151,13 +151,33 @@ tarea `demo-web-docs`). El servidor corre con `tsx watch`, que recarga el códig
 al editar; si no refresca, reinícialo con
 `docker compose -f docker-compose.base44.yml restart web`.
 
+## Integración con la demo web
+
+La rama `demo-web-docs` integra esta capa en la demo (Vite, DOM nativo):
+
+- Un panel **Módulos paramétricos** (`demo/src/ui/modules-panel.js`) lista los tipos
+  (`MODULOS`) y redibuja los campos desde el registro del motor, así que añadir un
+  parámetro al registro lo expone solo en la UI.
+- Al pulsar *Generar piezas del módulo* se llama a `generarModulo(tipo, valores)` y las
+  `Pieza` se bridgean al optimizador con `Pieza.toPartInput()` (`demo/src/engine/modules.js`):
+  `width = ancho`, `height = largo`, veta → `grain`, cantos → `edges`. El reparto de
+  aristas a lados absolutos del motor sigue **por revisar**.
+- El tablero de stock pasa al recomendado por el perfil (2500×1830×18 mm) y el layout se
+  recalcula en vivo, con los hallazgos del perfil como avisos.
+- El ejemplo por omisión de la demo sigue siendo el **escritorio compacto** real (fixture de
+  Cortecloud, `tests/fixtures/cortecloud/escritorio_D_simple.json`), cargado con el botón
+  *Escritorio compacto (fixture)* del panel de piezas.
+
+Pruebas: `demo/tests/app/modules-panel.test.js` (jsdom) cubre generar cajonera y clóset,
+el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio compacto.
+
 ## Pendientes
 
 - Verificar el mapeo de cantos contra el formato de Cortecloud (ver arriba).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
 - Resolver la ranura de trasera (hoy la trasera va clavada al dorso, sin ranura).
-- Conectar con el optimizador (rama `optimizer-engine`) y el servidor MCP
-  (rama `mcp-server`).
+- Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la
+  demo web ya está resuelta en la rama `demo-web-docs`.
 
 ## English summary
 
