@@ -22,4 +22,9 @@ Generadores paramétricos de cajonera, clóset, cocina y librero a partir de med
 - **Ranura de trasera** (`common.ts`, `encajeTrasera()`): clóset y cajonera encastran la trasera de 3 mm en una ranura de 5.7 × 9 mm a 15 mm del borde del dorso (`trasera_ranura`, `ranura_ancho`, `ranura_profundidad`, `ranura_distancia`); la trasera crece 2 × profundidad, las repisas del clóset se recortan y el travesaño de la cajonera va por delante. Medidas `por revisar` con el taller. Suite en `tests/test_trasera_ranura.test.ts`.
 - **Tabla de pesos de tiradores** (`PESOS_TIRADOR_REFERENCIA` en `bisagras.ts`): 96 mm SKU 103910 y 128 mm SKU 103911/103916, todos 0.09 kg según sus fichas.
 - **Lista de verificación del lado físico** (`docs/verificacion-lados-piezas.md`): una fila por pieza de los seis módulos, con el canto marcado, el lado esperado y casilla para el taller.
+- **Pieza máxima girada** (`validateParts` en `src/profiles.ts` y `src/engine/profiles.ts`): el
+  puente al motor comparaba eje por eje y el demo marcaba `pieza-sobre-maximo` en piezas que
+  caben giradas (costado de 600 × 2400 mm del clóset, lateral de 300 × 2000 mm del librero).
+  Ahora compara lado mayor contra 2480 y menor contra 1810, igual que `cabe()` y
+  `validarConPerfil`. Suites: `tests/profiles.test.ts`.
 - Pendiente: confirmar el lado físico de cada canto y las medidas de la ranura con el taller, y enlazar con las ramas `optimizer-engine` y `mcp-server`.

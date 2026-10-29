@@ -180,6 +180,14 @@ const perfilTaller = PERFIL_CORTECLOUD_MADIJAL.con({ piezaMinCorte: 80.0 });
 const hallazgos = validar(modulo.resumen(), perfilTaller);
 ```
 
+La pieza máxima se compara **girada**: el lado mayor contra 2480 mm y el menor
+contra 1810 mm, porque es un límite de hoja/máquina y no de orientación. Así un
+costado de 600 × 2400 mm del clóset o un lateral de 300 × 2000 mm del librero no
+generan hallazgo, y solo es error cuando ninguna orientación cabe (p. ej.
+1900 × 2400 mm). El puente al motor (`validateParts` en `src/profiles.ts`) aplica
+la misma comparación; antes exigía `width` ≤ 2480 **y** `height` ≤ 1810, y el demo
+marcaba `pieza-sobre-maximo` en piezas que sí caben giradas.
+
 Reglas y niveles: `error` (no fabricable en ese perfil) y `aviso` (revisar). El
 perfil no cambia las medidas generadas: solo informa. La luz máxima entre apoyos
 de una repisa (`luz_max_repisa_aviso`) viene **desactivada**: no hay fuente
