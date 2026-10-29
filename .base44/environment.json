@@ -1,8 +1,6 @@
 {
   "previewPort": 3000,
-  "healthPath": "/health",
+  "healthPath": "/",
   "startCommand": "docker compose -f docker-compose.base44.yml up -d",
-  "project": "cutlist-mcp",
-  "notes": "Importadores/exportadores de formatos de corte en TypeScript (sobre los tipos del motor de la rama optimizer-engine). El servicio `web` (node:22) instala las dependencias de desarrollo al arrancar y sirve la documentación en el puerto 3000 (tools/preview/server.ts). Pruebas y tipos: docker compose -f docker-compose.base44.yml exec -T web npm test | npm run typecheck. Sin secretos ni variables externas.",
   "secrets": []
 }
