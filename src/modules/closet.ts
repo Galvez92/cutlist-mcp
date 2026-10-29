@@ -58,7 +58,7 @@ export const CAMPOS: Record<string, string> = {
   repisas_moviles: "Perforar los costados para soportes de repisa (Ø5)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
-  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador — por revisar",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)",
   trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
   juego: "Holgura entre puertas (mm); el revelado mínimo de la bisagra pide 2.6",
   traslape_corredera: "Traslape entre puertas correderas (mm) — por revisar",

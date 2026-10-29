@@ -57,7 +57,7 @@ export const CAMPOS: Record<string, string> = {
   cajones: "Cantidad de cajones (0 si lleva puertas)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
-  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador — por revisar",  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)",  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
   juego: "Holgura entre puertas o frentes (mm) — por revisar",
   juego_corredera: "Juego lateral total de la corredera (mm) — por revisar",
   margen_alto_cajon: "Diferencia de alto entre frente y caja del cajón (mm) — por revisar",

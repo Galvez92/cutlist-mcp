@@ -4,8 +4,9 @@
  * Blum (*CLIP top BLUMOTION: Number of hinges*, https://ea.blum.com/en/number-of-hinges/)
  * pide contar la puerta **con sus tiradores**: 2 bisagras de 4 a 6 kg y 3 de 6 a 12 kg.
  * El peso de un tirador sale de una ficha de producto real (tirador recto de acero
- * inoxidable de 96 mm, 0.09 kg, https://www.promart.pe/tirador-recto-acero-inox-96mm/p);
- * es un valor de referencia y queda `por revisar` contra el tirador elegido.
+ * inoxidable de 96 mm, 0.09 kg, SKU 103910, ficha verificada el 2026-10-29,
+ * https://www.promart.pe/tirador-recto-acero-inox-96mm/p); es un valor de
+ * referencia: el taller debe pasar el peso del tirador elegido.
  */
 
 import { describe, expect, it } from "vitest";

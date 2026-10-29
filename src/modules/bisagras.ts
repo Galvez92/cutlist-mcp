@@ -25,9 +25,9 @@
  *   la distancia de barrenado de 3–8 mm), barrenos Ø8 mm y tabla de revelado
  *   mínimo (puerta de 18 mm con barrenado de 3 mm: 1.3 mm).
  *   https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf
- * - Promart, ficha del *Tirador de acero inoxidable Orient recto 96 mm*: peso
- *   del producto 0.09 kg. Sirve como peso de referencia de un tirador; el peso
- *   real depende del modelo elegido.
+ * - Promart, ficha del *Tirador de acero inoxidable Orient recto 96 mm pulido*
+ *   (SKU 103910): «Peso Del Producto 0.09 kg», consultada el 2026-10-29. Es el
+ *   peso de ese tirador concreto; otro modelo cambia el valor.
  *   https://www.promart.pe/tirador-recto-acero-inox-96mm/p
  */
 
@@ -66,10 +66,12 @@ export const DENSIDAD_TABLERO = 750.0;
 
 /**
  * Peso de referencia de un tirador (kg): tirador recto de acero inoxidable de
- * 96 mm, 0.09 kg según la ficha del producto (Promart). Blum pide contar la
- * puerta **con sus tiradores** para elegir las bisagras, así que este valor
- * entra en el peso de la puerta cuando el módulo no indica otro.
- * *Por revisar*: depende del tirador elegido; el taller debe usar el peso real.
+ * 96 mm, 0.09 kg según la ficha del producto (Promart, SKU 103910, verificada el
+ * 2026-10-29). Blum pide contar la puerta **con sus tiradores** para elegir las
+ * bisagras, así que este valor entra en el peso de la puerta cuando el módulo no
+ * indica otro.
+ * Es el peso de ese tirador concreto, no una regla de fabricante: el taller debe
+ * pasar el peso del tirador elegido (y 0 si la puerta no lleva tirador).
  */
 export const PESO_TIRADOR_REFERENCIA = 0.09;
 
