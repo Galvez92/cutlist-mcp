@@ -12,6 +12,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PESOS_TIRADOR_REFERENCIA,
   PESO_TIRADOR_REFERENCIA,
   bisagrasPuerta,
   notasPesoBisagras,
@@ -29,6 +30,18 @@ function bisagra(modulo: Modulo) {
   if (!accesorio) throw new Error("el módulo no trae bisagras");
   return accesorio;
 }
+
+describe("tabla de pesos de referencia de tiradores", () => {
+  it("cubre los tiradores verificados y coincide con el valor por omisión", () => {
+    expect(PESOS_TIRADOR_REFERENCIA.map((t) => t.medidaMm)).toEqual([96.0, 128.0, 128.0]);
+    expect(PESOS_TIRADOR_REFERENCIA.map((t) => t.sku)).toEqual(["103910", "103911", "103916"]);
+    for (const tirador of PESOS_TIRADOR_REFERENCIA) {
+      expect(tirador.pesoKg, tirador.modelo).toBe(0.09);
+      expect(tirador.fuente).toMatch(/^https:\/\/www\.promart\.pe\//);
+    }
+    expect(PESOS_TIRADOR_REFERENCIA[0].pesoKg).toBe(PESO_TIRADOR_REFERENCIA);
+  });
+});
 
 describe("peso de la puerta con tirador", () => {
   it("el peso del tablero no cambia y el tirador se suma aparte", () => {

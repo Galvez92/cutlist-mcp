@@ -6,7 +6,8 @@ inventado; lo que no se puede comprobar se marca aquí y en el código (`// por 
 Fecha de esta revisión: 2026-10-27 (rama `demo-web-docs`); cantos y ejes de Cortecloud
 verificados el 2026-10-29, y bisagras del clóset y de la cocina (cantidad por alto
 y por peso, revelado y copa) el 2026-10-29; los pesos publicados de los tiradores de
-96 y 128 mm se consultaron y confirmaron el 2026-10-29 (rama `parametric-modules`).
+96 y 128 mm se consultaron y confirmaron el 2026-10-29; la ranura de la trasera y la
+lista del lado físico de las piezas se agregaron el 2026-10-29 (rama `parametric-modules`).
 
 ## Verificado con fuente
 
@@ -39,6 +40,9 @@ y por peso, revelado y copa) el 2026-10-29; los pesos publicados de los tiradore
 | Descuento de canto en el perfil | `docs/memoria/MEMORIA.md` | El mínimo se compara contra el lado terminado (lado corto − 2 × canto). Aproximación. |
 | Un `Kerf` único por corrida | decisión de diseño | El motor usa un solo kerf; no modela kerf distinto por sentido de corte. |
 | Cantidad de bisagras con puertas de más de 600 mm de ancho | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | La tabla vale hasta 600 mm de ancho por hoja (Blum suma una bisagra entre 600 y 650 mm). Sobre eso el módulo avisa y deja la cantidad a revisar con el fabricante. |
+| Ranura para la trasera: 9 mm de profundidad a 15 mm del borde del dorso | [Manual Técnico de Melamina #02](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938) | Son las medidas con que ese manual de taller ranura el fondo de un cajón de 4 mm; no son una especificación de fabricante. Se usan por omisión en `ranura_profundidad` / `ranura_distancia` del clóset y la cajonera; confirmar con el taller. |
+| Ancho de la ranura de la trasera (5.7 mm) | perfil Cortecloud/Madijal (`docs/memoria/MEMORIA.md`); el manual propone 4 mm | 5.7 mm es el menor ancho de ranura que admite ese perfil, pero para una trasera de 3 mm queda holgado. Es `ranura_ancho`, ajustable por módulo. |
+| Lado físico (frente/arriba) de cada pieza exportada | [Lista de verificación para el taller](verificacion-lados-piezas.md) (2026-10-29) | El JSON no declara en qué orientación se dibujó la pieza. La lista recorre cada pieza de los seis módulos con su canto y el lado que se espera, para que el taller la confirme. |
 | Traslape de 30 mm y juego de guía de 45 mm de las correderas | ninguna (los catálogos de correderas fijan su propio traslape y juego) | Valores de taller ajustables; hay que confirmarlos contra el sistema de correderas elegido. |
 
 ## Pendiente en otras ramas

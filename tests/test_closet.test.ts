@@ -23,7 +23,8 @@ describe("clóset · cuerpo", () => {
     expect(buscar(modulo, "Costado").cantidad).toBe(2);
     expect([buscar(modulo, "Base").largo, buscar(modulo, "Base").ancho]).toEqual([600.0, 1464.0]);
     expect(buscar(modulo, "Tapa").cantidad).toBe(1);
-    expect([buscar(modulo, "Trasera").largo, buscar(modulo, "Trasera").ancho]).toEqual([2400.0, 1500.0]);
+    // Trasera encastrada en ranura: alto y ancho interiores + 2 x 9 mm de ranura.
+    expect([buscar(modulo, "Trasera").largo, buscar(modulo, "Trasera").ancho]).toEqual([2382.0, 1482.0]);
     expect(buscar(modulo, "Trasera").espesor).toBe(3.0);
     aprox(modulo.medidas["ancho_interior"], 1464.0);
   });
@@ -32,7 +33,8 @@ describe("clóset · cuerpo", () => {
     const modulo = generar();
     const repisa = buscar(modulo, "Repisa");
     expect(repisa.cantidad).toBe(3);
-    expect([repisa.largo, repisa.ancho]).toEqual([600.0, 1464.0]);
+    // La repisa termina en la cara frontal de la trasera: 600 - (15 + 5.7).
+    expect([repisa.largo, repisa.ancho]).toEqual([579.3, 1464.0]);
     expect(repisa.cantos.porArista()).toEqual({ ancho_a: "PVC 0.4 mm" });
     expect(repisa.rol).toBe("repisa");
     expect(modulo.notas.some((n) => n.endsWith("591, 1182, 1773"))).toBe(true);
@@ -107,7 +109,10 @@ describe("clóset · barral y repisas móviles", () => {
     expect(soportes[0].cantidad).toBe(12);
 
     const sinPerforar = buscar(generar(), "Costado");
-    expect(sinPerforar.mecanizado.vacio()).toBe(true);
+    expect(sinPerforar.mecanizado.barrenos).toEqual([]);
+    expect(sinPerforar.mecanizado.ranuras.length).toBe(1); // la ranura de la trasera
+    const sinRanura = buscar(generar({ traseraRanura: false }), "Costado");
+    expect(sinRanura.mecanizado.vacio()).toBe(true);
   });
 });
 

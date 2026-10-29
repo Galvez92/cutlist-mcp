@@ -7,8 +7,9 @@
  * exterior, criterio de modulación de ARAUCO (*Cómo Diseñar y Construir
  * Correctamente una Cocina*, serie Cómo Hacer 17).
  * - Caja del cuerpo: 2 costados de ``alto x fondo``, base y tapa entre costados
- * (``ancho - 2 x espesor``), un travesaño trasero de rigidez y trasera de 3 mm
- * clavada al dorso (espesor de trasera según ARAUCO #17).
+ * (``ancho - 2 x espesor``) y un travesaño trasero de rigidez. La trasera de
+ * 3 mm va encastrada en una ranura de los cuatro lados (``trasera_ranura``;
+ * ``false`` la deja clavada al dorso); espesor de trasera según ARAUCO #17.
  * - Frentes cubrientes: la altura total se reparte en ``cajones`` frentes con
  * ``juego`` entre ellos. La caja de cada cajón se arma como el despiece real del
  * fixture `tests/fixtures/cortecloud/escritorio_D_simple.json`.
@@ -27,13 +28,17 @@ import {
   JUEGO_DEFAULT,
   MATERIAL_DEFAULT,
   MATERIAL_TRASERA_DEFAULT,
+  RANURA_TRASERA_ANCHO_DEFAULT,
+  RANURA_TRASERA_DISTANCIA_DEFAULT,
+  RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   cajon,
   elegirCorredera,
+  encajeTrasera,
   exigirPositivo,
   frentes,
   repartir,
 } from "./common.js";
-import { Cantos, Pieza, ValueError } from "./parts.js";
+import { Cantos, Mecanizado, Pieza, ValueError } from "./parts.js";
 
 export const CAMPOS: Record<string, string> = {
   ancho: "Ancho exterior, de costado a costado (mm)",
@@ -42,6 +47,11 @@ export const CAMPOS: Record<string, string> = {
   cajones: "Cantidad de cajones",
   espesor: "Espesor del tablero del cuerpo (mm)",
   trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  trasera_ranura: "Encastrar la trasera en una ranura de los cuatro lados; false = clavada al dorso",
+  ranura_ancho: "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas",
+  ranura_profundidad: "Profundidad de la ranura de la trasera en la cara interior (mm)",
+  ranura_distancia: "Distancia de la ranura desde el borde del dorso (mm)",
+
   juego: "Holgura entre frentes (mm) — por revisar",
   juego_corredera: "Juego lateral total de la corredera (mm) — por revisar",
   margen_alto_cajon: "Diferencia de alto entre frente y caja del cajón (mm) — por revisar",
@@ -62,6 +72,10 @@ export interface ParamsCajonera {
   cajones?: number;
   espesor?: number;
   traseraEspesor?: number;
+  traseraRanura?: boolean;
+  ranuraAncho?: number;
+  ranuraProfundidad?: number;
+  ranuraDistancia?: number;
   juego?: number;
   juegoCorredera?: number;
   margenAltoCajon?: number;
@@ -87,6 +101,10 @@ export const DEFAULTS_CAJONERA: Required<Omit<ParamsCajonera, "alturasFrente" | 
   cajones: 4,
   espesor: 18.0,
   traseraEspesor: 3.0,
+  traseraRanura: true,
+  ranuraAncho: RANURA_TRASERA_ANCHO_DEFAULT,
+  ranuraProfundidad: RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
+  ranuraDistancia: RANURA_TRASERA_DISTANCIA_DEFAULT,
   juego: JUEGO_DEFAULT,
   juegoCorredera: 25.0,
   margenAltoCajon: 20.0,
@@ -129,6 +147,21 @@ export function generar(params: ParamsCajonera = {}): Modulo {
   }
 
   const comun = { espesor: p.espesor, material, modulo: nombre };
+  const encaje =
+    p.traseraEspesor > 0 && p.traseraRanura
+      ? encajeTrasera({
+          anchoInterior,
+          altoInterior: p.alto - 2 * p.espesor,
+          fondo: p.fondo,
+          anchoRanura: p.ranuraAncho,
+          profundidad: p.ranuraProfundidad,
+          distancia: p.ranuraDistancia,
+        })
+      : null;
+  const ranurasTrasera = encaje ? [encaje.ranura] : [];
+  const mecanizadoCostado = new Mecanizado(ranurasTrasera);
+  const mecanizadoHorizontal = new Mecanizado(ranurasTrasera);
+  const sufijoRanura = encaje ? ", ranura para la trasera" : "";
   const piezas: Pieza[] = [
     new Pieza({
       nombre: "Costado",
@@ -137,7 +170,11 @@ export function generar(params: ParamsCajonera = {}): Modulo {
       cantidad: 2,
       rol: "costado",
       cantos: new Cantos(canto),
-      funcion: "Costado — canto en la arista frontal",
+      mecanizado: mecanizadoCostado,
+      funcion:
+        "Costado — canto en la arista frontal" +
+        sufijoRanura +
+        (encaje ? ` a ${p.ranuraDistancia.toFixed(1)} mm del borde del dorso` : ""),
       ...comun,
     }),
     new Pieza({
@@ -146,7 +183,8 @@ export function generar(params: ParamsCajonera = {}): Modulo {
       ancho: anchoInterior,
       rol: "base",
       cantos: new Cantos(undefined, undefined, canto),
-      funcion: "Base entre costados — canto en la arista frontal",
+      mecanizado: mecanizadoHorizontal,
+      funcion: "Base entre costados — canto en la arista frontal" + sufijoRanura,
       ...comun,
     }),
     new Pieza({
@@ -155,7 +193,8 @@ export function generar(params: ParamsCajonera = {}): Modulo {
       ancho: anchoInterior,
       rol: "tapa",
       cantos: new Cantos(undefined, undefined, canto),
-      funcion: "Tapa entre costados — canto en la arista frontal",
+      mecanizado: mecanizadoHorizontal,
+      funcion: "Tapa entre costados — canto en la arista frontal" + sufijoRanura,
       ...comun,
     }),
     new Pieza({
@@ -172,13 +211,15 @@ export function generar(params: ParamsCajonera = {}): Modulo {
     piezas.push(
       new Pieza({
         nombre: "Trasera",
-        largo: p.alto,
-        ancho: p.ancho,
+        largo: encaje ? Math.max(encaje.largo, encaje.ancho) : p.alto,
+        ancho: encaje ? Math.min(encaje.largo, encaje.ancho) : p.ancho,
         espesor: p.traseraEspesor,
         material: p.materialTrasera,
         rol: "trasera",
         veta: "indiferente",
-        funcion: "Trasera clavada al dorso del módulo",
+        funcion: encaje
+          ? "Trasera encastrada en la ranura de costados, base y tapa"
+          : "Trasera clavada al dorso del módulo",
         modulo: nombre,
       }),
     );
@@ -204,8 +245,21 @@ export function generar(params: ParamsCajonera = {}): Modulo {
   const notas: string[] = [
     `Frentes cubrientes: cubren el frente del módulo, con ${p.juego.toFixed(0)} mm de holgura entre ellos (por revisar).`,
     `Caja de cajón de ${anchoCaja.toFixed(0)} mm de ancho exterior (${anchoInterior.toFixed(0)} mm de interior menos ${p.juegoCorredera.toFixed(0)} mm de juego de corredera: por revisar contra el herraje).`,
-    "La trasera se clava/atornilla al dorso, sin ranura.",
   ];
+  if (p.traseraEspesor <= 0) {
+    notas.push("Módulo sin trasera: necesita muro o rigidización adicional.");
+  } else if (encaje) {
+    notas.push(
+      `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
+        `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
+        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+    );
+    notas.push(
+      "El travesaño trasero va por delante de la trasera encastrada: confirmar su retranqueo en taller.",
+    );
+  } else {
+    notas.push("La trasera se clava/atornilla al dorso, sin ranura.");
+  }
   if (!esEstandar) {
     notas.push(
       `El cajón queda de ${largoCorredera.toFixed(0)} mm de fondo: no calza ninguna corredera de 400/450/500 mm (ARAUCO #17); por revisar el catálogo del herraje.`,

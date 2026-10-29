@@ -82,6 +82,51 @@ export const DENSIDAD_TABLERO = 750.0;
  */
 export const PESO_TIRADOR_REFERENCIA = 0.09;
 
+/** Peso publicado de un tirador de referencia, con la ficha consultada. */
+export interface PesoTiradorReferencia {
+  /** Distancia de instalación entre tornillos (mm). */
+  medidaMm: number;
+  /** Modelo del catálogo. */
+  modelo: string;
+  /** SKU del producto en la ficha. */
+  sku: string;
+  /** Peso del producto según su ficha (kg). */
+  pesoKg: number;
+  /** Enlace a la ficha consultada. */
+  fuente: string;
+}
+
+/**
+ * Tabla de pesos de referencia de tiradores (kg), verificada contra las fichas
+ * de producto el 2026-10-29. Las tres fichas de Promart publican el mismo peso
+ * (0.09 kg), incluso el modelo «pesado» de 128 mm: parece un valor redondeado,
+ * así que el taller debe pesar el tirador elegido y pasar ese valor en
+ * ``peso_tirador``. El peso de 96 mm es el que usa ``PESO_TIRADOR_REFERENCIA``.
+ */
+export const PESOS_TIRADOR_REFERENCIA: readonly PesoTiradorReferencia[] = [
+  {
+    medidaMm: 96.0,
+    modelo: "Orient recto 96 mm pulido",
+    sku: "103910",
+    pesoKg: 0.09,
+    fuente: "https://www.promart.pe/tirador-recto-acero-inox-96mm/p",
+  },
+  {
+    medidaMm: 128.0,
+    modelo: "Orient recto liviano 128 mm",
+    sku: "103911",
+    pesoKg: 0.09,
+    fuente: "https://www.promart.pe/tirador-recto-acero-inoxidable-liviano-128mm/p",
+  },
+  {
+    medidaMm: 128.0,
+    modelo: "Orient recto pesado 128 mm pulido",
+    sku: "103916",
+    pesoKg: 0.09,
+    fuente: "https://www.promart.pe/tirador-recto-pesado-acero-inoxidable-128mm/p",
+  },
+];
+
 /**
  * Revelado mínimo de una puerta de 18 mm con la copa a 3 mm del borde (mm).
  * Blum CLIP top: 1.3 mm; Hettich *Sensys*: 0.6–0.8 mm según la tabla del

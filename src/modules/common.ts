@@ -17,8 +17,8 @@
  * herraje real antes de fabricar (ver `docs/modulos-parametricos.md`).
  */
 
-import { Cantos, Mecanizado, Pieza, ValueError } from "./parts.js";
-import type { Barreno } from "./parts.js";
+import { Cantos, Mecanizado, Pieza, ValueError, ranura } from "./parts.js";
+import type { Barreno, Ranura } from "./parts.js";
 
 export const MATERIAL_DEFAULT = "Melamina 18 mm";
 export const CANTO_DEFAULT = "PVC 0.4 mm";
@@ -32,6 +32,67 @@ export const PASO_BARRENOS_REPISA = 30.0;
 export const BARRENOS_POR_POSICION = 5;
 export const DIAMETRO_BARRENO_REPISA = 5.0;
 export const PROFUNDIDAD_BARRENO_REPISA = 12.0;
+
+/**
+ * Ranura (canal) para encastrar la trasera de 3 mm en los cuatro lados de la
+ * caja. Valores de partida:
+ *
+ * - **Profundidad 9 mm y distancia 15 mm desde el borde del dorso**: *Manual
+ *   Técnico de Melamina #02* (www.autodidacta.info / comohacercomohacer.com),
+ *   que ranura el fondo de un cajón «4 mm de espesor x 9 mm de profundidad» y
+ *   «del borde medimos 15 mm». Es un manual de taller, no de fabricante:
+ *   *por revisar*.
+ * - **Ancho 5.7 mm**: el menor ancho de ranura que puede ejecutar el perfil
+ *   Cortecloud/Madijal (`PerfilRestricciones.ranurasPermitidas`); el manual usa
+ *   4 mm para un panel de 4 mm, medida que ese perfil no admite. *Por revisar*
+ *   con el fresol del taller: para una trasera de 3 mm la ranura queda holgada.
+ */
+export const RANURA_TRASERA_ANCHO_DEFAULT = 5.7;
+export const RANURA_TRASERA_PROFUNDIDAD_DEFAULT = 9.0;
+export const RANURA_TRASERA_DISTANCIA_DEFAULT = 15.0;
+
+/** Ranura para la trasera y medidas de la trasera ya encastrada (mm). */
+export interface EncajeTrasera {
+  ranura: Ranura;
+  /** Largo de la trasera con los dos extremos dentro de la ranura. */
+  largo: number;
+  /** Ancho de la trasera con los dos extremos dentro de la ranura. */
+  ancho: number;
+}
+
+/**
+ * Encaje de la trasera en ranura: la trasera entra ``profundidad`` mm en cada
+ * uno de los cuatro lados de la caja, así que crece el doble de esa medida
+ * respecto del interior. La ranura se mide desde el borde del dorso.
+ */
+export function encajeTrasera(init: {
+  anchoInterior: number;
+  altoInterior: number;
+  fondo: number;
+  anchoRanura?: number;
+  profundidad?: number;
+  distancia?: number;
+}): EncajeTrasera {
+  const anchoRanura = init.anchoRanura ?? RANURA_TRASERA_ANCHO_DEFAULT;
+  const profundidad = init.profundidad ?? RANURA_TRASERA_PROFUNDIDAD_DEFAULT;
+  const distancia = init.distancia ?? RANURA_TRASERA_DISTANCIA_DEFAULT;
+  if (!(anchoRanura > 0) || !(profundidad > 0) || !(distancia > 0)) {
+    throw new ValueError(
+      "el ancho, la profundidad y la distancia de la ranura de la trasera deben ser mayores que cero",
+    );
+  }
+  if (distancia + anchoRanura >= init.fondo) {
+    throw new ValueError(
+      `la ranura de la trasera a ${distancia.toFixed(1)} mm del borde del dorso no cabe ` +
+        `en el fondo del módulo (${init.fondo.toFixed(0)} mm)`,
+    );
+  }
+  return {
+    ranura: ranura({ cara: "i", profundidad, ancho: anchoRanura, distancia }),
+    largo: init.altoInterior + 2 * profundidad,
+    ancho: init.anchoInterior + 2 * profundidad,
+  };
+}
 
 /**
  * Reparte ``total`` en ``cantidad`` tramos iguales con ``cantidad - 1`` juegos.
