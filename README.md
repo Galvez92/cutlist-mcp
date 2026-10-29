@@ -11,6 +11,36 @@ Alcance:
 3. **Servidor MCP:** para que el agente de cualquier usuario diseñe muebles a partir de medidas (módulos paramétricos: cajonera, clóset, cocina, librero → piezas → optimizar → exportar). Los generadores de módulos (medidas → piezas con cantos, con perfil de restricciones opcional) están documentados en [`docs/modulos-parametricos.md`](docs/modulos-parametricos.md).
 4. **Demo web simple**, pruebas y documentación es/en.
 
+### Formatos (rama `formatos-import-export`)
+
+| Formato | Clave | Dirección | Estado |
+|---|---|---|---|
+| Cortecloud (JSON) | `cortecloud` | importar + exportar | parcial |
+| CSV genérico (propio) | `csv_generico` | importar + exportar | verificado |
+| SketchUp / OpenCutList (CSV) | `opencutlist` | importar + exportar | parcial |
+| PolyBoard (lista de corte) | `polyboard` | sólo importar | parcial |
+| Promob (listado TXT/CSV) | `promob` | sólo importar | por revisar |
+| PRO100 (listado TXT/CSV) | `pro100` | sólo importar | por revisar |
+| DXF (ASCII R12) | `dxf` | importar + exportar | parcial |
+
+```ts
+import { importarArchivo, importar, exportar } from "./src/formats/index.js";
+
+const lista = importarArchivo("proyecto.json");          // Cortecloud (deduce por extensión)
+const lista2 = importar(texto, "promob", {
+  columnas: ["nombre", "cantidad", "largo", "ancho", "espesor"],
+});
+console.log(lista.totalPiezas, lista.areaTotalM2);
+for (const aviso of lista.porRevisar()) {                // lo no verificado, con su fuente
+  console.log(aviso.mensaje, aviso.fuente);
+}
+```
+
+Cada formato declara su estado y sus fuentes públicas; lo que no se pudo verificar
+se marca **por revisar** con enlace. Ver `docs/formatos/`.
+
+Pruebas (TypeScript, sin dependencias de ejecución): `docker compose -f docker-compose.base44.yml exec -T web npm test` (59 pruebas `vitest`), o `npx vitest run` sobre Node. Tipos: `npm run typecheck`.
+
 Licencia MIT.
 
 ## English
@@ -21,6 +51,18 @@ Scope:
 2. **Importers/exporters:** Cortecloud, Promob, generic CSV, SketchUp/OpenCutList, Polyboard, Pro100, DXF. Formats based on real public docs; unverified items are marked *por revisar* (to be verified).
 3. **MCP server:** lets any user's agent design furniture from measurements (parametric modules: drawer unit, closet, kitchen, bookcase → parts → optimize → export). The module generators (measurements → parts with edge banding, optional restriction profile) are documented in [`docs/modulos-parametricos.md`](docs/modulos-parametricos.md).
 4. **Simple web demo**, tests and es/en docs.
+
+### Formats (branch `formatos-import-export`)
+
+`src/formats/` ships importers/exporters for Cortecloud (JSON, import+export),
+our own generic CSV (import+export), SketchUp/OpenCutList CSV (import+export),
+PolyBoard, Promob and PRO100 cut lists (import only), and DXF R12 (layout export +
+rectangle reading), built on the engine types in `src/types.ts` (branch
+`optimizer-engine`). Each format declares its verification status and its public
+sources; anything that could not be verified is flagged **por revisar** (to be
+verified) with a link — see `docs/formatos/`. TypeScript, Node standard library
+only, no runtime dependencies; tests run with
+`docker compose -f docker-compose.base44.yml exec -T web npm test`.
 
 MIT licensed.
 

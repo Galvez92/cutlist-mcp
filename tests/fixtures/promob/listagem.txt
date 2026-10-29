@@ -1,0 +1,3 @@
+Costado interior izq;1;732,0;564,0;18,0;Moscato 2 C 18 mm 771L ARAUCO;D02;si;PVC 771L Moscato 0.4 x 22 mm REHAU ®;;;;
+Travesaño trasero;1;1628,0;100,0;18,0;Moscato 2 C 18 mm 771L ARAUCO;D08;nao;;;;;
+Frente cajón;2;460,0;110,0;18,0;Moscato 2 C 18 mm 771L ARAUCO;D10;nao;PVC 771L Moscato 0.4 x 22 mm REHAU ®;PVC 771L Moscato 0.4 x 22 mm REHAU ®;PVC 771L Moscato 0.4 x 22 mm REHAU ®;PVC 771L Moscato 0.4 x 22 mm REHAU ®

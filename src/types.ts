@@ -245,6 +245,8 @@ export interface ConstraintProfile {
   /** Medida de corte mínima admisible (mm). */
   minCutWidth: number;
   minCutHeight: number;
+  /** Mínimo de corte cuando la pieza lleva canto (mm). */
+  minWithEdge?: number;
   /** Largo mínimo de una pieza mecanizada (mm). */
   minMachinedLength?: number;
   /** Medida máxima de pieza (mm). */
