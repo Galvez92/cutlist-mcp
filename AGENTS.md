@@ -49,3 +49,4 @@
   con su fuente.
 - Si otra rama agrega un paquete al monorepo, decláralo en `workspaces` de la raíz y añade el
   servicio correspondiente a `docker-compose.base44.yml` con sus etiquetas `base44.*`.
+- Servidor MCP: `src/servidor.ts`, `src/http.ts` (Streamable HTTP en `/mcp`) y `src/stdio.ts`. Servicio `mcp` del compose en el puerto 3001; `npm run start:stdio` / `npm run start:http`. Sus pruebas usan `node:test` y corren con `npm run test:mcp` (incluidas en `npm test`). Las listas de `Host`/`Origin` de `src/http.ts` solo se amplían si `BASE44_PREVIEW_MODE` vale exactamente `"1"`. Ver `docs/mcp-server.md`.

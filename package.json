@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Optimizador de corte de tableros: motor TypeScript (optimizer-engine) + módulos paramétricos + demo web (Vite)",
+  "description": "Optimizador de corte de tableros: motor TypeScript + formatos + módulos paramétricos + servidor MCP + demo web (Vite)",
   "license": "MIT",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
@@ -15,13 +15,18 @@
     "dev": "npm --workspace cutlist-demo run dev",
     "build": "npm --workspace cutlist-demo run build",
     "preview": "tsx tools/preview/server.ts",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:mcp",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "preview:motor": "tsx tools/preview/motor.ts",
-    "preview:formatos": "tsx tools/preview/formatos.ts"
+    "preview:formatos": "tsx tools/preview/formatos.ts",
+    "start:stdio": "tsx src/stdio.ts",
+    "start:http": "tsx src/http.ts",
+    "dev:http": "tsx watch src/http.ts",
+    "test:mcp": "node --import tsx --test tests/modulos.test.ts tests/optimizar.test.ts tests/export.test.ts tests/servidor.test.ts tests/stdio.test.ts"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
     "@types/node": "^26.6.5",
     "jsdom": "^30.1.3",
     "pdf-lib": "^1.17.1",
@@ -29,5 +34,10 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/node": "^2.1.2",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.2.0"
   }
 }
