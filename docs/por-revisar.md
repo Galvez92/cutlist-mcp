@@ -5,8 +5,8 @@ inventado; lo que no se puede comprobar se marca aquí y en el código (`// por 
 
 Fecha de esta revisión: 2026-10-27 (rama `demo-web-docs`); cantos y ejes de Cortecloud
 verificados el 2026-10-29, y bisagras del clóset y de la cocina (cantidad por alto
-y por peso, revelado y copa) el 2026-10-29; el peso publicado del tirador de 96 mm
-se volvió a consultar y confirmar el 2026-10-29 (rama `parametric-modules`).
+y por peso, revelado y copa) el 2026-10-29; los pesos publicados de los tiradores de
+96 y 128 mm se consultaron y confirmaron el 2026-10-29 (rama `parametric-modules`).
 
 ## Verificado con fuente
 
@@ -21,6 +21,7 @@ se volvió a consultar y confirmar el 2026-10-29 (rama `parametric-modules`).
 | Bisagras por alto de puerta | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | 2/3/4/5 bisagras hasta 900/1600/2000/2400 mm de alto, para puertas de hasta 600 mm de ancho (tablero de 19 mm, 750 kg/m³). |
 | Bisagras por peso de puerta | [Blum, *CLIP top BLUMOTION: Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | 2 bisagras para 4–6 kg y 3 para 6–12 kg, con el peso de la puerta y sus tiradores; vale hasta 600 mm de ancho. El módulo calcula el peso con área × espesor × densidad (750 kg/m³, el valor que publica Hettich) más el tirador (`peso_tirador`, 0.09 kg por omisión) y toma la mayor de las dos guías; sobre 12 kg avisa y deja la cantidad a revisar. |
 | Peso del tirador de referencia (0.09 kg) | [Promart, ficha del tirador Orient recto de acero inoxidable 96 mm pulido, SKU 103910](https://www.promart.pe/tirador-recto-acero-inox-96mm/p) | «Peso Del Producto 0.09 kg», verificado el 2026-10-29. Es el peso publicado de **ese** tirador, no una regla de fabricante: los tiradores van de ~0.04 a ~0.5 kg según modelo y largo, así que el taller debe pasar el peso del tirador elegido en `peso_tirador` (y `0` si la puerta no lleva). |
+| Peso del tirador de referencia de 128 mm (0.09 kg) | [Promart, tirador recto liviano 128 mm, SKU 103911](https://www.promart.pe/tirador-recto-acero-inoxidable-liviano-128mm/p) y [tirador recto pesado 128 mm, SKU 103916](https://www.promart.pe/tirador-recto-pesado-acero-inoxidable-128mm/p) | Las dos fichas publican «Peso Del Producto 0.09 kg», verificado el 2026-10-29: el mismo valor que el tirador de 96 mm y también para el modelo «pesado», señal de un peso redondeado. El taller debe pesar el tirador elegido. |
 | Revelado mínimo y copa de la bisagra | [Blum, guía rápida](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf), [Blum CLIP top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf), [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | Puerta de 18 mm con la copa a 3 mm del borde: revelado mínimo 1.3 mm (Blum) / 0.6–0.8 mm (Hettich); entre dos puertas, ≥ 2 × el revelado. Copa Ø35 mm, distancia de copa 3–8 mm, espesor de puerta 15–24 mm. |
 
 ## Por revisar (sin documentación pública encontrada)

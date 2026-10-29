@@ -29,6 +29,13 @@
  *   (SKU 103910): «Peso Del Producto 0.09 kg», consultada el 2026-10-29. Es el
  *   peso de ese tirador concreto; otro modelo cambia el valor.
  *   https://www.promart.pe/tirador-recto-acero-inox-96mm/p
+ * - Promart, fichas de los tiradores rectos de acero inoxidable de 128 mm
+ *   (liviano, SKU 103911; pesado, SKU 103916): ambas publican «Peso Del
+ *   Producto 0.09 kg», consultadas el 2026-10-29. Mismo valor que el de 96 mm,
+ *   pese a que una es «pesado»: parece un peso redondeado, así que el tirador
+ *   elegido hay que pesarlo.
+ *   https://www.promart.pe/tirador-recto-acero-inoxidable-liviano-128mm/p
+ *   https://www.promart.pe/tirador-recto-pesado-acero-inoxidable-128mm/p
  */
 
 export const BISAGRAS_POR_ALTO: readonly { altoMaximo: number; bisagras: number }[] = [
