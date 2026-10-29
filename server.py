@@ -9,10 +9,14 @@ Rutas:
                            JSON con los tableros, el aprovechamiento y el SVG
                            (?algorithm=guillotine|nonguillotine)
   GET  /api/example        CSV de ejemplo para la caja de texto de la página
-  POST /api/optimize       optimiza el CSV enviado en el cuerpo JSON:
-                           {"csv": "...", "algorithm": "...", "sheet": {...}}
-                           o, con varios tipos de stock, "stocks": [{...}, ...]
+  GET  /api/stocks         catálogo de stocks guardado (JSON en disco)
+  PUT  /api/stocks         guarda el catálogo: {"stocks": [{...}, ...]}
+  POST /api/optimize       optimiza las piezas enviadas en el cuerpo JSON:
+                           {"csv": "..."} o {"dxf": "..."}, más
+                           "algorithm", "sheet" o "stocks": [{...}, ...]
                            (cada pieza se corta del stock de su material).
+  POST /api/report.pdf     el mismo cuerpo, opcionalmente {"source": "demo"},
+                           y devuelve el reporte en PDF.
 """
 
 from __future__ import annotations
@@ -26,11 +30,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from cutlist.catalog import CatalogStore, parse_catalog, sheet_to_dict
 from cutlist.cortecloud import MaterialGroup, load_fixture
 from cutlist.csv_import import EXAMPLE_CSV, parse_parts_csv
+from cutlist.dxf import parse_dxf
 from cutlist.materials import optimize_by_material
-from cutlist.models import Constraints, Sheet
+from cutlist.models import Constraints, Part, Sheet
 from cutlist.optimizer import ALGORITHMS
+from cutlist.pdf import render_pdf
 from cutlist.stock import optimize_with_stock
 from cutlist.svg import render_svg
 
@@ -38,7 +45,8 @@ ROOT = Path(__file__).resolve().parent
 INDEX = ROOT / "web" / "index.html"
 FAVICON = ROOT / "web" / "favicon.svg"
 MAX_SHEETS = 30
-MAX_BODY = 512_000
+MAX_BODY = 4_000_000
+STOCKS_PATH = Path(os.environ.get("CUTLIST_STOCKS") or ROOT / "data" / "stocks.json")
 
 
 def demo_payload(algorithm: str) -> dict:
@@ -51,24 +59,71 @@ def demo_payload(algorithm: str) -> dict:
     return payload
 
 
-def csv_payload(
-    csv_text: str, algorithm: str, sheet_data: dict, stocks_data=None
-) -> dict:
-    """Optimiza el CSV asignando cada pieza al stock de su material."""
+def optimize_payload(body: dict) -> dict:
+    """Optimiza las piezas del cuerpo JSON (CSV o DXF) contra los stocks."""
+    algorithm = str(body.get("algorithm", "guillotine"))
     if algorithm not in ALGORITHMS:
         return {"error": f"algoritmo desconocido: {algorithm}"}
 
-    sheets = _sheets_from_request(sheet_data, stocks_data)
-    parts = parse_parts_csv(csv_text)
-    optimization = optimize_with_stock(
-        parts, sheets, algorithm=algorithm, constraints=Constraints(), max_sheets=MAX_SHEETS
-    )
+    sheets = _sheets_from_request(body.get("sheet") or {}, body.get("stocks"))
+    parts, import_warnings, source = _parts_from_body(body)
+    optimization = _optimize(parts, sheets, algorithm)
     payload = optimization.to_dict()
     payload["svg"] = render_svg(optimization.result)
-    payload["stocks"] = [_sheet_dict(sheet) for sheet in sheets]
+    payload["stocks"] = [sheet_to_dict(sheet) for sheet in sheets]
     payload["sheet"] = payload["stocks"][0]
-    payload["source"] = "csv"
+    payload["source"] = source
+    if import_warnings:
+        payload["warnings"] = [*import_warnings, *payload["warnings"]]
     return payload
+
+
+def report_pdf(body: dict) -> bytes:
+    """Reporte PDF: la muestra de Cortecloud o las piezas enviadas."""
+    algorithm = str(body.get("algorithm", "guillotine"))
+    if algorithm not in ALGORITHMS:
+        raise ValueError(f"algoritmo desconocido: {algorithm}")
+
+    if str(body.get("source") or "").strip() == "demo":
+        source = "tests/fixtures/cortecloud/escritorio_D_simple.json"
+        optimization = optimize_by_material(
+            load_fixture(),
+            algorithm=algorithm,
+            constraints=Constraints(),
+            max_sheets=MAX_SHEETS,
+        )
+    else:
+        sheets = _sheets_from_request(body.get("sheet") or {}, body.get("stocks"))
+        parts, import_warnings, origin = _parts_from_body(body)
+        optimization = _optimize(parts, sheets, algorithm)
+        source = origin
+        if import_warnings:
+            optimization.result.warnings = [
+                *import_warnings,
+                *optimization.result.warnings,
+            ]
+
+    return render_pdf(
+        optimization.result, source=source, generated=time.strftime("%Y-%m-%d %H:%M")
+    )
+
+
+def _optimize(parts: list[Part], sheets: list[Sheet], algorithm: str):
+    return optimize_with_stock(
+        parts, sheets, algorithm=algorithm, constraints=Constraints(), max_sheets=MAX_SHEETS
+    )
+
+
+def _parts_from_body(body: dict) -> tuple[list[Part], list[str], str]:
+    """Piezas del cuerpo JSON: el texto `csv` o el dibujo `dxf` (uno de los dos)."""
+    csv_text = str(body.get("csv") or "").strip()
+    dxf_text = str(body.get("dxf") or "").strip()
+    if csv_text and dxf_text:
+        raise ValueError("envía las piezas en CSV o en DXF, no en ambos")
+    if dxf_text:
+        imported = parse_dxf(dxf_text)
+        return imported.parts, imported.warnings, "dxf"
+    return parse_parts_csv(csv_text), [], "csv"
 
 
 def _payload(groups: list[MaterialGroup], algorithm: str) -> dict:
@@ -80,50 +135,16 @@ def _payload(groups: list[MaterialGroup], algorithm: str) -> dict:
     return payload
 
 
-def _sheets_from_request(sheet_data: dict, stocks_data) -> list[Sheet]:
-    """Catálogo de stocks del cuerpo JSON: una lista `stocks` o un `sheet` único."""
+def _sheets_from_request(sheet_data, stocks_data) -> list[Sheet]:
+    """Catálogo del cuerpo JSON: una lista `stocks` o un `sheet` único comodín."""
     if stocks_data is None:
-        return [_sheet_from_request(sheet_data)]
-    if not isinstance(stocks_data, list):
-        raise ValueError("«stocks» debe ser una lista de objetos")
-    if not stocks_data:
-        raise ValueError("«stocks» está vacío")
-    sheets = []
-    for index, data in enumerate(stocks_data, start=1):
-        if not isinstance(data, dict):
-            raise ValueError(f"stock {index}: se espera un objeto")
-        material = str(data.get("material") or "").strip()
-        sheets.append(
-            _sheet_from_request(
-                data, material=material, label=material or f"Stock {index}"
-            )
-        )
-    return sheets
+        return parse_catalog([sheet_data or {}], default_label="Stock indicado")
+    return parse_catalog(stocks_data)
 
 
-def _sheet_from_request(
-    data: dict, material: str = "", label: str = "Stock indicado"
-) -> Sheet:
-    """Un stock del cuerpo JSON; por defecto 2500×1830×18 mm con kerf de 4 mm."""
-    return Sheet(
-        width=float(data.get("width", 2500)),
-        height=float(data.get("height", 1830)),
-        thickness=float(data.get("thickness", 18)),
-        kerf=float(data.get("kerf", 4)),
-        label=label,
-        material=material,
-    )
-
-
-def _sheet_dict(sheet: Sheet) -> dict:
-    return {
-        "material": sheet.material,
-        "label": sheet.label,
-        "width": sheet.width,
-        "height": sheet.height,
-        "thickness": sheet.thickness,
-        "kerf": sheet.kerf,
-    }
+def _catalog() -> CatalogStore:
+    """Catálogo guardado; la ruta se puede cambiar con `CUTLIST_STOCKS`."""
+    return CatalogStore(Path(STOCKS_PATH))
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -155,29 +176,27 @@ class Handler(BaseHTTPRequestHandler):
             self._json(payload, status=400 if "error" in payload else 200)
         elif path == "/api/example":
             self._json({"csv": EXAMPLE_CSV})
+        elif path == "/api/stocks":
+            sheets, warning = _catalog().load()
+            payload = {"stocks": [sheet_to_dict(sheet) for sheet in sheets]}
+            if warning:
+                payload["warning"] = warning
+            self._json(payload)
         else:
             self._send(404, "text/plain; charset=utf-8", b"no encontrado")
 
     def do_POST(self) -> None:  # noqa: N802 (nombre impuesto por http.server)
-        if urlsplit(self.path).path != "/api/optimize":
+        path = urlsplit(self.path).path
+        if path not in ("/api/optimize", "/api/report.pdf"):
             self._send(404, "text/plain; charset=utf-8", b"no encontrado")
             return
 
-        length = int(self.headers.get("Content-Length") or 0)
-        if length <= 0 or length > MAX_BODY:
-            self._json({"error": "cuerpo vacío o demasiado grande"}, status=400)
-            return
-
         try:
-            body = json.loads(self.rfile.read(length).decode("utf-8"))
-            if not isinstance(body, dict):
-                raise ValueError("se espera un objeto JSON")
-            payload = csv_payload(
-                str(body.get("csv", "")),
-                str(body.get("algorithm", "guillotine")),
-                body.get("sheet") or {},
-                body.get("stocks"),
-            )
+            body = self._read_json()
+            if path == "/api/report.pdf":
+                pdf = report_pdf(body)
+            else:
+                payload = optimize_payload(body)
         except (ValueError, TypeError) as error:
             self._json({"error": str(error)}, status=400)
             return
@@ -185,17 +204,59 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": f"{type(error).__name__}: {error}"}, status=500)
             return
 
-        self._json(payload, status=400 if "error" in payload else 200)
+        if path == "/api/report.pdf":
+            self._send(
+                200,
+                "application/pdf",
+                pdf,
+                {"Content-Disposition": 'attachment; filename="cutlist-reporte.pdf"'},
+            )
+        else:
+            self._json(payload, status=400 if "error" in payload else 200)
+
+    def do_PUT(self) -> None:  # noqa: N802 (nombre impuesto por http.server)
+        if urlsplit(self.path).path != "/api/stocks":
+            self._send(404, "text/plain; charset=utf-8", b"no encontrado")
+            return
+
+        try:
+            body = self._read_json()
+            saved = _catalog().save(parse_catalog(body.get("stocks")))
+        except (ValueError, TypeError) as error:
+            self._json({"error": str(error)}, status=400)
+            return
+        except Exception as error:  # noqa: BLE001 - se reporta en la vista
+            self._json({"error": f"{type(error).__name__}: {error}"}, status=500)
+            return
+
+        self._json({"stocks": [sheet_to_dict(sheet) for sheet in saved]})
+
+    def _read_json(self) -> dict:
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > MAX_BODY:
+            raise ValueError("cuerpo vacío o demasiado grande")
+        body = json.loads(self.rfile.read(length).decode("utf-8"))
+        if not isinstance(body, dict):
+            raise ValueError("se espera un objeto JSON")
+        return body
 
     def _json(self, payload: dict, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self._send(status, "application/json; charset=utf-8", body)
 
-    def _send(self, status: int, content_type: str, body: bytes) -> None:
+    def _send(
+        self,
+        status: int,
+        content_type: str,
+        body: bytes,
+        headers: dict | None = None,
+    ) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 

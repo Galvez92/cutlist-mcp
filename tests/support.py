@@ -3,6 +3,26 @@
 from cutlist.models import EPS
 
 
+def dxf_document(entities, insunits=4):
+    """DXF ASCII mínimo: HEADER con las unidades y la sección ENTITIES."""
+    lines = ["0", "SECTION", "2", "HEADER"]
+    if insunits is not None:
+        lines += ["9", "$INSUNITS", "70", str(insunits)]
+    lines += ["0", "ENDSEC", "0", "SECTION", "2", "ENTITIES"]
+    for entity in entities:
+        lines += entity
+    lines += ["0", "ENDSEC", "0", "EOF"]
+    return "\n".join(lines) + "\n"
+
+
+def lwpolyline(points, layer="Roble", closed=True):
+    """Entidad LWPOLYLINE cerrada con sus vértices."""
+    lines = ["0", "LWPOLYLINE", "8", layer, "90", str(len(points)), "70", "1" if closed else "0"]
+    for x, y in points:
+        lines += ["10", f"{x:g}", "20", f"{y:g}"]
+    return lines
+
+
 def assert_layouts_valid(testcase, layouts) -> None:
     """Cada pieza queda dentro de su tablero y ninguna se solapa con otra."""
     for layout in layouts:

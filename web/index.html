@@ -83,6 +83,13 @@
     border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a;
   }
   .stock button { padding: 6px 10px; background: #fff; color: #b91c1c; border-color: #fecaca; }
+  .stocks .controls { margin-bottom: 0; }
+  #stocks-status, #dxf-status, #report-status { font-size: 12px; color: #64748b; }
+  .dxf { display: grid; gap: 6px; margin-top: 10px; }
+  .dxf input[type="file"] {
+    width: 100%; min-width: 0; font: inherit; font-size: 12px; color: #475569;
+  }
+  .dxf-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 </style>
 </head>
 <body>
@@ -101,6 +108,8 @@
         <option value="nonguillotine">No guillotina (MaxRects)</option>
       </select>
     </label>
+    <button id="report" type="button" class="ghost">Descargar PDF</button>
+    <span id="report-status"></span>
     <span id="status">cargando…</span>
   </div>
 
@@ -110,32 +119,47 @@
   <div id="layout"></div>
 
   <section class="custom">
-    <h2>Probar con tu propio CSV</h2>
+    <h2>Probar con tus piezas (CSV o DXF)</h2>
     <p>
-      Formato propio de cutlist-mcp, aún <em>por revisar</em>: columnas
+      CSV con formato propio de cutlist-mcp, aún <em>por revisar</em>: columnas
       <code>ancho, alto, cantidad, veta, etiqueta, material</code> en milímetros
       (también se aceptan <code>width</code>, <code>height</code>, <code>qty</code>,
       <code>label</code>, <code>stock</code>). Las piezas se cortan de los stocks de abajo.
     </p>
     <textarea id="csv" spellcheck="false" aria-label="Piezas en CSV"></textarea>
+    <div class="dxf">
+      <label for="dxf">O importa un DXF</label>
+      <input id="dxf" type="file" accept=".dxf,text/plain" />
+      <div class="dxf-actions">
+        <button id="clear-dxf" type="button" class="ghost" hidden>Quitar DXF</button>
+        <span id="dxf-status"></span>
+      </div>
+    </div>
+    <p>
+      DXF ASCII, <em>por revisar</em>: cada contorno cerrado (LWPOLYLINE,
+      POLYLINE o líneas que lo formen) es una pieza y su <strong>capa</strong> es
+      el material; la capa <code>0</code> cuenta como sin material. Un texto
+      dentro del contorno pasa a ser la etiqueta. Si cargas un DXF, reemplaza al CSV.
+    </p>
 
     <div class="stocks">
       <h2>Stocks (tableros)</h2>
       <p>
-        Cada pieza se corta del stock de su <code>material</code> (columna opcional
-        del CSV). Un stock sin material es comodín: acepta cualquier pieza. Puedes
-        repetir un mismo material con medidas distintas y el optimizador usa los
-        stocks en el orden de esta lista.
+        Cada pieza se corta del stock de su <code>material</code> (columna del CSV
+        o capa del DXF). Un stock sin material es comodín: acepta cualquier pieza.
+        Puedes repetir un mismo material con medidas distintas y el optimizador usa
+        los stocks en el orden de esta lista. El catálogo se guarda en el servidor.
       </p>
       <div id="stocks"></div>
       <div class="controls">
         <button id="add-stock" type="button" class="ghost">Agregar stock</button>
         <button id="reset-stocks" type="button" class="ghost">Restablecer</button>
+        <span id="stocks-status"></span>
       </div>
     </div>
 
     <div class="controls" style="margin-top: 10px;">
-      <button id="run" type="button">Optimizar CSV</button>
+      <button id="run" type="button">Optimizar piezas</button>
       <span id="csv-status"></span>
     </div>
   </section>
@@ -210,9 +234,10 @@
     return data;
   }
 
-  /* Editor de stocks: catálogo de tableros por material que usa el optimizador. */
+  /* Editor de stocks: catálogo de tableros por material, guardado en el servidor. */
   const stockList = document.getElementById("stocks");
-  const STOCK_STORAGE = "cutlist.stocks.v1";
+  const stocksStatus = document.getElementById("stocks-status");
+  let saveTimer = null;
   const DEFAULT_STOCK = { material: "", width: "2500", height: "1830", thickness: "18", kerf: "4" };
   const STOCK_FIELDS = [
     ["material", "Material", "comodín"],
@@ -245,10 +270,10 @@
     remove.textContent = "Quitar";
     remove.addEventListener("click", () => {
       row.remove();
-      saveStocks();
+      scheduleSaveStocks();
     });
     row.append(remove);
-    row.addEventListener("input", saveStocks);
+    row.addEventListener("input", scheduleSaveStocks);
     stockList.append(row);
     return row;
   }
@@ -289,11 +314,29 @@
     });
   }
 
-  function saveStocks() {
+  function scheduleSaveStocks() {
+    stocksStatus.textContent = "guardando…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveStocks, 600);
+  }
+
+  async function saveStocks() {
+    let stocks;
     try {
-      localStorage.setItem(STOCK_STORAGE, JSON.stringify(collectStocks()));
+      stocks = readStocks();
     } catch (error) {
-      /* sin almacenamiento: la lista sigue en pantalla */
+      stocksStatus.textContent = `sin guardar: ${error.message}`;
+      return;
+    }
+    try {
+      await request("/api/stocks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stocks }),
+      });
+      stocksStatus.textContent = "catálogo guardado";
+    } catch (error) {
+      stocksStatus.textContent = `sin guardar: ${error.message}`;
     }
   }
 
@@ -302,30 +345,120 @@
     (stocks.length ? stocks : [DEFAULT_STOCK]).forEach((stock) => addStockRow(stock));
   }
 
-  function loadStocks() {
-    let saved = null;
+  async function loadStocks() {
     try {
-      saved = JSON.parse(localStorage.getItem(STOCK_STORAGE) || "null");
+      const data = await request("/api/stocks");
+      renderStockList(
+        (data.stocks || []).map((stock) => ({
+          material: stock.material || "",
+          width: String(stock.width),
+          height: String(stock.height),
+          thickness: String(stock.thickness),
+          kerf: String(stock.kerf),
+        }))
+      );
+      stocksStatus.textContent = data.warning || "catálogo guardado en el servidor";
     } catch (error) {
-      saved = null;
+      renderStockList([]);
+      stocksStatus.textContent = `no se pudo leer el catálogo: ${error.message}`;
     }
-    renderStockList(Array.isArray(saved) ? saved : []);
   }
 
   document.getElementById("add-stock").addEventListener("click", () => {
     addStockRow().querySelector("input").focus();
-    saveStocks();
+    scheduleSaveStocks();
   });
   document.getElementById("reset-stocks").addEventListener("click", () => {
     renderStockList([DEFAULT_STOCK]);
     saveStocks();
   });
 
+  /* DXF: el dibujo reemplaza al CSV cuando hay un archivo cargado. */
+  const dxfInput = document.getElementById("dxf");
+  const dxfStatus = document.getElementById("dxf-status");
+  const clearDxf = document.getElementById("clear-dxf");
+  let dxfText = "";
+  let dxfName = "";
+
+  dxfInput.addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      dxfText = await file.text();
+      dxfName = file.name;
+      dxfStatus.textContent = `${file.name} · el DXF reemplaza al CSV`;
+      clearDxf.hidden = false;
+    } catch (error) {
+      dxfText = "";
+      dxfName = "";
+      dxfStatus.textContent = `no se pudo leer el archivo: ${error.message}`;
+    }
+  });
+
+  clearDxf.addEventListener("click", () => {
+    dxfText = "";
+    dxfName = "";
+    dxfInput.value = "";
+    dxfStatus.textContent = "";
+    clearDxf.hidden = true;
+  });
+
+  let lastSource = "demo";
+
+  function customPayload() {
+    const stocks = readStocks();
+    const payload = { algorithm: select.value, stocks };
+    if (dxfText) {
+      payload.dxf = dxfText;
+    } else {
+      payload.csv = document.getElementById("csv").value;
+    }
+    return payload;
+  }
+
+  async function downloadReport() {
+    const button = document.getElementById("report");
+    const reportStatus = document.getElementById("report-status");
+    button.disabled = true;
+    reportStatus.textContent = "generando…";
+    try {
+      const payload =
+        lastSource === "demo"
+          ? { source: "demo", algorithm: select.value }
+          : customPayload();
+      const response = await fetch("/api/report.pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "cutlist-reporte.pdf";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      reportStatus.textContent = "PDF descargado";
+    } catch (error) {
+      reportStatus.textContent = `error: ${error.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  document.getElementById("report").addEventListener("click", downloadReport);
+
   async function load() {
     status.textContent = "optimizando…";
     try {
       const data = await request(`/api/demo?algorithm=${encodeURIComponent(select.value)}`);
       render(data);
+      lastSource = "demo";
       status.textContent = `${data.algorithm} · fuente: ${data.source}`;
     } catch (error) {
       status.textContent = `error: ${error.message}`;
@@ -336,25 +469,23 @@
     }
   }
 
-  async function runCsv() {
+  async function runCustom() {
     const button = document.getElementById("run");
     const csvStatus = document.getElementById("csv-status");
     button.disabled = true;
     csvStatus.textContent = "optimizando…";
     try {
-      const stocks = readStocks();
+      const payload = customPayload();
       const data = await request("/api/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          csv: document.getElementById("csv").value,
-          algorithm: select.value,
-          stocks,
-        }),
+        body: JSON.stringify(payload),
       });
       render(data);
+      lastSource = payload.dxf ? "dxf" : "csv";
+      const origin = payload.dxf ? `DXF ${dxfName}` : "tu CSV";
       status.textContent =
-        `${data.algorithm} · tu CSV · ${data.sheets_used} tablero(s) de ${stocks.length} stock(s)`;
+        `${data.algorithm} · ${origin} · ${data.sheets_used} tablero(s) de ${payload.stocks.length} stock(s)`;
       csvStatus.textContent = "listo";
     } catch (error) {
       csvStatus.textContent = `error: ${error.message}`;
@@ -363,7 +494,7 @@
     }
   }
 
-  document.getElementById("run").addEventListener("click", runCsv);
+  document.getElementById("run").addEventListener("click", runCustom);
   select.addEventListener("change", load);
   loadStocks();
   load();

@@ -1,0 +1,6 @@
+# Datos de la aplicación que no se versionan
+data/
+
+# Python
+__pycache__/
+*.pyc
