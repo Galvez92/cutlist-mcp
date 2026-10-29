@@ -25,6 +25,10 @@
  *   la distancia de barrenado de 3–8 mm), barrenos Ø8 mm y tabla de revelado
  *   mínimo (puerta de 18 mm con barrenado de 3 mm: 1.3 mm).
  *   https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf
+ * - Promart, ficha del *Tirador de acero inoxidable Orient recto 96 mm*: peso
+ *   del producto 0.09 kg. Sirve como peso de referencia de un tirador; el peso
+ *   real depende del modelo elegido.
+ *   https://www.promart.pe/tirador-recto-acero-inox-96mm/p
  */
 
 export const BISAGRAS_POR_ALTO: readonly { altoMaximo: number; bisagras: number }[] = [
@@ -61,6 +65,15 @@ export const PESO_MAXIMO_GUIA_BISAGRAS = 12.0;
 export const DENSIDAD_TABLERO = 750.0;
 
 /**
+ * Peso de referencia de un tirador (kg): tirador recto de acero inoxidable de
+ * 96 mm, 0.09 kg según la ficha del producto (Promart). Blum pide contar la
+ * puerta **con sus tiradores** para elegir las bisagras, así que este valor
+ * entra en el peso de la puerta cuando el módulo no indica otro.
+ * *Por revisar*: depende del tirador elegido; el taller debe usar el peso real.
+ */
+export const PESO_TIRADOR_REFERENCIA = 0.09;
+
+/**
  * Revelado mínimo de una puerta de 18 mm con la copa a 3 mm del borde (mm).
  * Blum CLIP top: 1.3 mm; Hettich *Sensys*: 0.6–0.8 mm según la tabla del
  * catálogo. Se toma el mayor.
@@ -83,8 +96,9 @@ export function bisagrasPorPuerta(altoPuerta: number): number {
 }
 
 /**
- * Peso de la puerta en kg: área × espesor × densidad. No incluye tiradores ni
- * otros adicionales, que Blum pide contar para elegir las bisagras.
+ * Peso del tablero de la puerta en kg: área × espesor × densidad. No incluye
+ * tiradores ni otros adicionales; para la guía de bisagras se usa
+ * ``pesoPuertaConTiradorKg()``.
  */
 export function pesoPuertaKg(
   ancho: number,
@@ -93,6 +107,19 @@ export function pesoPuertaKg(
   densidad: number = DENSIDAD_TABLERO,
 ): number {
   return (ancho / 1000.0) * (alto / 1000.0) * (espesor / 1000.0) * densidad;
+}
+
+/**
+ * Peso de la puerta en kg tal como lo pide Blum: el tablero más sus tiradores.
+ */
+export function pesoPuertaConTiradorKg(
+  ancho: number,
+  alto: number,
+  espesor: number,
+  pesoTiradorKg: number = PESO_TIRADOR_REFERENCIA,
+  densidad: number = DENSIDAD_TABLERO,
+): number {
+  return pesoPuertaKg(ancho, alto, espesor, densidad) + pesoTiradorKg;
 }
 
 /**
@@ -107,6 +134,16 @@ export function bisagrasPorPeso(pesoKg: number): number {
   return BISAGRAS_POR_PESO[BISAGRAS_POR_PESO.length - 1].bisagras;
 }
 
+export interface OpcionesBisagras {
+  /** Densidad del tablero de la puerta (kg/m³); por omisión 750. */
+  densidad?: number;
+  /**
+   * Peso de un tirador de la puerta (kg). Por omisión
+   * ``PESO_TIRADOR_REFERENCIA``; 0 calcula la puerta sin tirador.
+   */
+  pesoTiradorKg?: number;
+}
+
 export interface BisagrasPuerta {
   /** Cantidad que se pide: la mayor de las dos guías. */
   bisagras: number;
@@ -114,25 +151,39 @@ export interface BisagrasPuerta {
   porAlto: number;
   /** Cantidad según el peso de la puerta (Blum). */
   porPeso: number;
-  /** Peso calculado de la puerta (kg). */
+  /** Peso de la puerta con sus tiradores (kg): lo que compara la guía. */
   pesoKg: number;
+  /** Peso del tablero de la puerta solo (kg). */
+  pesoTableroKg: number;
+  /** Peso sumado de los tiradores de la puerta (kg). */
+  pesoTiradorKg: number;
 }
 
 /**
  * Bisagras por puerta combinando las dos guías: la de alto (Hettich) y la de
  * peso (Blum). Se toma la mayor, porque cada guía es un mínimo independiente y
- * Blum pide contar el alto además del peso.
+ * Blum pide contar el alto además del peso. El peso incluye los tiradores.
  */
 export function bisagrasPuerta(
   ancho: number,
   alto: number,
   espesor: number,
-  densidad: number = DENSIDAD_TABLERO,
+  opciones: OpcionesBisagras = {},
 ): BisagrasPuerta {
-  const pesoKg = pesoPuertaKg(ancho, alto, espesor, densidad);
+  const densidad = opciones.densidad ?? DENSIDAD_TABLERO;
+  const pesoTiradorKg = opciones.pesoTiradorKg ?? PESO_TIRADOR_REFERENCIA;
+  const pesoTableroKg = pesoPuertaKg(ancho, alto, espesor, densidad);
+  const pesoKg = pesoTableroKg + pesoTiradorKg;
   const porAlto = bisagrasPorPuerta(alto);
   const porPeso = bisagrasPorPeso(pesoKg);
-  return { bisagras: Math.max(porAlto, porPeso), porAlto, porPeso, pesoKg };
+  return {
+    bisagras: Math.max(porAlto, porPeso),
+    porAlto,
+    porPeso,
+    pesoKg,
+    pesoTableroKg,
+    pesoTiradorKg,
+  };
 }
 
 /**
@@ -141,14 +192,15 @@ export function bisagrasPuerta(
  */
 export function notasPesoBisagras(resultado: BisagrasPuerta): string[] {
   const notas: string[] = [];
+  const peso = `${resultado.pesoKg.toFixed(1)} kg (tablero ${resultado.pesoTableroKg.toFixed(1)} kg + tirador ${resultado.pesoTiradorKg.toFixed(2)} kg)`;
   if (resultado.porPeso > resultado.porAlto) {
     notas.push(
-      `Puerta de ${resultado.pesoKg.toFixed(1)} kg: la guía de Blum pide ${resultado.porPeso} bisagras (2 hasta 6 kg, 3 hasta 12 kg), más que las ${resultado.porAlto} del alto.`,
+      `Puerta de ${peso}: la guía de Blum pide ${resultado.porPeso} bisagras (2 hasta 6 kg, 3 hasta 12 kg), más que las ${resultado.porAlto} del alto.`,
     );
   }
   if (resultado.pesoKg > PESO_MAXIMO_GUIA_BISAGRAS) {
     notas.push(
-      `Puerta de ${resultado.pesoKg.toFixed(1)} kg: la guía de bisagras por peso llega a ${PESO_MAXIMO_GUIA_BISAGRAS.toFixed(0)} kg; revisar la cantidad con el fabricante.`,
+      `Puerta de ${peso}: la guía de bisagras por peso llega a ${PESO_MAXIMO_GUIA_BISAGRAS.toFixed(0)} kg; revisar la cantidad con el fabricante.`,
     );
   }
   return notas;

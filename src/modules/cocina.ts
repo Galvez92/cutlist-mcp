@@ -40,6 +40,7 @@ import {
 import {
   ALTO_MAXIMO_BISAGRAS,
   ANCHO_MAXIMO_GUIA_BISAGRAS,
+  PESO_TIRADOR_REFERENCIA,
   bisagrasPuerta,
   notasPesoBisagras,
 } from "./bisagras.js";
@@ -56,7 +57,7 @@ export const CAMPOS: Record<string, string> = {
   cajones: "Cantidad de cajones (0 si lleva puertas)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
-  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador — por revisar",  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
   juego: "Holgura entre puertas o frentes (mm) — por revisar",
   juego_corredera: "Juego lateral total de la corredera (mm) — por revisar",
   margen_alto_cajon: "Diferencia de alto entre frente y caja del cajón (mm) — por revisar",
@@ -80,6 +81,7 @@ export interface ParamsCocina {
   cajones?: number;
   espesor?: number;
   espesorPuerta?: number;
+  pesoTirador?: number;
   traseraEspesor?: number;
   juego?: number;
   juegoCorredera?: number;
@@ -104,6 +106,7 @@ export const DEFAULTS_COCINA = {
   cajones: 0,
   espesor: 18.0,
   espesorPuerta: 18.0,
+  pesoTirador: PESO_TIRADOR_REFERENCIA,
   traseraEspesor: 3.0,
   juego: JUEGO_DEFAULT,
   juegoCorredera: 25.0,
@@ -134,6 +137,9 @@ export function generar(params: ParamsCocina = {}): Modulo {
   }
   if (p.cajones < 0 || p.puertas < 0) {
     throw new ValueError("puertas y cajones no pueden ser negativos");
+  }
+  if (p.pesoTirador < 0) {
+    throw new ValueError("el peso del tirador no puede ser negativo");
   }
 
   const [material, materialFrente, canto, cantoFrente] = frentes(
@@ -323,12 +329,14 @@ export function generar(params: ParamsCocina = {}): Modulo {
         modulo: nombre,
       }),
     );
-    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta);
+    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta, {
+      pesoTiradorKg: p.pesoTirador,
+    });
     accesorios.push(
       new Accesorio(
         "Bisagra",
         calculoBisagras.bisagras * p.puertas,
-        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg): ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg`,
+        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg), con el peso de la puerta y su tirador: ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg (tirador ${calculoBisagras.pesoTiradorKg.toFixed(2)} kg)`,
       ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));

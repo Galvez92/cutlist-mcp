@@ -111,18 +111,24 @@ Todo esto vive en `src/modules/bisagras.ts`, compartido por el clóset y la coci
 `bisagrasPorPuerta()` aplica la tabla por alto y `bisagrasPorPeso()` la de peso;
 `bisagrasPuerta()` combina las dos y pide la mayor, porque cada guía es un mínimo
 independiente. El peso sale de `pesoPuertaKg()` = área × espesor × densidad, con
-750 kg/m³ (el valor que publica Hettich) y el espesor de puerta del módulo; no
-suma el peso de los tiradores.
+750 kg/m³ (el valor que publica Hettich) y el espesor de puerta del módulo, más el
+peso del tirador (`peso_tirador`, por omisión 0.09 kg: tirador recto de acero de
+96 mm según su ficha de producto, *por revisar* contra el tirador elegido). Blum
+pide contar la puerta **con sus tiradores**; `peso_tirador: 0` calcula una puerta
+sin tirador (por ejemplo, de apertura a presión).
 
 Los dos módulos avisan en `notas` cuando el caso queda fuera de una guía: puertas
 de más de 2400 mm de alto, de más de 600 mm de ancho o de más de 12 kg, y cuando
-el peso pide más bisagras que el alto. El clóset avisa además si la holgura entre
-puertas queda bajo 2.6 mm. Las correderas mantienen su traslape y juego de guía
-`por revisar`, porque los fija el sistema elegido.
+el peso pide más bisagras que el alto. El aviso desglosa el peso del tablero y el
+del tirador. El clóset avisa además si la holgura entre puertas queda bajo 2.6 mm.
+Las correderas mantienen su traslape y juego de guía `por revisar`, porque los fija
+el sistema elegido.
 
 Ejemplo de la regla combinada: una puerta cubriente de 600 × 797 × 18 mm pesa
-6.5 kg, así que Blum pide 3 bisagras aunque el alto solo pida 2; una hoja de
-298 × 897 × 18 mm pesa 3.6 kg y se queda con las 2 del alto.
+6.5 kg de tablero (6.6 kg con el tirador), así que Blum pide 3 bisagras aunque el
+alto solo pida 2; una hoja de 298 × 897 × 18 mm pesa 3.6 kg y se queda con las 2
+del alto. Un caso donde el tirador decide: una hoja de 598.5 × 736 × 18 mm pesa
+5.9 kg y se queda en 2 bisagras, pero con el tirador llega a 6.0 kg y pide 3.
 
 ## Perfil de restricciones (opcional)
 
@@ -160,7 +166,8 @@ verificada para un valor de carga.
 | profundidad del barreno de repisa 12 mm | clóset y librero | valor de taller | **por revisar** |
 | traslape de 30 mm y juego de guía de 45 mm | clóset con correderas | valor de taller (lo fija el sistema de correderas elegido) | **por revisar** |
 | 2/3/4/5 bisagras por puerta hasta 900/1600/2000/2400 mm de alto; puertas de hasta 600 mm de ancho; espesor de puerta 15–24 mm | clóset y cocina | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) y [Blum CLIP top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf) | verificado |
-| 2 bisagras de 4 a 6 kg y 3 de 6 a 12 kg, con el peso de la puerta y sus tiradores; puertas de hasta 600 mm de ancho; densidad de referencia 750 kg/m³ | clóset y cocina (el peso no suma tiradores) | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | verificado (la densidad de 750 kg/m³ es la que publica Hettich) |
+| 2 bisagras de 4 a 6 kg y 3 de 6 a 12 kg, con el peso de la puerta y sus tiradores; puertas de hasta 600 mm de ancho; densidad de referencia 750 kg/m³ | clóset y cocina (el peso suma el tirador, 0.09 kg por omisión) | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | verificado (la densidad de 750 kg/m³ es la que publica Hettich) |
+| peso de referencia de un tirador: 0.09 kg (tirador recto de acero inoxidable de 96 mm) | clóset y cocina (`peso_tirador`) | [Promart, ficha del tirador Orient recto 96 mm](https://www.promart.pe/tirador-recto-acero-inox-96mm/p) | **por revisar**: es un producto concreto; el taller debe usar el peso del tirador elegido |
 | revelado mínimo de 1.3 mm por puerta de 18 mm con la copa a 3 mm del borde (Hettich *Sensys*: 0.6–0.8 mm); entre dos puertas, ≥ 2 × el revelado | clóset batiente | [Blum, guía rápida de bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf); [Hettich *Sensys*](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | verificado (se toma el mayor) |
 | fondo de 600 mm (clóset) y de 300 mm (librero) | clóset y librero | guías de taller (https://www.closetworld.com/blog/standard-closet-dimensions, https://www.instagram.com/p/B7RItFOH3XF/) | **por revisar** |
 | barral a 1700 mm del piso | clóset | valor de taller | **por revisar** |

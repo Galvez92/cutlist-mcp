@@ -8,6 +8,7 @@ import * as cocina from "./cocina.js";
 import * as escritorio from "./escritorio.js";
 import * as librero from "./librero.js";
 import { ValueError } from "./parts.js";
+import { PESO_TIRADOR_REFERENCIA } from "./bisagras.js";
 
 /** Tipos simples expuestos a la vista previa (igual que el Python original). */
 export type TipoCampo = "float" | "int" | "bool" | "texto" | "lista" | "float_opcional";
@@ -109,6 +110,7 @@ const CAMPOS_CLOSET: CampoParam[] = [
   caj("repisas_moviles", "repisasMoviles", "bool", false, "Perforar los costados para soportes de repisa (Ø5)"),
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("espesor_puerta", "espesorPuerta", "float", 18.0, "Espesor del tablero de puertas (mm)"),
+  caj("peso_tirador", "pesoTirador", "float", PESO_TIRADOR_REFERENCIA, "Peso de un tirador de puerta (kg), que suma la guía de bisagras; 0 = sin tirador — por revisar"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
   caj("juego", "juego", "float", 3.0, "Holgura entre puertas (mm); el revelado mínimo de la bisagra pide 2.6"),
   caj("traslape_corredera", "traslapeCorredera", "float", 30.0, "Traslape entre puertas correderas (mm) — por revisar"),
@@ -132,6 +134,7 @@ const CAMPOS_COCINA: CampoParam[] = [
   caj("cajones", "cajones", "int", 0, "Cantidad de cajones (0 si lleva puertas)"),
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("espesor_puerta", "espesorPuerta", "float", 18.0, "Espesor del tablero de puertas (mm)"),
+  caj("peso_tirador", "pesoTirador", "float", PESO_TIRADOR_REFERENCIA, "Peso de un tirador de puerta (kg), que suma la guía de bisagras; 0 = sin tirador — por revisar"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
   caj("juego", "juego", "float", 3.0, "Holgura entre puertas o frentes (mm) — por revisar"),
   caj("juego_corredera", "juegoCorredera", "float", 25.0, "Juego lateral total de la corredera (mm) — por revisar"),

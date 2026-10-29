@@ -39,6 +39,7 @@ import {
   ALTO_MAXIMO_BISAGRAS,
   ANCHO_MAXIMO_GUIA_BISAGRAS,
   JUEGO_MINIMO_ENTRE_PUERTAS,
+  PESO_TIRADOR_REFERENCIA,
   bisagrasPuerta,
   notasPesoBisagras,
 } from "./bisagras.js";
@@ -57,6 +58,7 @@ export const CAMPOS: Record<string, string> = {
   repisas_moviles: "Perforar los costados para soportes de repisa (Ø5)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador — por revisar",
   trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
   juego: "Holgura entre puertas (mm); el revelado mínimo de la bisagra pide 2.6",
   traslape_corredera: "Traslape entre puertas correderas (mm) — por revisar",
@@ -81,6 +83,7 @@ export interface ParamsCloset {
   repisasMoviles?: boolean;
   espesor?: number;
   espesorPuerta?: number;
+  pesoTirador?: number;
   traseraEspesor?: number;
   juego?: number;
   traslapeCorredera?: number;
@@ -105,6 +108,7 @@ export const DEFAULTS_CLOSET = {
   repisasMoviles: false,
   espesor: 18.0,
   espesorPuerta: 18.0,
+  pesoTirador: PESO_TIRADOR_REFERENCIA,
   traseraEspesor: 3.0,
   juego: JUEGO_DEFAULT,
   traslapeCorredera: 30.0,
@@ -135,6 +139,9 @@ export function generar(params: ParamsCloset = {}): Modulo {
   }
   if (p.repisas < 0) {
     throw new ValueError("la cantidad de repisas no puede ser negativa");
+  }
+  if (p.pesoTirador < 0) {
+    throw new ValueError("el peso del tirador no puede ser negativo");
   }
   if (p.tipoPuerta !== "sin" && p.puertas < 1) {
     throw new ValueError("se pidieron puertas pero la cantidad es menor que uno");
@@ -291,7 +298,9 @@ export function generar(params: ParamsCloset = {}): Modulo {
         modulo: nombre,
       }),
     );
-    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta);
+    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta, {
+      pesoTiradorKg: p.pesoTirador,
+    });
     notas.push(
       `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (revelado mínimo documentado: ${JUEGO_MINIMO_ENTRE_PUERTAS.toFixed(1)} mm entre dos puertas).`,
     );
@@ -315,7 +324,7 @@ export function generar(params: ParamsCloset = {}): Modulo {
       new Accesorio(
         "Bisagra",
         calculoBisagras.bisagras * p.puertas,
-        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg): ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg`,
+        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg), con el peso de la puerta y su tirador: ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg (tirador ${calculoBisagras.pesoTiradorKg.toFixed(2)} kg)`,
       ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));

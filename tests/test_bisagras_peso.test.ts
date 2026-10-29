@@ -86,7 +86,7 @@ describe("bisagras por peso (guía de Blum)", () => {
     expect(porPeso[0]).toContain("la guía de Blum pide 3 bisagras");
 
     const alto = bisagrasPuerta(600.0, 2400.0, 18.0);
-    aprox(alto.pesoKg, 19.44);
+    aprox(alto.pesoKg, 19.53); // 19.44 kg de tablero + 0.09 kg de tirador
     expect(notasPesoBisagras(alto).some((n) => n.includes("llega a 12 kg"))).toBe(true);
   });
 });
@@ -110,7 +110,7 @@ describe("módulos · bisagras por peso", () => {
   it("avisa en el clóset cuando la hoja supera los 12 kg de la guía", () => {
     const modulo = generarCloset();
     const calculo = bisagrasPuerta(748.5, 2397.0, 18.0);
-    aprox(calculo.pesoKg, 24.221086);
+    aprox(calculo.pesoKg, 24.311086); // 24.221086 kg de tablero + 0.09 kg de tirador
     expect(calculo.pesoKg).toBeGreaterThan(PESO_MAXIMO_GUIA_BISAGRAS);
     expect(
       modulo.notas.some((n) => n.includes("la guía de bisagras por peso llega a 12 kg")),
