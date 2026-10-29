@@ -20,8 +20,8 @@
  * 3 mm y zócalo (frente y dos laterales).
  * - Frente: puertas cubrientes o, si ``cajones > 0``, frentes de cajón (no se
  * combinan puertas y cajones en el mismo módulo).
- * - Bisagras: cantidad por puerta con la misma guía verificada del clóset
- *   (``bisagrasPorPuerta()``, catálogos Hettich *Sensys* y Blum CLIP top).
+ * - Bisagras: cantidad por puerta con las mismas guías verificadas del clóset
+ *   (``bisagrasPuerta()``: alto con Hettich *Sensys* y peso con Blum CLIP top).
  */
 
 import { Accesorio, Modulo } from "./modulo.js";
@@ -40,7 +40,8 @@ import {
 import {
   ALTO_MAXIMO_BISAGRAS,
   ANCHO_MAXIMO_GUIA_BISAGRAS,
-  bisagrasPorPuerta,
+  bisagrasPuerta,
+  notasPesoBisagras,
 } from "./bisagras.js";
 import { Cantos, Pieza, ValueError } from "./parts.js";
 
@@ -322,18 +323,19 @@ export function generar(params: ParamsCocina = {}): Modulo {
         modulo: nombre,
       }),
     );
-    const bisagras = bisagrasPorPuerta(altoPuerta);
+    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta);
     accesorios.push(
       new Accesorio(
         "Bisagra",
-        bisagras * p.puertas,
-        `Según el alto de puerta, guía de Hettich Sensys (2/3/4/5 bisagras hasta 900/1600/2000/2400 mm): ${bisagras} por puerta`,
+        calculoBisagras.bisagras * p.puertas,
+        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg): ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg`,
       ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));
     notas.push(
       `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (por revisar).`,
     );
+    notas.push(...notasPesoBisagras(calculoBisagras));
     if (altoPuerta > ALTO_MAXIMO_BISAGRAS) {
       notas.push(
         `Puertas de ${altoPuerta.toFixed(0)} mm de alto: la guía de bisagras llega a ${ALTO_MAXIMO_BISAGRAS.toFixed(0)} mm; revisar la cantidad con el fabricante.`,

@@ -12,8 +12,9 @@
  * una posición y dos arriba y dos abajo).
  * - Puertas ``batiente`` (cubrientes, con ``juego`` entre ellas) o ``corredera``
  * (traslapadas, con juego de guía). El barral es un accesorio, no una pieza.
- * - Bisagras: la cantidad por puerta y el revelado mínimo están verificados con
- *   los catálogos de Hettich (Sensys) y Blum (CLIP top); ver ``BISAGRAS_POR_ALTO``.
+ * - Bisagras: la cantidad por puerta sale del alto (Hettich Sensys) y del peso de
+ *   la puerta (Blum CLIP top), y el revelado mínimo está verificado con los
+ *   mismos catálogos; ver ``bisagrasPuerta()`` en ``bisagras.ts``.
  *   El traslape y el juego de guía de las correderas siguen ``por revisar``: los
  *   fija el sistema de correderas elegido.
  *
@@ -38,7 +39,8 @@ import {
   ALTO_MAXIMO_BISAGRAS,
   ANCHO_MAXIMO_GUIA_BISAGRAS,
   JUEGO_MINIMO_ENTRE_PUERTAS,
-  bisagrasPorPuerta,
+  bisagrasPuerta,
+  notasPesoBisagras,
 } from "./bisagras.js";
 
 export const TIPOS_PUERTA = ["batiente", "corredera", "sin"] as const;
@@ -289,10 +291,11 @@ export function generar(params: ParamsCloset = {}): Modulo {
         modulo: nombre,
       }),
     );
-    const bisagras = bisagrasPorPuerta(altoPuerta);
+    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta);
     notas.push(
       `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (revelado mínimo documentado: ${JUEGO_MINIMO_ENTRE_PUERTAS.toFixed(1)} mm entre dos puertas).`,
     );
+    notas.push(...notasPesoBisagras(calculoBisagras));
     if (p.juego < JUEGO_MINIMO_ENTRE_PUERTAS) {
       notas.push(
         `La holgura de ${p.juego.toFixed(1)} mm queda bajo el revelado mínimo de la bisagra (${JUEGO_MINIMO_ENTRE_PUERTAS.toFixed(1)} mm): las puertas no abren a la vez.`,
@@ -311,8 +314,8 @@ export function generar(params: ParamsCloset = {}): Modulo {
     accesorios.push(
       new Accesorio(
         "Bisagra",
-        bisagras * p.puertas,
-        `Según el alto de puerta, guía de Hettich Sensys (2/3/4/5 bisagras hasta 900/1600/2000/2400 mm): ${bisagras} por puerta`,
+        calculoBisagras.bisagras * p.puertas,
+        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg): ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg`,
       ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));

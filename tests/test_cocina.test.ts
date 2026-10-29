@@ -102,10 +102,21 @@ describe("cocina · bisagras (guía verificada)", () => {
       [2200, 5], // puerta de 2097 mm
       [2500, 5], // puerta de 2397 mm
     ];
+    // Puerta angosta (300 mm) para que el tramo lo fije el alto y no el peso.
     for (const [alto, esperado] of casos) {
-      const modulo = generar({ alto, puertas: 1 });
+      const modulo = generar({ alto, ancho: 300, puertas: 1 });
       expect([alto, bisagras(modulo)], `alto ${alto}`).toEqual([alto, esperado]);
     }
+  });
+
+  it("el peso de la puerta manda sobre el alto", () => {
+    // Puerta cubriente de 600 x 797 x 18 mm = 6.5 kg → 3 bisagras con la guía de Blum.
+    const modulo = generar({ puertas: 1 });
+    expect(buscar(modulo, "Puerta").ancho).toBe(600.0);
+    expect(bisagras(modulo)).toBe(3);
+    expect(
+      modulo.notas.some((n) => n.includes("la guía de Blum pide 3 bisagras")),
+    ).toBe(true);
   });
 
   it("usa la misma tabla que el clóset", () => {

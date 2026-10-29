@@ -92,6 +92,11 @@ La cantidad de bisagras y el revelado mínimo salen de catálogos de herraje:
   2 bisagras hasta 900 mm, 3 hasta 1600 mm, 4 hasta 2000 mm y 5 hasta 2400 mm.
   La guía vale para puertas de hasta 600 mm de ancho (Blum suma una bisagra
   entre 600 y 650 mm) y para tablero de 19 mm y 750 kg/m³.
+- **Cantidad por peso de puerta** ([Blum, *CLIP top BLUMOTION: Number of
+  hinges*](https://ea.blum.com/en/number-of-hinges/)): 2 bisagras para puertas de
+  4–6 kg y 3 para 6–12 kg, contando la puerta con sus tiradores; vale para
+  puertas de hasta 600 mm de ancho. Blum pide mirar también el alto: en puertas
+  altas y angostas conviene una bisagra extra.
 - **Revelado mínimo** ([Blum, guía rápida de
   bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf);
   [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf)):
@@ -102,14 +107,22 @@ La cantidad de bisagras y el revelado mínimo salen de catálogos de herraje:
   15–24 mm ([Blum CLIP
   top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf)).
 
-`bisagrasPorPuerta()` (en `src/modules/bisagras.ts`, compartido por el clóset y la
-cocina) aplica la tabla y ambos módulos avisan en `notas` cuando el caso queda
-fuera de la guía: puertas de más de 2400 mm de alto o de más de 600 mm de ancho;
-el clóset avisa además si la holgura entre puertas queda bajo 2.6 mm. La cantidad no considera el peso de la puerta
-(los catálogos piden 2 bisagras para 4–6 kg y 3 para 6–12 kg,
-[Blum](https://ea.blum.com/en/number-of-hinges/)): ese dato el módulo no lo
-modela y queda `por revisar`. Las correderas mantienen su traslape y juego de
-guía `por revisar`, porque los fija el sistema elegido.
+Todo esto vive en `src/modules/bisagras.ts`, compartido por el clóset y la cocina.
+`bisagrasPorPuerta()` aplica la tabla por alto y `bisagrasPorPeso()` la de peso;
+`bisagrasPuerta()` combina las dos y pide la mayor, porque cada guía es un mínimo
+independiente. El peso sale de `pesoPuertaKg()` = área × espesor × densidad, con
+750 kg/m³ (el valor que publica Hettich) y el espesor de puerta del módulo; no
+suma el peso de los tiradores.
+
+Los dos módulos avisan en `notas` cuando el caso queda fuera de una guía: puertas
+de más de 2400 mm de alto, de más de 600 mm de ancho o de más de 12 kg, y cuando
+el peso pide más bisagras que el alto. El clóset avisa además si la holgura entre
+puertas queda bajo 2.6 mm. Las correderas mantienen su traslape y juego de guía
+`por revisar`, porque los fija el sistema elegido.
+
+Ejemplo de la regla combinada: una puerta cubriente de 600 × 797 × 18 mm pesa
+6.5 kg, así que Blum pide 3 bisagras aunque el alto solo pida 2; una hoja de
+298 × 897 × 18 mm pesa 3.6 kg y se queda con las 2 del alto.
 
 ## Perfil de restricciones (opcional)
 
@@ -147,6 +160,7 @@ verificada para un valor de carga.
 | profundidad del barreno de repisa 12 mm | clóset y librero | valor de taller | **por revisar** |
 | traslape de 30 mm y juego de guía de 45 mm | clóset con correderas | valor de taller (lo fija el sistema de correderas elegido) | **por revisar** |
 | 2/3/4/5 bisagras por puerta hasta 900/1600/2000/2400 mm de alto; puertas de hasta 600 mm de ancho; espesor de puerta 15–24 mm | clóset y cocina | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) y [Blum CLIP top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf) | verificado |
+| 2 bisagras de 4 a 6 kg y 3 de 6 a 12 kg, con el peso de la puerta y sus tiradores; puertas de hasta 600 mm de ancho; densidad de referencia 750 kg/m³ | clóset y cocina (el peso no suma tiradores) | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | verificado (la densidad de 750 kg/m³ es la que publica Hettich) |
 | revelado mínimo de 1.3 mm por puerta de 18 mm con la copa a 3 mm del borde (Hettich *Sensys*: 0.6–0.8 mm); entre dos puertas, ≥ 2 × el revelado | clóset batiente | [Blum, guía rápida de bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf); [Hettich *Sensys*](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | verificado (se toma el mayor) |
 | fondo de 600 mm (clóset) y de 300 mm (librero) | clóset y librero | guías de taller (https://www.closetworld.com/blog/standard-closet-dimensions, https://www.instagram.com/p/B7RItFOH3XF/) | **por revisar** |
 | barral a 1700 mm del piso | clóset | valor de taller | **por revisar** |
@@ -169,8 +183,10 @@ cantos a los lados `c1`/`c2`/`l1`/`l2` de Cortecloud
 fixture) y las tolerancias de bisagras y juegos de herraje contra las tablas de
 Hettich y Blum (`tests/test_closet_herrajes.test.ts`: tramos de 2/3/4/5 bisagras,
 revelado mínimo entre puertas, avisos de altura y ancho fuera de guía;
-`tests/test_cocina.test.ts`: la cocina aplica la misma tabla y avisa fuera de guía).
-Son **315 pruebas vitest** y 60 del servidor MCP (`node:test`), y
+`tests/test_cocina.test.ts`: la cocina aplica la misma tabla y avisa fuera de guía;
+`tests/test_bisagras_peso.test.ts`: peso de la puerta y combinación de la guía por
+alto con la de peso, en el clóset y la cocina).
+Son **323 pruebas vitest** y 60 del servidor MCP (`node:test`), y
 `tsc --noEmit` estricto pasa.
 
 ## Vista previa de desarrollo
@@ -215,7 +231,6 @@ el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio
 - Confirmar con el taller el lado **físico** de cada canto en las piezas importadas
   (el JSON no declara la orientación del dibujo; ver arriba).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
-- Peso de puerta: la guía de bisagras por peso (4–6 kg / 6–12 kg) no está modelada.
 - Resolver la ranura de trasera (hoy la trasera va clavada al dorso, sin ranura).
 - Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la
   demo web ya está resuelta en la rama `demo-web-docs`.

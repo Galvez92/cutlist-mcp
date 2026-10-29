@@ -75,7 +75,8 @@ describe("clóset · bisagras por alto de puerta", () => {
     aprox(buscar(deDosMetros, "Puerta").largo, 1997.0);
     expect(deDosMetros.accesorios.find((a) => a.nombre === "Bisagra")!.cantidad).toBe(4 * 2);
 
-    const bajo = generar({ alto: 900.0, repisas: 0, barralAltura: null });
+    // Clóset angosto: con hojas de 298 mm el peso no manda y el tramo es solo por alto.
+    const bajo = generar({ alto: 900.0, ancho: 600.0, repisas: 0, barralAltura: null });
     aprox(buscar(bajo, "Puerta").largo, 897.0);
     expect(bajo.accesorios.find((a) => a.nombre === "Bisagra")!.cantidad).toBe(2 * 2);
   });
