@@ -110,7 +110,7 @@ const CAMPOS_CLOSET: CampoParam[] = [
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("espesor_puerta", "espesorPuerta", "float", 18.0, "Espesor del tablero de puertas (mm)"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
-  caj("juego", "juego", "float", 3.0, "Holgura entre puertas (mm) — por revisar"),
+  caj("juego", "juego", "float", 3.0, "Holgura entre puertas (mm); el revelado mínimo de la bisagra pide 2.6"),
   caj("traslape_corredera", "traslapeCorredera", "float", 30.0, "Traslape entre puertas correderas (mm) — por revisar"),
   caj("juego_guia", "juegoGuia", "float", 45.0, "Juego vertical para las guías de puerta corredera (mm) — por revisar"),
   caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),

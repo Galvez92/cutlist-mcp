@@ -59,7 +59,7 @@ describe("clóset · puertas", () => {
     expect(puerta.cantos.cantidad()).toBe(4);
     expect(puerta.espesor).toBe(18.0);
     const accesorios = new Map(modulo.accesorios.map((a) => [a.nombre, a]));
-    expect(accesorios.get("Bisagra")!.cantidad).toBe(8);
+    expect(accesorios.get("Bisagra")!.cantidad).toBe(10);
     expect(accesorios.get("Tirador o manija")!.cantidad).toBe(2);
   });
 

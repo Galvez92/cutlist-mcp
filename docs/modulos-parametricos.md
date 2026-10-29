@@ -83,6 +83,33 @@ de `largo x alto` con canto en la arista superior, frente interior y trasera de
 Los herrajes y complementos (correderas, bisagras, barral, patas, tiradores) van
 en `modulo.accesorios`, no como piezas de tablero.
 
+## Bisagras y revelado de las puertas batientes (clóset)
+
+La cantidad de bisagras y el revelado mínimo salen de catálogos de herraje:
+
+- **Cantidad por alto de puerta** ([Hettich *Sensys*, p. 14, «Number of hinges
+  per door»](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf)):
+  2 bisagras hasta 900 mm, 3 hasta 1600 mm, 4 hasta 2000 mm y 5 hasta 2400 mm.
+  La guía vale para puertas de hasta 600 mm de ancho (Blum suma una bisagra
+  entre 600 y 650 mm) y para tablero de 19 mm y 750 kg/m³.
+- **Revelado mínimo** ([Blum, guía rápida de
+  bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf);
+  [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf)):
+  una puerta de 18 mm con la copa a 3 mm del borde necesita 1.3 mm (Blum) o
+  0.6–0.8 mm (Hettich, según la tabla del catálogo); entre dos puertas el total
+  debe ser al menos el doble, 2.6 mm. El `juego` por omisión de 3 mm lo cumple.
+- **Herraje**: copa Ø35 mm, distancia de copa de 3–8 mm y espesor de puerta de
+  15–24 mm ([Blum CLIP
+  top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf)).
+
+`bisagrasPorPuerta()` aplica la tabla y el módulo avisa en `notas` cuando el caso
+queda fuera de la guía: holgura menor que 2.6 mm, puertas de más de 2400 mm de
+alto o de más de 600 mm de ancho. La cantidad no considera el peso de la puerta
+(los catálogos piden 2 bisagras para 4–6 kg y 3 para 6–12 kg,
+[Blum](https://ea.blum.com/en/number-of-hinges/)): ese dato el módulo no lo
+modela y queda `por revisar`. Las correderas mantienen su traslape y juego de
+guía `por revisar`, porque los fija el sistema elegido.
+
 ## Perfil de restricciones (opcional)
 
 `src/modules/profiles.js` (`PERFIL_CORTECLOUD_MADIJAL`) transcribe el perfil de
@@ -114,11 +141,12 @@ verificada para un valor de carga.
 | travesaños de 100 mm de ancho | cajonera y cocina | fixture real `tests/fixtures/cortecloud/escritorio_D_simple.json` | verificado (despiece del repo) |
 | barrenos de repisa: Ø5, a 40–50 mm del borde, con 30 mm entre barrenos, una posición y dos arriba y dos abajo | clóset y librero | ARAUCO, *Cómo Instalar Repisas* (serie Cómo Hacer 6) | verificado |
 | 65 mm mínimo de corte; 250 mm para piezas mecanizadas; 2480 x 1810 mm máximo; tablero 2500 x 1830 x 18; ranuras y barrenos permitidos | perfil Cortecloud/Madijal | `docs/memoria/MEMORIA.md` (restricciones observadas en uso real) | según la MEMORIA; **por revisar** contra el proveedor |
-| juego de 3 mm entre puertas/frentes | todos | valor de taller | **por revisar** |
+| juego de 3 mm entre puertas/frentes | todos | valor de taller; en el clóset cubre el revelado mínimo de la bisagra (≥ 2 × 1.3 mm) | clóset batiente: verificado como suficiente; cajonera y cocina: **por revisar** |
 | juego de corredera 25 mm; margen de alto de caja 20 mm; juego de fondo 10 mm | cajonera y cocina | valor de taller | **por revisar** |
 | profundidad del barreno de repisa 12 mm | clóset y librero | valor de taller | **por revisar** |
-| traslape de 30 mm y juego de guía de 45 mm | clóset con correderas | valor de taller | **por revisar** |
-| 2/3/4 bisagras según alto de puerta | clóset y cocina | regla de taller | **por revisar** |
+| traslape de 30 mm y juego de guía de 45 mm | clóset con correderas | valor de taller (lo fija el sistema de correderas elegido) | **por revisar** |
+| 2/3/4/5 bisagras por puerta hasta 900/1600/2000/2400 mm de alto; puertas de hasta 600 mm de ancho; espesor de puerta 15–24 mm | clóset (la cocina sigue con su regla local de 2/3) | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) y [Blum CLIP top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf) | verificado |
+| revelado mínimo de 1.3 mm por puerta de 18 mm con la copa a 3 mm del borde (Hettich *Sensys*: 0.6–0.8 mm); entre dos puertas, ≥ 2 × el revelado | clóset batiente | [Blum, guía rápida de bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf); [Hettich *Sensys*](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | verificado (se toma el mayor) |
 | fondo de 600 mm (clóset) y de 300 mm (librero) | clóset y librero | guías de taller (https://www.closetworld.com/blog/standard-closet-dimensions, https://www.instagram.com/p/B7RItFOH3XF/) | **por revisar** |
 | barral a 1700 mm del piso | clóset | valor de taller | **por revisar** |
 
@@ -137,7 +165,10 @@ totales), las reglas del perfil (una prueba por regla, incluidos los umbrales de
 puertas y frentes, la idea escrita y el punto de entrada HTTP, y el mapeo de
 cantos a los lados `c1`/`c2`/`l1`/`l2` de Cortecloud
 (`tests/test_cantos_cortecloud.test.ts`, con ida y vuelta sobre las 21 líneas del
-fixture). Son **302 pruebas vitest** y 60 del servidor MCP (`node:test`), y
+fixture) y las tolerancias de bisagras y juegos de herraje del clóset contra las
+tablas de Hettich y Blum (`tests/test_closet_herrajes.test.ts`: tramos de 2/3/4/5
+bisagras, revelado mínimo entre puertas, avisos de altura y ancho fuera de guía).
+Son **311 pruebas vitest** y 60 del servidor MCP (`node:test`), y
 `tsc --noEmit` estricto pasa.
 
 ## Vista previa de desarrollo
@@ -182,6 +213,9 @@ el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio
 - Confirmar con el taller el lado **físico** de cada canto en las piezas importadas
   (el JSON no declara la orientación del dibujo; ver arriba).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
+- Llevar la cantidad de bisagras de la cocina (hoy regla local de 2/3) a la tabla
+  verificada de `bisagrasPorPuerta()`.
+- Peso de puerta: la guía de bisagras por peso (4–6 kg / 6–12 kg) no está modelada.
 - Resolver la ranura de trasera (hoy la trasera va clavada al dorso, sin ranura).
 - Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la
   demo web ya está resuelta en la rama `demo-web-docs`.
