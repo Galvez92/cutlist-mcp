@@ -95,19 +95,29 @@ describe("cajon · mecanizado (fondo en ranura + minifix)", () => {
     aprox(ys[3], 100.0);
   });
 
-  it("pines minifix Ø9.525 en frente y trasera (4 barrenos horizontales)", () => {
+  it("pines minifix Ø7 en frente y trasera (4 barrenos horizontales)", () => {
+    // Ø7 mm: el barreno del pasador que publica Häfele para el Minifix 15
+    // («bolt drill hole Ø7 or Ø8 mm»), no el 3/8" del perfil de la máquina.
     const modulo = generar();
     const frente = buscar(modulo, "Frente");
     const pines = frente.mecanizado.barrenos.filter((b) => b.horizontal);
     expect(pines.length).toBe(4);
     for (const pin of pines) {
-      aprox(pin.diametro, 9.525);
+      aprox(pin.diametro, 7.0);
       expect(pin.horizontal).toBe(true);
     }
     // en los cantos (x = 0 y x = ancho_interior)
     const xs = pines.map((p) => p.x).sort((a, b) => a - b);
     aprox(xs[0], 0.0);
     aprox(xs[2], 564.0); // ancho_interior
+    expect(buscar(modulo, "Trasera").mecanizado.barrenos[0].diametro).toBe(7.0);
+  });
+
+  it("acepta el Ø8 del otro espárrago y el 3/8\" del perfil", () => {
+    const pines8 = buscar(generar({ diametroPin: 8.0 }), "Frente").mecanizado.barrenos;
+    expect(pines8.every((b) => b.diametro === 8.0)).toBe(true);
+    const pinesPerfil = buscar(generar({ diametroPin: 9.525 }), "Frente").mecanizado.barrenos;
+    expect(pinesPerfil.every((b) => b.diametro === 9.525)).toBe(true);
   });
 
   it("fondo no lleva mecanizado", () => {
@@ -155,8 +165,20 @@ describe("cajon · accesorios", () => {
 });
 
 describe("cajon · validación y errores", () => {
-  it("respeta el perfil Cortecloud/Madijal", () => {
-    expect(errores(generar().validar())).toEqual([]);
+  it("el perfil avisa que el Ø7 del herraje no es un horizontal suyo", () => {
+    // El perfil Cortecloud/Madijal solo perfora Ø9.525 mm (3/8") en horizontal,
+    // así que el barreno real del pasador (Ø7) sale marcado: por revisar con el
+    // proveedor. El herraje real no entra en el barreno de 3/8".
+    const hallazgos = errores(generar().validar());
+    expect(hallazgos.map((h) => [h.pieza, h.regla])).toEqual([
+      ["Frente", "barreno_no_permitido"],
+      ["Trasera", "barreno_no_permitido"],
+    ]);
+    expect(hallazgos[0].mensaje).toContain("Ø7 mm");
+  });
+
+  it("con el Ø9.525 del perfil no hay hallazgos de barreno", () => {
+    expect(errores(generar({ diametroPin: 9.525 }).validar())).toEqual([]);
   });
 
   it("medidas inválidas fallan", () => {

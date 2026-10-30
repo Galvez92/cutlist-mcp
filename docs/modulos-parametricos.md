@@ -92,7 +92,11 @@ cuatro lados del cuerpo en lugar de clavarla al dorso: costados y base en todos,
 más tapa en clóset, cajonera y librero y travesaño trasero en la cocina.
 Parámetros: `trasera_ranura` (`true` por omisión; `false` deja la trasera clavada
 al dorso), `ranura_ancho` (5.7 mm), `ranura_profundidad` (9 mm) y
-`ranura_distancia` (15 mm desde el borde del dorso).
+`ranura_distancia` (15 mm desde el borde del dorso). El ancho tiene que ser mayor
+que el espesor de la trasera (`encajeTrasera()` rechaza la ranura si no: el panel
+no entra) y el encaje devuelve la **holgura del panel** —2.7 mm con los valores
+por omisión—, que las notas de los cuatro módulos muestran para compararla con el
+fresol real.
 
 - **Geometría:** la trasera entra `ranura_profundidad` mm en cada lado, así que
   mide alto y ancho interiores + 2 × profundidad. En el clóset y el librero las
@@ -103,7 +107,11 @@ al dorso), `ranura_ancho` (5.7 mm), `ranura_profundidad` (9 mm) y
   en la cara frontal de la trasera, que con ranura queda a 20.7 mm del dorso:
   `fondo − ranura_distancia − ranura_ancho − juego_fondo` (en la cocina el fondo
   es el del costado). Con `trasera_ranura: false` las dos descuentan solo el
-  espesor de la trasera.
+  espesor de la trasera. La medida sale de `fondoUtilCajon()` (`common.ts`) y la
+  cocina publica el presupuesto en `medidas` (`fondo_util_cajon`,
+  `largo_caja_cajon`) y en una nota, porque la corredera no puede superarlo: con
+  490 mm de fondo la cocina baja de la corredera de 450 mm (trasera clavada) a la
+  de 400 mm (trasera en ranura).
 - **Fuentes:** profundidad de 9 mm y 15 mm desde el borde, [*Manual Técnico de
   Melamina #02*](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938)
   (www.autodidacta.info / comohacercomohacer.com), que ranura el fondo de un cajón
@@ -221,7 +229,8 @@ verificada para un valor de carga.
 | peso de referencia de un tirador: 0.09 kg (tirador recto de acero inoxidable de 96 mm, SKU 103910) | clóset y cocina (`peso_tirador`) | [Promart, ficha del tirador Orient recto 96 mm](https://www.promart.pe/tirador-recto-acero-inox-96mm/p) | verificado (2026-10-29); es el peso de ese tirador, así que el taller debe pasar el del tirador elegido |
 | peso de referencia del tirador recto de 128 mm: 0.09 kg (liviano SKU 103911 y pesado SKU 103916) | clóset y cocina (`peso_tirador`), si el taller usa ese tirador | [Promart, tirador recto liviano 128 mm](https://www.promart.pe/tirador-recto-acero-inoxidable-liviano-128mm/p) y [tirador recto pesado 128 mm](https://www.promart.pe/tirador-recto-pesado-acero-inoxidable-128mm/p) | verificado (2026-10-29); las dos fichas publican el mismo peso, así que parece redondeado: conviene pesarlo en el taller |
 | ranura para la trasera: 9 mm de profundidad, a 15 mm del borde del dorso | clóset, cajonera, cocina y librero (`ranura_profundidad`, `ranura_distancia`) | [Manual Técnico de Melamina #02](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938) | **por revisar**: manual de taller (ranura el fondo de un cajón de 4 mm), no de fabricante |
-| ancho de la ranura de la trasera: 5.7 mm | clóset, cajonera, cocina y librero (`ranura_ancho`) | perfil Cortecloud/Madijal (`docs/memoria/MEMORIA.md`); el manual propone 4 mm | **por revisar**: 5.7 mm es el menor ancho del perfil y queda holgado para una trasera de 3 mm |
+| ancho de la ranura de la trasera: 5.7 mm | clóset, cajonera, cocina y librero (`ranura_ancho`) | perfil Cortecloud/Madijal (`docs/memoria/MEMORIA.md`); el manual propone 4 mm | **por revisar**: 5.7 mm es el menor ancho del perfil y deja 2.7 mm de holgura para una trasera de 3 mm (el encaje rechaza una ranura más angosta que el panel) |
+| minifix: caja Ø15 mm con 13.5 mm de profundidad en tablero de 18 mm; barreno del pasador de Ø7 u Ø8 mm en el canto | cajón (`diametro_pin`, por omisión 7 mm) | [Häfele, *IXCONNECT Minifix 15 metal housings*](https://files.hafele.co.uk/catalogfiles/www/14CFC294.pdf) | verificado (2026-10-30); el perfil Cortecloud/Madijal solo admite Ø9.525 mm en horizontal, así que el Ø7 sale marcado **por revisar** con el proveedor |
 | revelado mínimo de 1.3 mm por puerta de 18 mm con la copa a 3 mm del borde (Hettich *Sensys*: 0.6–0.8 mm); entre dos puertas, ≥ 2 × el revelado | clóset batiente | [Blum, guía rápida de bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf); [Hettich *Sensys*](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | verificado (se toma el mayor) |
 | fondo de 600 mm (clóset) y de 300 mm (librero) | clóset y librero | guías de taller (https://www.closetworld.com/blog/standard-closet-dimensions, https://www.instagram.com/p/B7RItFOH3XF/) | **por revisar** |
 | barral a 1700 mm del piso | clóset | valor de taller | **por revisar** |
@@ -247,7 +256,7 @@ revelado mínimo entre puertas, avisos de altura y ancho fuera de guía;
 `tests/test_cocina.test.ts`: la cocina aplica la misma tabla y avisa fuera de guía;
 `tests/test_bisagras_peso.test.ts`: peso de la puerta y combinación de la guía por
 alto con la de peso, en el clóset y la cocina).
-Son **323 pruebas vitest** y 60 del servidor MCP (`node:test`), y
+Son **369 pruebas vitest** y 60 del servidor MCP (`node:test`), y
 `tsc --noEmit` estricto pasa.
 
 ## Vista previa de desarrollo
@@ -294,7 +303,10 @@ el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio
   [`docs/verificacion-lados-piezas.md`](verificacion-lados-piezas.md).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
 - Confirmar las medidas de la ranura de la trasera (9 mm de profundidad, 15 mm del
-  borde, 5.7 mm de ancho), ya adoptada en clóset, cajonera, cocina y librero.
+  borde, 5.7 mm de ancho, 2.7 mm de holgura para el panel), ya adoptada en clóset,
+  cajonera, cocina y librero.
+- Confirmar con el proveedor qué barreno horizontal puede ejecutar la máquina: el
+  perfil solo admite Ø9.525 mm (3/8") y el pasador del minifix real es Ø7 u Ø8 mm.
 - Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la
   demo web ya está resuelta en la rama `demo-web-docs`.
 

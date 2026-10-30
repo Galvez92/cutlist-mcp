@@ -37,10 +37,10 @@ import {
   RANURA_TRASERA_DISTANCIA_DEFAULT,
   RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   cajon,
-  caraFrontalTrasera,
   elegirCorredera,
   encajeTrasera,
   exigirPositivo,
+  fondoUtilCajon,
   frentes,
   repartir,
 } from "./common.js";
@@ -202,6 +202,7 @@ export function generar(params: ParamsCocina = {}): Modulo {
           anchoRanura: p.ranuraAncho,
           profundidad: p.ranuraProfundidad,
           distancia: p.ranuraDistancia,
+          espesorTrasera: p.traseraEspesor,
         })
       : null;
   const ranurasTrasera = encaje ? [encaje.ranura] : [];
@@ -296,6 +297,11 @@ export function generar(params: ParamsCocina = {}): Modulo {
     );
   }
 
+  // Fondo libre para la caja del cajón: termina en la cara frontal de la
+  // trasera, que con ranura queda más adelante que el dorso.
+  const fondoUtil = fondoUtilCajon(fondoCostado, p.traseraEspesor, encaje, p.juegoFondo);
+  const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
+
   const notas: string[] = [
     `Alto de carcasa ${altoCarcasa.toFixed(0)} mm: ${p.zocalo.toFixed(0)} mm de zócalo y ${p.cubiertaEspesor.toFixed(0)} mm de mesón.`,
     `Profundidad de costado ${fondoCostado.toFixed(0)} mm y ${p.espesorPuerta.toFixed(0)} mm de puerta (criterio de 600 mm totales de ARAUCO #17).`,
@@ -308,7 +314,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
     notas.push(
       `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
         `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
-        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
+        `de holgura para el panel (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
     );
     notas.push(
       "La ranura va en costados, base y travesaño trasero; el travesaño frontal queda sin ranura.",
@@ -326,11 +333,10 @@ export function generar(params: ParamsCocina = {}): Modulo {
     if (anchoCaja <= 2 * p.espesor) {
       throw new ValueError("el juego de corredera no deja ancho útil en la caja del cajón");
     }
-    // Fondo libre para la caja del cajón: termina en la cara frontal de la
-    // trasera, que con ranura queda más adelante que el dorso.
-    const fondoUtil =
-      fondoCostado - caraFrontalTrasera(p.traseraEspesor, encaje) - p.juegoFondo;
-    const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
+    notas.push(
+      `Fondo útil para el cajón: ${fondoUtil.toFixed(1)} mm hasta la cara frontal de la trasera ` +
+        `menos ${p.juegoFondo.toFixed(0)} mm de juego de fondo; la corredera no puede superar esa medida.`,
+    );
     if (!esEstandar) {
       notas.push(
         `Cajón de ${largoCorredera.toFixed(0)} mm de fondo: no calza ninguna corredera de 400/450/500 mm (ARAUCO #17); por revisar el catálogo.`,
@@ -433,6 +439,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
       alto_carcasa: altoCarcasa,
       fondo_costado: fondoCostado,
       ancho_interior: anchoInterior,
+      fondo_util_cajon: fondoUtil,
+      largo_caja_cajon: p.cajones > 0 ? largoCorredera : 0.0,
     },
     piezas,
     accesorios,

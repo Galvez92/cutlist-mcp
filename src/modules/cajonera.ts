@@ -32,10 +32,10 @@ import {
   RANURA_TRASERA_DISTANCIA_DEFAULT,
   RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   cajon,
-  caraFrontalTrasera,
   elegirCorredera,
   encajeTrasera,
   exigirPositivo,
+  fondoUtilCajon,
   frentes,
   repartir,
 } from "./common.js";
@@ -157,6 +157,7 @@ export function generar(params: ParamsCajonera = {}): Modulo {
           anchoRanura: p.ranuraAncho,
           profundidad: p.ranuraProfundidad,
           distancia: p.ranuraDistancia,
+          espesorTrasera: p.traseraEspesor,
         })
       : null;
   const ranurasTrasera = encaje ? [encaje.ranura] : [];
@@ -242,7 +243,7 @@ export function generar(params: ParamsCajonera = {}): Modulo {
   }
   // Fondo libre para la caja del cajón: termina en la cara frontal de la
   // trasera, que con ranura queda más adelante que el dorso.
-  const fondoUtil = p.fondo - caraFrontalTrasera(p.traseraEspesor, encaje) - p.juegoFondo;
+  const fondoUtil = fondoUtilCajon(p.fondo, p.traseraEspesor, encaje, p.juegoFondo);
   const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
 
   const notas: string[] = [
@@ -255,7 +256,8 @@ export function generar(params: ParamsCajonera = {}): Modulo {
     notas.push(
       `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
         `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
-        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
+        `de holgura para el panel (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
     );
     notas.push(
       "El travesaño trasero va por delante de la trasera encastrada: confirmar su retranqueo en taller.",

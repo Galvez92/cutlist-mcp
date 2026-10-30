@@ -12,10 +12,13 @@
  *   tornillos estructurales; los laterales se unen al frente y la trasera con
  *   minifix. Las excentricas (Ø15 mm, barreno vertical en la cara interior del
  *   lateral) se colocan a ``distanciaMinifix`` de las orillas superior e
- *   inferior; los pines (Ø9.525 mm = 3/8", único diámetro horizontal permitido
- *   por el perfil Cortecloud/Madijal) van en el canto del frente/trasera. El
- *   diámetro del pin es **por revisar** contra el herraje real (típicamente
- *   Ø5–8 mm, pero el perfil solo permite Ø9.525 mm horizontal).
+ *   inferior; los pines van en el canto del frente/trasera.
+ *   Diámetros según el herraje real (Häfele, *IXCONNECT Minifix 15 metal
+ *   housings*): caja Ø15 mm con 13.5 mm de profundidad en tablero de 18 mm y
+ *   barreno del pasador de **Ø7 u Ø8 mm** en el canto del panel, según el
+ *   espárrago elegido. El perfil Cortecloud/Madijal solo admite Ø9.525 mm
+ *   (3/8") en horizontal, medida que no es de minifix: se deja como parámetro
+ *   (``diametro_pin``) y el perfil lo marca *por revisar* con el proveedor.
  * - **Correderas al centro**: la corredera se monta por debajo del cajón,
  *   centrada, sin necesitar juego lateral. El largo de la corredera se elige
  *   del catálogo estándar (400/450/500 mm, ARAUCO #17).
@@ -46,6 +49,7 @@ export const CAMPOS: Record<string, string> = {
   ranura_distancia: "Distancia de la ranura desde el borde inferior (mm)",
   ranura_profundidad: "Profundidad de la ranura en la cara interior (mm)",
   distancia_minifix: "Distancia de los minifix desde las orillas superior e inferior (mm)",
+  diametro_pin: "Diámetro del barreno del pasador minifix en el canto (mm); el herraje real usa 7 u 8",
   material: "Texto del material del cuerpo (como en el despiece)",
   material_fondo: "Texto del material del fondo",
   canto: "Texto del canto de las aristas vistas",
@@ -62,11 +66,20 @@ export interface ParamsCajon {
   ranuraDistancia?: number;
   ranuraProfundidad?: number;
   distanciaMinifix?: number;
+  diametroPin?: number;
   material?: string;
   materialFondo?: string;
   canto?: string;
   nombre?: string;
 }
+
+/**
+ * Diámetro del barreno del pasador en el canto (mm): Ø7 mm, la medida menor que
+ * publica Häfele para el Minifix 15 («bolt drill hole Ø7 or Ø8 mm»); Ø8 con el
+ * espárrago correspondiente. No es 3/8" (9.525 mm): ese es el único horizontal
+ * del perfil Cortecloud/Madijal, que no coincide con el herraje real.
+ */
+const DIAMETRO_PIN_DEFAULT = 7.0;
 
 export const DEFAULTS_CAJON: Required<Omit<ParamsCajon, "nombre" | "materialFondo">> & {
   nombre: string;
@@ -81,18 +94,21 @@ export const DEFAULTS_CAJON: Required<Omit<ParamsCajon, "nombre" | "materialFond
   ranuraDistancia: 15.0,
   ranuraProfundidad: 10.0,
   distanciaMinifix: 50.0,
+  diametroPin: DIAMETRO_PIN_DEFAULT,
   material: MATERIAL_DEFAULT,
   materialFondo: MATERIAL_TRASERA_DEFAULT,
   canto: CANTO_DEFAULT,
   nombre: "",
 };
 
-/** Profundidad del barreno de la excentrica minifix (mm). */
-const PROFUNDIDAD_CAM_MINIFIX = 13.0;
+/**
+ * Profundidad del barreno de la excentrica minifix (mm): 13.5 mm para tablero
+ * de 18 mm (Häfele *IXCONNECT Minifix 15*: 12.0/12.5/13.5/14.0 mm para 15/16/18/19
+ * mm). Con otro espesor hay que ajustarla — *por revisar*.
+ */
+const PROFUNDIDAD_CAM_MINIFIX = 13.5;
 /** Profundidad del barreno del pin minifix en el canto (mm). */
 const PROFUNDIDAD_PIN_MINIFIX = 12.0;
-/** Diámetro del barreno horizontal del pin (3/8" = único horizontal del perfil). */
-const DIAMETRO_PIN = 9.525;
 /** Diámetro del barreno vertical de la excentrica minifix. */
 const DIAMETRO_CAM = 15.0;
 
@@ -106,6 +122,9 @@ export function generar(params: ParamsCajon = {}): Modulo {
   });
   if (p.distanciaMinifix <= 0) {
     throw new ValueError("distancia_minifix debe ser mayor que cero");
+  }
+  if (p.diametroPin <= 0) {
+    throw new ValueError("diametro_pin debe ser mayor que cero");
   }
   if (2 * p.distanciaMinifix >= p.alto) {
     throw new ValueError(
@@ -153,10 +172,10 @@ export function generar(params: ParamsCajon = {}): Modulo {
   ];
 
   const pinesFrenteTrasera: Barreno[] = [
-    barreno({ cara: "i", x: 0, y: yAbajo, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: DIAMETRO_PIN, horizontal: true }),
-    barreno({ cara: "i", x: 0, y: yArriba, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: DIAMETRO_PIN, horizontal: true }),
-    barreno({ cara: "i", x: anchoInterior, y: yAbajo, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: DIAMETRO_PIN, horizontal: true }),
-    barreno({ cara: "i", x: anchoInterior, y: yArriba, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: DIAMETRO_PIN, horizontal: true }),
+    barreno({ cara: "i", x: 0, y: yAbajo, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: p.diametroPin, horizontal: true }),
+    barreno({ cara: "i", x: 0, y: yArriba, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: p.diametroPin, horizontal: true }),
+    barreno({ cara: "i", x: anchoInterior, y: yAbajo, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: p.diametroPin, horizontal: true }),
+    barreno({ cara: "i", x: anchoInterior, y: yArriba, profundidad: PROFUNDIDAD_PIN_MINIFIX, diametro: p.diametroPin, horizontal: true }),
   ];
 
   const mecanizadoLateral = new Mecanizado(
@@ -190,8 +209,9 @@ export function generar(params: ParamsCajon = {}): Modulo {
       rol: "frente",
       cantos: new Cantos(p.canto),
       mecanizado: mecanizadoFrenteTrasera,
-      funcion: "Frente del cajón entre laterales — canto en la arista superior, " +
-        "ranura para el fondo, pines minifix Ø9.525 mm (por revisar) en los cantos",
+      funcion:
+        "Frente del cajón entre laterales — canto en la arista superior, " +
+        `ranura para el fondo, pines minifix Ø${p.diametroPin} mm en los cantos`,
       ...comun,
     }),
     new Pieza({
@@ -200,8 +220,9 @@ export function generar(params: ParamsCajon = {}): Modulo {
       ancho: p.alto,
       rol: "trasera",
       mecanizado: mecanizadoFrenteTrasera,
-      funcion: "Trasera del cajón entre laterales — sin canto, ranura para el fondo, " +
-        "pines minifix Ø9.525 mm (por revisar) en los cantos",
+      funcion:
+        "Trasera del cajón entre laterales — sin canto, ranura para el fondo, " +
+        `pines minifix Ø${p.diametroPin} mm en los cantos`,
       ...comun,
     }),
   ];
@@ -231,7 +252,10 @@ export function generar(params: ParamsCajon = {}): Modulo {
   const notas: string[] = [
     "Fondo en ranura: el panel se inserta en canales fresados en laterales, frente y trasera.",
     `Armado solo con minifix: excentricas Ø15 mm a ${p.distanciaMinifix.toFixed(0)} mm de cada orilla ` +
-      `(4 por lateral); pines Ø9.525 mm en los cantos del frente y la trasera (por revisar contra el herraje real).`,
+      `(4 por lateral, barreno de ${PROFUNDIDAD_CAM_MINIFIX.toFixed(1)} mm de profundidad en tablero de 18 mm); ` +
+      `pines Ø${p.diametroPin} mm en los cantos del frente y la trasera.`,
+    "Herraje Häfele Minifix 15: el barreno del pasador es de Ø7 u Ø8 mm; el perfil Cortecloud/Madijal " +
+      "solo admite Ø9.525 mm (3/8\") en horizontal, así que esa medida queda por revisar con el proveedor.",
     "Correderas al centro: la corredera se monta por debajo del cajón, centrada, sin juego lateral.",
   ];
   if (!esEstandar) {

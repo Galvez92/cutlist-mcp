@@ -50,6 +50,8 @@ export const PROFUNDIDAD_BARRENO_REPISA = 12.0;
 export const RANURA_TRASERA_ANCHO_DEFAULT = 5.7;
 export const RANURA_TRASERA_PROFUNDIDAD_DEFAULT = 9.0;
 export const RANURA_TRASERA_DISTANCIA_DEFAULT = 15.0;
+/** Espesor de la trasera con que se calcula la holgura de la ranura (mm). */
+export const ESPESOR_TRASERA_DEFAULT = 3.0;
 
 /** Ranura para la trasera y medidas de la trasera ya encastrada (mm). */
 export interface EncajeTrasera {
@@ -58,6 +60,8 @@ export interface EncajeTrasera {
   largo: number;
   /** Ancho de la trasera con los dos extremos dentro de la ranura. */
   ancho: number;
+  /** Holgura del panel en la ranura: ancho de la ranura − espesor de la trasera. */
+  holgura: number;
 }
 
 /**
@@ -72,13 +76,26 @@ export function encajeTrasera(init: {
   anchoRanura?: number;
   profundidad?: number;
   distancia?: number;
+  espesorTrasera?: number;
 }): EncajeTrasera {
   const anchoRanura = init.anchoRanura ?? RANURA_TRASERA_ANCHO_DEFAULT;
   const profundidad = init.profundidad ?? RANURA_TRASERA_PROFUNDIDAD_DEFAULT;
   const distancia = init.distancia ?? RANURA_TRASERA_DISTANCIA_DEFAULT;
+  const espesorTrasera = init.espesorTrasera ?? ESPESOR_TRASERA_DEFAULT;
   if (!(anchoRanura > 0) || !(profundidad > 0) || !(distancia > 0)) {
     throw new ValueError(
       "el ancho, la profundidad y la distancia de la ranura de la trasera deben ser mayores que cero",
+    );
+  }
+  if (!(espesorTrasera > 0)) {
+    throw new ValueError(
+      `el espesor de la trasera debe ser mayor que cero (recibido ${espesorTrasera})`,
+    );
+  }
+  if (anchoRanura <= espesorTrasera) {
+    throw new ValueError(
+      `la ranura de ${anchoRanura.toFixed(1)} mm no admite la trasera de ` +
+        `${espesorTrasera.toFixed(1)} mm: el panel no entra`,
     );
   }
   if (distancia + anchoRanura >= init.fondo) {
@@ -91,6 +108,7 @@ export function encajeTrasera(init: {
     ranura: ranura({ cara: "i", profundidad, ancho: anchoRanura, distancia }),
     largo: init.altoInterior + 2 * profundidad,
     ancho: init.anchoInterior + 2 * profundidad,
+    holgura: anchoRanura - espesorTrasera,
   };
 }
 
@@ -103,6 +121,20 @@ export function encajeTrasera(init: {
 export function caraFrontalTrasera(espesor: number, encaje: EncajeTrasera | null): number {
   if (!(espesor > 0)) return 0.0;
   return encaje ? encaje.ranura.distancia + encaje.ranura.ancho : espesor;
+}
+
+/**
+ * Fondo libre para la caja del cajón (mm): del borde frontal del módulo a la
+ * cara frontal de la trasera, menos la holgura de fondo que pide la corredera.
+ * La corredera elegida nunca puede ser más larga que esta medida.
+ */
+export function fondoUtilCajon(
+  fondo: number,
+  espesorTrasera: number,
+  encaje: EncajeTrasera | null,
+  juegoFondo: number,
+): number {
+  return fondo - caraFrontalTrasera(espesorTrasera, encaje) - juegoFondo;
 }
 
 /**

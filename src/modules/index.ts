@@ -72,6 +72,7 @@ const CAMPOS_CAJON: CampoParam[] = [
   caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde inferior (mm)"),
   caj("ranura_profundidad", "ranuraProfundidad", "float", 10.0, "Profundidad de la ranura en la cara interior (mm)"),
   caj("distancia_minifix", "distanciaMinifix", "float", 50.0, "Distancia de los minifix desde las orillas superior e inferior (mm)"),
+  caj("diametro_pin", "diametroPin", "float", 7.0, "Diámetro del barreno del pasador minifix en el canto (mm); el herraje real usa Ø7 u Ø8"),
   caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
   caj("material_fondo", "materialFondo", "texto", "MDF 3 mm", "Texto del material del fondo"),
   caj("canto", "canto", "texto", "PVC 0.4 mm", "Texto del canto de las aristas vistas"),

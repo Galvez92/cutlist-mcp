@@ -49,6 +49,37 @@ describe("encaje de la trasera", () => {
     expect(encaje.ranura).toEqual({ cara: "i", profundidad: 9.0, ancho: 5.7, distancia: 15.0 });
   });
 
+  it("la holgura del panel es el ancho de la ranura menos el espesor de la trasera", () => {
+    // 5.7 mm de ranura para la trasera de 3 mm del perfil: 2.7 mm de holgura.
+    aprox(
+      encajeTrasera({ anchoInterior: 400.0, altoInterior: 800.0, fondo: 500.0 }).holgura,
+      2.7,
+    );
+    // La ranura de 4 mm del manual, con un panel de 3 mm, deja 1 mm.
+    aprox(
+      encajeTrasera({
+        anchoInterior: 400.0,
+        altoInterior: 800.0,
+        fondo: 500.0,
+        anchoRanura: 4.0,
+        espesorTrasera: 3.0,
+      }).holgura,
+      1.0,
+    );
+  });
+
+  it("rechaza una ranura que no admite el espesor de la trasera", () => {
+    expect(() =>
+      encajeTrasera({
+        anchoInterior: 400.0,
+        altoInterior: 800.0,
+        fondo: 500.0,
+        anchoRanura: 3.0,
+        espesorTrasera: 3.0,
+      }),
+    ).toThrow(/no admite la trasera/);
+  });
+
   it("rechaza medidas no positivas y una ranura que no cabe en el fondo", () => {
     expect(() =>
       encajeTrasera({ anchoInterior: 400.0, altoInterior: 800.0, fondo: 300.0, anchoRanura: 0 }),
@@ -231,6 +262,33 @@ describe("cocina · trasera en ranura", () => {
     aprox(buscar(modulo, "Lateral cajón").largo, 500.0);
     const sinRanura = generarCocina({ puertas: 0, cajones: 2, traseraRanura: false });
     expect(buscar(sinRanura, "Lateral cajón").largo).toBe(500.0);
+  });
+
+  it("el fondo útil del cajón de la cocina depende de la trasera encastrada", () => {
+    // Con 490 mm de fondo el costado mide 472 mm: con ranura quedan
+    // 441.3 mm útiles (472 − 20.7 − 10) y entra la corredera de 400 mm; con la
+    // trasera clavada quedan 459 mm y entra la de 450 mm.
+    const modulo = generarCocina({ fondo: 490.0, puertas: 0, cajones: 2 });
+    aprox(modulo.medidas["fondo_util_cajon"], 441.3);
+    aprox(modulo.medidas["largo_caja_cajon"], 400.0);
+    aprox(buscar(modulo, "Lateral cajón").largo, 400.0);
+    const sinRanura = generarCocina({
+      fondo: 490.0,
+      puertas: 0,
+      cajones: 2,
+      traseraRanura: false,
+    });
+    aprox(sinRanura.medidas["fondo_util_cajon"], 459.0);
+    aprox(sinRanura.medidas["largo_caja_cajon"], 450.0);
+    aprox(buscar(sinRanura, "Lateral cajón").largo, 450.0);
+  });
+
+  it("la cocina informa el fondo útil y la holgura de la ranura", () => {
+    const modulo = generarCocina({ puertas: 0, cajones: 2 });
+    aprox(modulo.medidas["fondo_util_cajon"], 551.3);
+    aprox(modulo.medidas["largo_caja_cajon"], 500.0);
+    expect(modulo.notas.some((n) => n.includes("Fondo útil para el cajón: 551.3 mm"))).toBe(true);
+    expect(modulo.notas.some((n) => n.includes("2.7 mm de holgura"))).toBe(true);
   });
 
   it("el perfil por omisión admite el ancho de ranura", () => {

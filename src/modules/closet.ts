@@ -208,6 +208,7 @@ export function generar(params: ParamsCloset = {}): Modulo {
           anchoRanura: p.ranuraAncho,
           profundidad: p.ranuraProfundidad,
           distancia: p.ranuraDistancia,
+          espesorTrasera: p.traseraEspesor,
         })
       : null;
   const ranurasTrasera = encaje ? [encaje.ranura] : [];
@@ -291,7 +292,8 @@ export function generar(params: ParamsCloset = {}): Modulo {
     notas.push(
       `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
         `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
-        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
+        `de holgura para el panel (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
     );
   } else {
     notas.push("La trasera se clava/atornilla al dorso, sin ranura.");
