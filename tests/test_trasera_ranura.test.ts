@@ -380,6 +380,31 @@ describe("librero · trasera en ranura", () => {
     aprox(buscar(modulo, "Repisa").largo, 273.3);
   });
 
+  it("la repisa despeja la cara frontal de la trasera con el helper compartido", () => {
+    // Misma medida que el clóset y la caja del cajón de cocina y cajonera:
+    // distancia de la ranura + su ancho = 20.7 mm con los valores por omisión.
+    const fondo = 300.0;
+    const encaje = encajeTrasera({ anchoInterior: 764.0, altoInterior: 1964.0, fondo });
+    const frenteTrasera = caraFrontalTrasera(3.0, encaje);
+    aprox(frenteTrasera, 20.7);
+    aprox(buscar(generarLibrero({ fondo }), "Repisa").largo, fondo - frenteTrasera);
+    // Clavada al dorso la trasera no ocupa el interior: la repisa llega al dorso.
+    aprox(buscar(generarLibrero({ fondo, traseraRanura: false }), "Repisa").largo, fondo);
+  });
+
+  it("la nota dice dónde va la ranura, como en el clóset y la cocina", () => {
+    const modulo = generarLibrero();
+    expect(
+      modulo.notas.some((n) =>
+        n.includes("La ranura va en costados, base y tapa; el frente queda sin ranura."),
+      ),
+    ).toBe(true);
+    expect(modulo.notas.some((n) => n.includes("2.7 mm de holgura para el panel"))).toBe(true);
+    expect(
+      generarLibrero({ traseraRanura: false }).notas.some((n) => n.includes("La ranura va en")),
+    ).toBe(false);
+  });
+
   it("el parámetro del registro llega al generador", () => {
     const modulo = generarModulo("librero", { trasera_ranura: false });
     expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
