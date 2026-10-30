@@ -32,6 +32,7 @@ import {
   RANURA_TRASERA_DISTANCIA_DEFAULT,
   RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   cajon,
+  caraFrontalTrasera,
   elegirCorredera,
   encajeTrasera,
   exigirPositivo,
@@ -239,7 +240,9 @@ export function generar(params: ParamsCajonera = {}): Modulo {
   if (anchoCaja <= 2 * p.espesor) {
     throw new ValueError("el juego de corredera no deja ancho útil en la caja del cajón");
   }
-  const fondoUtil = p.fondo - p.traseraEspesor - p.juegoFondo;
+  // Fondo libre para la caja del cajón: termina en la cara frontal de la
+  // trasera, que con ranura queda más adelante que el dorso.
+  const fondoUtil = p.fondo - caraFrontalTrasera(p.traseraEspesor, encaje) - p.juegoFondo;
   const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
 
   const notas: string[] = [

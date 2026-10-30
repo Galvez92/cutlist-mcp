@@ -98,9 +98,12 @@ al dorso), `ranura_ancho` (5.7 mm), `ranura_profundidad` (9 mm) y
   mide alto y ancho interiores + 2 × profundidad. En el clóset y el librero las
   repisas se recortan para terminar en la cara frontal de la trasera
   (`fondo − ranura_distancia − ranura_ancho`); en la cajonera el travesaño
-  trasero queda por delante de la trasera; en la cocina la ranura va en el
-  travesaño trasero y la caja del cajón termina en la cara frontal de la trasera
-  (`fondo del costado − ranura_distancia − ranura_ancho − juego_fondo`).
+  trasero queda por delante de la trasera; en la cocina la ranura va además en
+  el travesaño trasero. En las dos cajas con cajones la caja del cajón termina
+  en la cara frontal de la trasera, que con ranura queda a 20.7 mm del dorso:
+  `fondo − ranura_distancia − ranura_ancho − juego_fondo` (en la cocina el fondo
+  es el del costado). Con `trasera_ranura: false` las dos descuentan solo el
+  espesor de la trasera.
 - **Fuentes:** profundidad de 9 mm y 15 mm desde el borde, [*Manual Técnico de
   Melamina #02*](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938)
   (www.autodidacta.info / comohacercomohacer.com), que ranura el fondo de un cajón

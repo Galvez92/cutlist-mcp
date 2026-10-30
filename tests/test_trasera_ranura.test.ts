@@ -142,6 +142,23 @@ describe("cajonera · trasera en ranura", () => {
     expect(modulo.notas.some((n) => n.includes("travesaño trasero va por delante"))).toBe(true);
   });
 
+  it("la caja del cajón termina en la cara frontal de la trasera", () => {
+    // Con 465 mm de fondo quedan 434.3 mm útiles (465 − 15 de ranura − 5.7 de
+    // ancho − 10 de juego), así que entra la corredera de 400 mm; con la trasera
+    // clavada quedan 452 mm y entra la de 450 mm.
+    const modulo = generarCajonera({ fondo: 465.0 });
+    aprox(modulo.medidas["largo_caja_cajon"], 400.0);
+    aprox(buscar(modulo, "Lateral cajón").largo, 400.0);
+    const sinRanura = generarCajonera({ fondo: 465.0, traseraRanura: false });
+    aprox(sinRanura.medidas["largo_caja_cajon"], 450.0);
+  });
+
+  it("con los valores por omisión la corredera sigue siendo de 450 mm", () => {
+    const modulo = generarCajonera();
+    aprox(modulo.medidas["largo_caja_cajon"], 450.0);
+    aprox(buscar(modulo, "Lateral cajón").largo, 450.0);
+  });
+
   it("con trasera_ranura: false vuelve la trasera clavada al dorso", () => {
     const modulo = generarCajonera({ traseraRanura: false });
     aprox(buscar(modulo, "Trasera").largo, 800.0);

@@ -95,6 +95,17 @@ export function encajeTrasera(init: {
 }
 
 /**
+ * Distancia desde el borde del dorso hasta la cara frontal de la trasera (mm).
+ * Sin ranura es el espesor de la trasera; encastrada queda adelantada
+ * ``distancia + ancho de la ranura``. La usan las cajas de cajón (cajonera y
+ * cocina) para que su fondo termine justo delante de la trasera.
+ */
+export function caraFrontalTrasera(espesor: number, encaje: EncajeTrasera | null): number {
+  if (!(espesor > 0)) return 0.0;
+  return encaje ? encaje.ranura.distancia + encaje.ranura.ancho : espesor;
+}
+
+/**
  * Reparte ``total`` en ``cantidad`` tramos iguales con ``cantidad - 1`` juegos.
  * Reparto de puertas cubrientes a lo ancho y de frentes de cajón a lo alto.
  */
