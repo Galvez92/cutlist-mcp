@@ -23,6 +23,12 @@ class PartTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Part(width=100, height=100, quantity=0)
 
+    def test_espesor_opcional(self):
+        self.assertIsNone(Part(width=100, height=100).thickness)
+        self.assertEqual(Part(width=100, height=100, thickness=18.0).thickness, 18.0)
+        with self.assertRaises(ValueError):
+            Part(width=100, height=100, thickness=0)
+
     def test_area_y_lado_mayor(self):
         part = Part(width=300, height=800)
         self.assertEqual(part.area, 240000)
@@ -147,11 +153,22 @@ class MachiningBoundsTest(unittest.TestCase):
         part = Part(600, 300, machining=Machining(slots=(Slot(9.7),)))
         self.assertEqual(part.invalid_reasons, ())
 
-    def test_barreno_horizontal_no_se_valida(self):
+    def test_barreno_horizontal_sin_espesor_valida_el_canto(self):
         part = Part(
             600, 300, machining=Machining(drills=(Drill(1, 1, 35.0, horizontal=True),))
         )
         self.assertEqual(part.invalid_reasons, ())
+
+    def test_barreno_horizontal_fuera_del_canto_y_espesor_invalida(self):
+        part = Part(
+            600,
+            300,
+            thickness=18.0,
+            machining=Machining(drills=(Drill(700, 400, 8.0, horizontal=True),)),
+        )
+        reasons = part.invalid_reasons
+        self.assertEqual(len(reasons), 1)
+        self.assertIn("barreno horizontal Ø8 mm", reasons[0])
 
     def test_sin_mecanizado_no_invalida(self):
         self.assertEqual(Part(600, 300).invalid_reasons, ())

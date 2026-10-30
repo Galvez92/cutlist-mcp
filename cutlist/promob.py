@@ -19,7 +19,9 @@ Subconjunto leído (por revisar: no es todo el formato):
   Los mecanizados interiores (`TYPE="Interior"`, bolsillos) no se importan.
 
 El archivo no trae material ni veta, así que las piezas van al stock comodín y
-se pueden girar. Un barreno fuera del área de la pieza la marca inválida
+se pueden girar; el `DZ` del `HEADER` es el espesor y se guarda en
+`Part.thickness`. Un barreno vertical fuera del área, o un barreno horizontal
+fuera del canto y del espesor, marcan la pieza inválida
 (`Part.invalid_reasons`) y el motor no la ubica.
 
 Fuente: «Builder - Plugin Builder XML», documentación y ejemplo oficial
@@ -94,6 +96,8 @@ def _part(program: ElementTree.Element, number: int, warnings: list[str]) -> Par
         raise ValueError(f"pieza {number}: el XML de Promob no tiene HEADER")
     width = _measure(header, "DX", number)
     height = _measure(header, "DY", number)
+    # DZ es el espesor del tablero: valida los barrenos al canto.
+    thickness = _measure(header, "DZ", number) if "DZ" in header.attrib else None
     label = (program.get("PARTDESCRIPTION") or "").strip()
 
     content = program.find("CONTENT")
@@ -114,6 +118,7 @@ def _part(program: ElementTree.Element, number: int, warnings: list[str]) -> Par
         height=height,
         label=label,
         material="",
+        thickness=thickness,
         machining=None if machining.is_empty else machining,
     )
 

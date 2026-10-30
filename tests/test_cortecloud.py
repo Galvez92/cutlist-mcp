@@ -356,6 +356,28 @@ class MachiningParseTest(unittest.TestCase):
         self.assertTrue(machining.drills[1].horizontal)
         self.assertFalse(machining.slots[0].has_axis)
 
+    def test_la_pieza_toma_el_espesor_del_texto_del_material(self):
+        groups = parse_cortecloud_json(payload(row()))
+        self.assertEqual(groups[0].parts[0].thickness, 18.0)
+
+    def test_barreno_horizontal_dentro_del_canto_y_espesor_no_invalida(self):
+        groups = parse_cortecloud_json(
+            payload(
+                row(machining={"horizontalDrills": [{"diameter": 8, "x": 200, "y": 9}]})
+            )
+        )
+        self.assertEqual(groups[0].parts[0].invalid_reasons, ())
+
+    def test_barreno_horizontal_fuera_del_espesor_invalida(self):
+        groups = parse_cortecloud_json(
+            payload(
+                row(machining={"horizontalDrills": [{"diameter": 8, "x": 200, "y": 40}]})
+            )
+        )
+        reasons = groups[0].parts[0].invalid_reasons
+        self.assertEqual(len(reasons), 1)
+        self.assertIn("barreno horizontal Ø8 mm", reasons[0])
+
     def test_barreno_sin_coordenadas(self):
         with self.assertRaises(ValueError) as ctx:
             parse_cortecloud_json(

@@ -17,10 +17,12 @@ Cortecloud/Madijal restringe —el `diameter` de cada barreno (`verticalDrills` 
 `horizontalDrills`) y el `width` de cada ranura (`furrowMachining` y
 `furrowMachiningPair`)— y el centro `x`/`y` de cada barreno, que sí viene en la
 muestra real. Una ranura o un barreno fuera del perfil no rechaza el archivo:
-`Constraints` lo reporta como aviso. Un barreno que cae, en todo o en parte,
-fuera del área de la pieza la marca inválida (`Part.invalid_reasons`) y el motor
-no la ubica. El `furrowMachining` real no trae el eje de la ranura, sólo `face`,
-`depth`, `width` y `distance`, así que su posición queda por revisar.
+`Constraints` lo reporta como aviso. Un barreno vertical que cae, en todo o en
+parte, fuera del área de la pieza la marca inválida (`Part.invalid_reasons`) y
+el motor no la ubica; un barreno horizontal se valida contra el canto y el
+espesor, que se toma del texto del material (`18 mm`). El `furrowMachining` real
+no trae el eje de la ranura, sólo `face`, `depth`, `width` y `distance`, así que
+su posición queda por revisar.
 
 Veta: el archivo no trae un campo de veta. Cortecloud documenta que el largo
 (`c`) siempre sigue la veta del tablero cuando el tablero tiene veta, así que
@@ -147,6 +149,7 @@ def _row_to_part(row: dict, index: int, material: str) -> Part:
             label=str(row.get("function") or "").strip(),
             grain=GRAIN_FOLLOWS_LARGO,
             material=material,
+            thickness=_thickness(material),
             edges=EdgeBanding(
                 c1=_edge(row, "c1", index),
                 c2=_edge(row, "c2", index),
@@ -283,14 +286,23 @@ def _positive(raw, index: int, what: str) -> float:
     return value
 
 
+def _thickness(material: str) -> float:
+    """Espesor (mm) del texto del material; si no aparece, el del perfil.
+
+    Es el espesor de la pieza (`Part.thickness`), que valida la posición de los
+    barrenos al canto.
+    """
+    match = _THICKNESS.search(material)
+    return float(match.group(1)) if match else FALLBACK_DIMENSIONS[2]
+
+
 def _sheet_for(material: str) -> Sheet:
     size = _SIZE.search(material)
-    fallback_width, fallback_height, fallback_thickness = FALLBACK_DIMENSIONS
-    thickness = _THICKNESS.search(material)
+    fallback_width, fallback_height, _ = FALLBACK_DIMENSIONS
     return Sheet(
         width=float(size.group(1)) if size else fallback_width,
         height=float(size.group(2)) if size else fallback_height,
-        thickness=float(thickness.group(1)) if thickness else fallback_thickness,
+        thickness=_thickness(material),
         kerf=DEFAULT_KERF,
         label=material,
         material=material,

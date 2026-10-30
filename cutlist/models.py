@@ -7,22 +7,14 @@ Todas las medidas están en milímetros. Los nombres de los cantos (`c1`, `c2`,
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from typing import Iterator
 
+# Las reglas viven en `constraints.py`; se reexportan aquí porque antes estaban
+# en este módulo (`Constraints`, `MACHINING_TOLERANCE`).
+from .constraints import MACHINING_TOLERANCE, Constraints, part_invalid_reasons
+
 EPS = 1e-9
-
-# Tolerancia al comparar medidas de mecanizado con las del perfil (en mm).
-MACHINING_TOLERANCE = 1e-6
-
-
-def _is_allowed(value: float, allowed: tuple[float, ...]) -> bool:
-    return any(abs(value - candidate) <= MACHINING_TOLERANCE for candidate in allowed)
-
-
-def _allowed_text(allowed: tuple[float, ...]) -> str:
-    return "/".join(f"{value:g}" for value in allowed)
 
 
 @dataclass(frozen=True)
@@ -101,51 +93,6 @@ class Machining:
     def slot_widths(self) -> tuple[float, ...]:
         return tuple(slot.width for slot in self.slots)
 
-    def outside(self, width: float, height: float) -> list[str]:
-        """Mecanizados que caen, en todo o en parte, fuera del área de la pieza."""
-        problems: list[str] = []
-        tolerance = MACHINING_TOLERANCE
-        for drill in self.drills:
-            if drill.horizontal:
-                # por revisar: en un canto el barreno viene proyectado sobre la
-                # cara, así que su X/Y no se miden contra el área de la pieza.
-                continue
-            radius = drill.diameter / 2.0
-            if (
-                drill.x - radius < -tolerance
-                or drill.y - radius < -tolerance
-                or drill.x + radius > width + tolerance
-                or drill.y + radius > height + tolerance
-            ):
-                problems.append(
-                    f"barreno Ø{drill.diameter:g} mm en ({drill.x:g}; {drill.y:g}) "
-                    f"fuera del área {width:g}x{height:g} mm"
-                )
-        for slot in self.slots:
-            if not slot.has_axis:
-                continue
-            half = slot.width / 2.0
-            length = math.hypot(slot.x1 - slot.x0, slot.y1 - slot.y0)
-            if length:
-                # El ancho se abre perpendicular al eje: una ranura puede
-                # terminar justo en el borde de la pieza (ranura pasante).
-                spread_x = abs(slot.y1 - slot.y0) / length * half
-                spread_y = abs(slot.x1 - slot.x0) / length * half
-            else:
-                spread_x = spread_y = half
-            if (
-                min(slot.x0, slot.x1) - spread_x < -tolerance
-                or min(slot.y0, slot.y1) - spread_y < -tolerance
-                or max(slot.x0, slot.x1) + spread_x > width + tolerance
-                or max(slot.y0, slot.y1) + spread_y > height + tolerance
-            ):
-                problems.append(
-                    f"ranura de {slot.width:g} mm de ({slot.x0:g}; {slot.y0:g}) a "
-                    f"({slot.x1:g}; {slot.y1:g}) fuera del área {width:g}x{height:g} mm"
-                )
-        return problems
-
-
 @dataclass(frozen=True)
 class Part:
     """Pieza a cortar.
@@ -161,6 +108,7 @@ class Part:
     label: str = ""
     edges: EdgeBanding | None = None
     material: str = ""
+    thickness: float | None = None
     machining: Machining | None = None
 
     def __post_init__(self) -> None:
@@ -168,6 +116,8 @@ class Part:
             raise ValueError(f"pieza con medida no positiva: {self.width}x{self.height}")
         if self.quantity < 1:
             raise ValueError(f"cantidad de pieza inválida: {self.quantity}")
+        if self.thickness is not None and self.thickness <= 0:
+            raise ValueError(f"espesor de pieza no positivo: {self.thickness}")
 
     @property
     def area(self) -> float:
@@ -183,10 +133,8 @@ class Part:
 
     @property
     def invalid_reasons(self) -> tuple[str, ...]:
-        """Mecanizado fuera del área: la pieza no se puede cortar."""
-        if self.machining is None:
-            return ()
-        return tuple(self.machining.outside(self.width, self.height))
+        """Mecanizado fuera de la pieza: no se puede cortar."""
+        return part_invalid_reasons(self)
 
 
 @dataclass(frozen=True)
@@ -209,77 +157,6 @@ class Sheet:
     @property
     def area(self) -> float:
         return self.width * self.height
-
-
-@dataclass(frozen=True)
-class Constraints:
-    """Perfil de restricciones de corte (por ejemplo Cortecloud/Madijal).
-
-    Los valores por defecto son los observados en uso real y documentados en
-    `docs/memoria/MEMORIA.md`; no son reglas del motor para todos los casos.
-    """
-
-    min_piece: float = 65.0
-    min_machined_length: float = 250.0
-    max_piece_width: float = 2480.0
-    max_piece_height: float = 1810.0
-    slot_widths: tuple[float, ...] = (5.7, 6.2, 6.7, 7.0, 9.7, 12.7, 15.7, 18.7, 25.7)
-    horizontal_drill_diameters: tuple[float, ...] = (3.0, 8.0)
-    vertical_drill_diameters: tuple[float, ...] = (3.0, 5.0, 8.0, 10.0, 15.0, 20.0, 35.0)
-
-    def violations(self, part: Part) -> list[str]:
-        """Restricciones que la pieza no cumple (lista vacía si cumple todas)."""
-        problems: list[str] = []
-        short_side = min(part.width, part.height)
-        long_side = max(part.width, part.height)
-        if short_side < self.min_piece:
-            problems.append(
-                f"pieza bajo el mínimo de corte ({self.min_piece:g} mm): "
-                f"{short_side:g} mm en «{part.label or 'sin nombre'}»"
-            )
-        fits = (
-            part.width <= self.max_piece_width and part.height <= self.max_piece_height
-        ) or (
-            part.height <= self.max_piece_width and part.width <= self.max_piece_height
-        )
-        if not fits:
-            problems.append(
-                f"pieza sobre el máximo ({self.max_piece_width:g}x{self.max_piece_height:g} mm): "
-                f"{part.width:g}x{part.height:g} en «{part.label or 'sin nombre'}»"
-            )
-        if long_side < self.min_machined_length:
-            problems.append(
-                f"pieza mecanizada menor a {self.min_machined_length:g} mm: "
-                f"{long_side:g} mm en «{part.label or 'sin nombre'}»"
-            )
-        problems.extend(self._machining_violations(part))
-        return problems
-
-    def _machining_violations(self, part: Part) -> list[str]:
-        """Ranuras y barrenos del mecanizado que el perfil no admite."""
-        machining = part.machining
-        if machining is None:
-            return []
-
-        name = part.label or "sin nombre"
-        problems: list[str] = []
-        for width in machining.slot_widths:
-            if not _is_allowed(width, self.slot_widths):
-                problems.append(
-                    f"ranura de {width:g} mm no permitida en «{name}» "
-                    f"(permitidas: {_allowed_text(self.slot_widths)} mm)"
-                )
-        for label, diameters, allowed in (
-            ("barreno horizontal", machining.horizontal_drills, self.horizontal_drill_diameters),
-            ("barreno vertical", machining.vertical_drills, self.vertical_drill_diameters),
-        ):
-            for diameter in diameters:
-                if not _is_allowed(diameter, allowed):
-                    problems.append(
-                        f"{label} Ø{diameter:g} mm no permitido en «{name}» "
-                        f"(permitidos: {_allowed_text(allowed)} mm)"
-                    )
-        return problems
 
 
 @dataclass(frozen=True)

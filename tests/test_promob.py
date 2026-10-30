@@ -54,6 +54,9 @@ class PromobFixtureTest(unittest.TestCase):
         self.assertEqual(self.part.label, "Right Side Panel Toe Kick")
         self.assertEqual(self.part.material, "")
 
+    def test_toma_el_espesor_del_header(self):
+        self.assertEqual(self.part.thickness, 18.5)
+
     def test_importa_barrenos_con_su_posicion(self):
         drills = self.part.machining.drills
         self.assertEqual(len(drills), 13)
@@ -93,13 +96,21 @@ class PromobParseTest(unittest.TestCase):
         self.assertEqual(len(imported.parts[0].invalid_reasons), 1)
         self.assertIn("ranura de 10 mm", imported.parts[0].invalid_reasons[0])
 
-    def test_barreno_horizontal_no_se_valida(self):
+    def test_barreno_horizontal_se_valida_contra_canto_y_espesor(self):
         imported = parse_promob_xml(
             program(content=hole(x=1, y=1, diameter=35, normal="(1;0;0)"))
         )
         drill = imported.parts[0].machining.drills[0]
         self.assertTrue(drill.horizontal)
         self.assertEqual(imported.parts[0].invalid_reasons, ())
+
+    def test_barreno_horizontal_fuera_del_canto_invalida(self):
+        imported = parse_promob_xml(
+            program(content=hole(x=1000, y=1000, diameter=8, normal="(1;0;0)"))
+        )
+        reasons = imported.parts[0].invalid_reasons
+        self.assertEqual(len(reasons), 1)
+        self.assertIn("barreno horizontal Ø8 mm", reasons[0])
 
     def test_varios_programas_son_varias_piezas(self):
         text = (

@@ -13,14 +13,8 @@ from __future__ import annotations
 import math
 import unittest
 
-from cutlist.models import (
-    MACHINING_TOLERANCE,
-    Constraints,
-    Drill,
-    Machining,
-    Part,
-    Slot,
-)
+from cutlist.constraints import MACHINING_TOLERANCE, Constraints
+from cutlist.models import Drill, Machining, Part, Slot
 
 WIDTH = 600.0
 HEIGHT = 300.0
@@ -34,6 +28,13 @@ TOLERANCE = MACHINING_TOLERANCE
 def reasons(machining: Machining | None) -> tuple[str, ...]:
     """Motivos por los que la pieza no se puede cortar."""
     return Part(WIDTH, HEIGHT, machining=machining).invalid_reasons
+
+
+def edge_reasons(
+    machining: Machining | None, thickness: float | None = 18.0
+) -> tuple[str, ...]:
+    """Motivos de una pieza con espesor conocido (barrenos al canto)."""
+    return Part(WIDTH, HEIGHT, thickness=thickness, machining=machining).invalid_reasons
 
 
 class MachiningToleranceLimitTest(unittest.TestCase):
@@ -143,10 +144,69 @@ class MachiningToleranceLimitTest(unittest.TestCase):
         """Una ranura sin eje no se puede posicionar: no marca falso positivo."""
         self.assertEqual(reasons(Machining(slots=(Slot(SLOT_WIDTH),))), ())
 
-    def test_barreno_horizontal_en_el_canto_no_se_valida(self):
+class HorizontalDrillEdgeTest(unittest.TestCase):
+    """Barrenos al canto: el centro se mide contra el canto y el espesor."""
+
+    def test_barreno_horizontal_dentro_del_canto_y_espesor_es_valido(self):
+        drill = Drill(150, 9, 8.0, horizontal=True)
+        self.assertEqual(edge_reasons(Machining(drills=(drill,))), ())
+
+    def test_barreno_horizontal_tangente_es_valido(self):
+        for drill in (
+            Drill(0, 0, 8.0, horizontal=True),
+            Drill(WIDTH, 18.0, 8.0, horizontal=True),
+        ):
+            with self.subTest(barreno=drill):
+                self.assertEqual(edge_reasons(Machining(drills=(drill,))), ())
+
+    def test_barreno_horizontal_fuera_del_canto_invalida(self):
+        drill = Drill(WIDTH + 1, 9, 8.0, horizontal=True)
+        reasons_ = edge_reasons(Machining(drills=(drill,)))
+        self.assertEqual(len(reasons_), 1)
+        self.assertIn("barreno horizontal Ø8 mm", reasons_[0])
+        self.assertIn("fuera del canto 600 mm", reasons_[0])
+
+    def test_barreno_horizontal_fuera_del_espesor_invalida(self):
+        drill = Drill(150, 40, 8.0, horizontal=True)
+        reasons_ = edge_reasons(Machining(drills=(drill,)))
+        self.assertEqual(len(reasons_), 1)
+        self.assertIn("espesor 18 mm", reasons_[0])
+
+    def test_barreno_horizontal_acepta_la_otra_lectura_de_coordenadas(self):
+        """El export no dice cuál coordenada corre a lo largo del canto."""
+        drill = Drill(9, 150, 8.0, horizontal=True)
+        self.assertEqual(edge_reasons(Machining(drills=(drill,))), ())
+
+    def test_barreno_horizontal_sin_espesor_solo_valida_el_canto(self):
+        dentro = Drill(150, 90, 8.0, horizontal=True)
+        self.assertEqual(edge_reasons(Machining(drills=(dentro,)), thickness=None), ())
+        fuera = Drill(WIDTH + 1, 9, 8.0, horizontal=True)
         self.assertEqual(
-            reasons(Machining(drills=(Drill(0, 0, DIAMETER, horizontal=True),))), ()
+            len(edge_reasons(Machining(drills=(fuera,)), thickness=None)), 1
         )
+
+    def test_barreno_vertical_sigue_midiendose_contra_la_cara(self):
+        """Un Ø35 de cara en un tablero de 18 mm es normal: no es del canto."""
+        part = Part(
+            WIDTH,
+            HEIGHT,
+            thickness=18.0,
+            machining=Machining(drills=(Drill(150, 150, DIAMETER),)),
+        )
+        self.assertEqual(part.invalid_reasons, ())
+
+    def test_barreno_horizontal_y_vertical_se_contabilizan_juntos(self):
+        machining = Machining(
+            drills=(
+                Drill(150, 9, 8.0, horizontal=True),
+                Drill(WIDTH + 1, 9, 8.0, horizontal=True),
+                Drill(5, 150, DIAMETER),
+            )
+        )
+        reasons_ = edge_reasons(machining)
+        self.assertEqual(len(reasons_), 2)
+        self.assertIn("barreno horizontal", reasons_[0])
+        self.assertIn("barreno Ø35 mm", reasons_[1])
 
 
 class ConstraintsEdgeToleranceTest(unittest.TestCase):
