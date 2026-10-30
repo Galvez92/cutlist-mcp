@@ -17,7 +17,9 @@
  * - ``fondo`` es la profundidad total: ``fondo - espesorPuerta`` es el costado.
  * - Cuerpo: 2 costados, base entre costados, travesaño frontal y trasero de
  * 100 mm de alto arriba (como los travesaños del fixture Cortecloud), trasera de
- * 3 mm y zócalo (frente y dos laterales).
+ * 3 mm y zócalo (frente y dos laterales). La trasera va encastrada en una ranura
+ * de costados, base y travesaño trasero (``trasera_ranura``; ``false`` la deja
+ * clavada al dorso), con las mismas medidas que el clóset y la cajonera.
  * - Frente: puertas cubrientes o, si ``cajones > 0``, frentes de cajón (no se
  * combinan puertas y cajones en el mismo módulo).
  * - Bisagras: cantidad por puerta con las mismas guías verificadas del clóset
@@ -31,8 +33,12 @@ import {
   JUEGO_DEFAULT,
   MATERIAL_DEFAULT,
   MATERIAL_TRASERA_DEFAULT,
+  RANURA_TRASERA_ANCHO_DEFAULT,
+  RANURA_TRASERA_DISTANCIA_DEFAULT,
+  RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   cajon,
   elegirCorredera,
+  encajeTrasera,
   exigirPositivo,
   frentes,
   repartir,
@@ -44,7 +50,7 @@ import {
   bisagrasPuerta,
   notasPesoBisagras,
 } from "./bisagras.js";
-import { Cantos, Pieza, ValueError } from "./parts.js";
+import { Cantos, Mecanizado, Pieza, ValueError } from "./parts.js";
 
 export const CAMPOS: Record<string, string> = {
   ancho: "Ancho exterior, de costado a costado (mm)",
@@ -57,7 +63,12 @@ export const CAMPOS: Record<string, string> = {
   cajones: "Cantidad de cajones (0 si lleva puertas)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
-  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)",  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)",
+  trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  trasera_ranura: "Encastrar la trasera en una ranura de costados, base y travesaño trasero; false = clavada al dorso",
+  ranura_ancho: "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas",
+  ranura_profundidad: "Profundidad de la ranura de la trasera en la cara interior (mm)",
+  ranura_distancia: "Distancia de la ranura desde el borde del dorso (mm)",
   juego: "Holgura entre puertas o frentes (mm) — por revisar",
   juego_corredera: "Juego lateral total de la corredera (mm) — por revisar",
   margen_alto_cajon: "Diferencia de alto entre frente y caja del cajón (mm) — por revisar",
@@ -83,6 +94,10 @@ export interface ParamsCocina {
   espesorPuerta?: number;
   pesoTirador?: number;
   traseraEspesor?: number;
+  traseraRanura?: boolean;
+  ranuraAncho?: number;
+  ranuraProfundidad?: number;
+  ranuraDistancia?: number;
   juego?: number;
   juegoCorredera?: number;
   margenAltoCajon?: number;
@@ -108,6 +123,10 @@ export const DEFAULTS_COCINA = {
   espesorPuerta: 18.0,
   pesoTirador: PESO_TIRADOR_REFERENCIA,
   traseraEspesor: 3.0,
+  traseraRanura: true,
+  ranuraAncho: RANURA_TRASERA_ANCHO_DEFAULT,
+  ranuraProfundidad: RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
+  ranuraDistancia: RANURA_TRASERA_DISTANCIA_DEFAULT,
   juego: JUEGO_DEFAULT,
   juegoCorredera: 25.0,
   margenAltoCajon: 20.0,
@@ -165,7 +184,36 @@ export function generar(params: ParamsCocina = {}): Modulo {
     throw new ValueError("la trasera no puede ocupar toda la profundidad del costado");
   }
 
+  // El interior de la caja va de la cara superior de la base a la cara inferior
+  // del travesaño trasero: son los dos lados horizontales que llevan la ranura.
+  const altoInterior = altoCarcasa - 2 * p.espesor;
+  if (altoInterior <= 0) {
+    throw new ValueError("la base y el travesaño trasero no dejan alto interior");
+  }
+
   const comun = { espesor: p.espesor, material, modulo: nombre };
+  const encaje =
+    p.traseraEspesor > 0 && p.traseraRanura
+      ? encajeTrasera({
+          anchoInterior,
+          altoInterior,
+          fondo: fondoCostado,
+          anchoRanura: p.ranuraAncho,
+          profundidad: p.ranuraProfundidad,
+          distancia: p.ranuraDistancia,
+        })
+      : null;
+  const ranurasTrasera = encaje ? [encaje.ranura] : [];
+  const mecanizadoTrasera = new Mecanizado(ranurasTrasera);
+  const sufijoRanura = encaje ? ", ranura para la trasera" : "";
+  // Fondo libre para la caja del cajón: termina en la cara frontal de la
+  // trasera, que con ranura queda más adelante que el dorso.
+  const caraFrontalTrasera =
+    p.traseraEspesor > 0
+      ? encaje
+        ? p.ranuraDistancia + p.ranuraAncho
+        : p.traseraEspesor
+      : 0;
   const piezas: Pieza[] = [
     new Pieza({
       nombre: "Costado",
@@ -174,7 +222,11 @@ export function generar(params: ParamsCocina = {}): Modulo {
       cantidad: 2,
       rol: "costado",
       cantos: new Cantos(canto),
-      funcion: "Costado — canto en la arista frontal",
+      mecanizado: mecanizadoTrasera,
+      funcion:
+        "Costado — canto en la arista frontal" +
+        sufijoRanura +
+        (encaje ? ` a ${p.ranuraDistancia.toFixed(1)} mm del borde del dorso` : ""),
       ...comun,
     }),
     new Pieza({
@@ -183,7 +235,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
       ancho: anchoInterior,
       rol: "base",
       cantos: new Cantos(undefined, undefined, canto),
-      funcion: "Base entre costados — canto en la arista frontal",
+      mecanizado: mecanizadoTrasera,
+      funcion: "Base entre costados — canto en la arista frontal" + sufijoRanura,
       ...comun,
     }),
     new Pieza({
@@ -199,7 +252,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
       largo: anchoInterior,
       ancho: ALTO_TRAVESAÑO_DEFAULT,
       rol: "travesaño",
-      funcion: "Barra de armar trasera, arriba entre costados",
+      mecanizado: mecanizadoTrasera,
+      funcion: "Barra de armar trasera, arriba entre costados" + sufijoRanura,
       ...comun,
     }),
   ];
@@ -235,13 +289,15 @@ export function generar(params: ParamsCocina = {}): Modulo {
     piezas.push(
       new Pieza({
         nombre: "Trasera",
-        largo: altoCarcasa,
-        ancho: p.ancho,
+        largo: encaje ? Math.max(encaje.largo, encaje.ancho) : altoCarcasa,
+        ancho: encaje ? Math.min(encaje.largo, encaje.ancho) : p.ancho,
         espesor: p.traseraEspesor,
         material: p.materialTrasera,
         rol: "trasera",
         veta: "indiferente",
-        funcion: "Trasera clavada al dorso del módulo",
+        funcion: encaje
+          ? "Trasera encastrada en la ranura de costados, base y travesaño trasero"
+          : "Trasera clavada al dorso del módulo",
         modulo: nombre,
       }),
     );
@@ -253,6 +309,20 @@ export function generar(params: ParamsCocina = {}): Modulo {
     `Zócalo retranqueado ${p.retranqueoZocalo.toFixed(0)} mm del borde de las puertas (ARAUCO #17 pide mínimo 75 mm).`,
     "El mesón y los artefactos no son piezas de este módulo.",
   ];
+  if (p.traseraEspesor <= 0) {
+    notas.push("Módulo sin trasera: necesita muro o rigidización adicional.");
+  } else if (encaje) {
+    notas.push(
+      `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
+        `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
+        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+    );
+    notas.push(
+      "La ranura va en costados, base y travesaño trasero; el travesaño frontal queda sin ranura.",
+    );
+  } else {
+    notas.push("La trasera se clava/atornilla al dorso, sin ranura.");
+  }
   const accesorios: Accesorio[] = [
     new Accesorio("Pata regulable", 4, "Cerradas por el zócalo"),
     new Accesorio("Tornillo 4 x 50 mm", 1, "Armado de costados, base y travesaños"),
@@ -263,7 +333,7 @@ export function generar(params: ParamsCocina = {}): Modulo {
     if (anchoCaja <= 2 * p.espesor) {
       throw new ValueError("el juego de corredera no deja ancho útil en la caja del cajón");
     }
-    const fondoUtil = fondoCostado - p.traseraEspesor - p.juegoFondo;
+    const fondoUtil = fondoCostado - caraFrontalTrasera - p.juegoFondo;
     const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
     if (!esEstandar) {
       notas.push(

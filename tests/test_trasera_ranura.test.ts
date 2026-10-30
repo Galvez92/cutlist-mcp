@@ -1,5 +1,5 @@
 /**
- * Trasera encastrada en ranura del clóset y de la cajonera.
+ * Trasera encastrada en ranura: clóset, cajonera, cocina y librero.
  *
  * La geometría sale del *Manual Técnico de Melamina #02* (ranura de 9 mm de
  * profundidad a 15 mm del borde del dorso) y del ancho mínimo de ranura del
@@ -11,6 +11,8 @@ import { describe, expect, it } from "vitest";
 
 import { generar as generarCajonera } from "../src/modules/cajonera.js";
 import { generar as generarCloset } from "../src/modules/closet.js";
+import { generar as generarCocina } from "../src/modules/cocina.js";
+import { generar as generarLibrero } from "../src/modules/librero.js";
 import {
   RANURA_TRASERA_ANCHO_DEFAULT,
   RANURA_TRASERA_DISTANCIA_DEFAULT,
@@ -158,5 +160,126 @@ describe("cajonera · trasera en ranura", () => {
     const modulo = generarCajonera();
     const ranuras = modulo.validar();
     expect(ranuras.filter((h) => h.regla === "ranura_no_permitida")).toEqual([]);
+  });
+});
+
+describe("cocina · trasera en ranura", () => {
+  it("ranura en costados, base y travesaño trasero", () => {
+    const modulo = generarCocina();
+    for (const nombre of ["Costado", "Base", "Travesaño trasero"]) {
+      const pieza = buscar(modulo, nombre);
+      expect(pieza.mecanizado.ranuras.length, nombre).toBe(1);
+      expect(pieza.mecanizado.ranuras[0], nombre).toEqual({
+        cara: "i",
+        profundidad: 9.0,
+        ancho: 5.7,
+        distancia: 15.0,
+      });
+      expect(pieza.funcion).toContain("ranura para la trasera");
+    }
+    expect(buscar(modulo, "Costado").funcion).toContain("15.0 mm del borde del dorso");
+    expect(buscar(modulo, "Travesaño frontal").mecanizado.vacio()).toBe(true);
+    expect(buscar(modulo, "Zócalo frontal").mecanizado.vacio()).toBe(true);
+  });
+
+  it("la trasera encastra entre base y travesaño trasero", () => {
+    const modulo = generarCocina();
+    const trasera = buscar(modulo, "Trasera");
+    aprox(trasera.largo, 782.0);
+    aprox(trasera.ancho, 582.0);
+    expect(trasera.funcion).toContain("encastrada");
+    expect(modulo.notas.some((n) => n.includes("Trasera encastrada 782 x 582 mm"))).toBe(true);
+    expect(
+      modulo.notas.some((n) => n.includes("costados, base y travesaño trasero")),
+    ).toBe(true);
+  });
+
+  it("con trasera_ranura: false vuelve la trasera clavada al dorso", () => {
+    const modulo = generarCocina({ traseraRanura: false });
+    aprox(buscar(modulo, "Trasera").largo, 800.0);
+    aprox(buscar(modulo, "Trasera").ancho, 600.0);
+    expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
+    expect(modulo.notas).toContain("La trasera se clava/atornilla al dorso, sin ranura.");
+  });
+
+  it("sin trasera no hay ranura", () => {
+    const modulo = generarCocina({ traseraEspesor: 0 });
+    expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
+    expect(modulo.resumen().some((p) => p.nombre === "Trasera")).toBe(false);
+  });
+
+  it("la caja del cajón termina en la cara frontal de la trasera", () => {
+    const modulo = generarCocina({ puertas: 0, cajones: 2 });
+    // 582 mm de costado − (15 mm de ranura + 5.7 mm de ancho) − 10 mm de juego.
+    aprox(buscar(modulo, "Lateral cajón").largo, 500.0);
+    const sinRanura = generarCocina({ puertas: 0, cajones: 2, traseraRanura: false });
+    expect(buscar(sinRanura, "Lateral cajón").largo).toBe(500.0);
+  });
+
+  it("el perfil por omisión admite el ancho de ranura", () => {
+    const modulo = generarCocina();
+    expect(modulo.validar().filter((h) => h.regla === "ranura_no_permitida")).toEqual([]);
+  });
+
+  it("el parámetro del registro llega al generador", () => {
+    const modulo = generarModulo("cocina", { trasera_ranura: false });
+    expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
+  });
+});
+
+describe("librero · trasera en ranura", () => {
+  it("ranura en costados, base y tapa", () => {
+    const modulo = generarLibrero();
+    for (const nombre of ["Costado", "Base", "Tapa"]) {
+      expect(buscar(modulo, nombre).mecanizado.ranuras.length, nombre).toBe(1);
+    }
+    expect(buscar(modulo, "Costado").funcion).toContain("15.0 mm del borde del dorso");
+  });
+
+  it("la trasera encastra y las repisas se recortan", () => {
+    const modulo = generarLibrero();
+    const trasera = buscar(modulo, "Trasera");
+    aprox(trasera.largo, 1982.0);
+    aprox(trasera.ancho, 782.0);
+    expect(trasera.funcion).toContain("encastrada");
+    aprox(buscar(modulo, "Repisa").largo, 279.3);
+    expect(modulo.notas.some((n) => n.includes("Trasera encastrada 1982 x 782 mm"))).toBe(true);
+    expect(modulo.notas.some((n) => n.includes("Repisas de 279 mm de fondo"))).toBe(true);
+  });
+
+  it("con trasera_ranura: false vuelve la trasera clavada al dorso", () => {
+    const modulo = generarLibrero({ traseraRanura: false });
+    aprox(buscar(modulo, "Trasera").largo, 2000.0);
+    aprox(buscar(modulo, "Trasera").ancho, 800.0);
+    expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
+    aprox(buscar(modulo, "Repisa").largo, 300.0);
+    expect(modulo.notas).toContain("La trasera se clava/atornilla al dorso, sin ranura.");
+  });
+
+  it("sin trasera no hay ranura", () => {
+    const modulo = generarLibrero({ traseraEspesor: 0 });
+    expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
+    expect(modulo.resumen().some((p) => p.nombre === "Trasera")).toBe(false);
+  });
+
+  it("acepta otra ranura y recalcula la trasera", () => {
+    const modulo = generarLibrero({
+      ranuraAncho: 6.7,
+      ranuraProfundidad: 10.0,
+      ranuraDistancia: 20.0,
+    });
+    expect(buscar(modulo, "Base").mecanizado.ranuras[0]).toEqual({
+      cara: "i",
+      profundidad: 10.0,
+      ancho: 6.7,
+      distancia: 20.0,
+    });
+    aprox(buscar(modulo, "Trasera").largo, 1984.0);
+    aprox(buscar(modulo, "Repisa").largo, 273.3);
+  });
+
+  it("el parámetro del registro llega al generador", () => {
+    const modulo = generarModulo("librero", { trasera_ranura: false });
+    expect(buscar(modulo, "Costado").mecanizado.vacio()).toBe(true);
   });
 });

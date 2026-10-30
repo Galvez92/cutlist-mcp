@@ -75,8 +75,8 @@ reparto de las aristas geométricas a los lados absolutos del motor es
 | --- | --- | --- | --- |
 | `cajonera` | 2 costados, base y tapa entre costados, travesaño trasero de 100 mm, trasera de 3 mm en ranura | frentes cubrientes de cajón + caja de cajón (laterales, frente interior, trasera, piso) | correderas 400/450/500 mm, tiradores |
 | `closet` | 2 costados, base y tapa, trasera de 3 mm en ranura | puertas batientes cubrientes o correderas traslapadas | repisas (repartidas o explícitas), barral, soportes Ø5 |
-| `cocina` | 2 costados, base, travesaño frontal y trasero, trasera de 3 mm, zócalo retranqueado | puertas cubrientes o frentes de cajón (no se mezclan) | bisagras, correderas, patas regulables |
-| `librero` | 2 costados (con canto frontal y superior), base y tapa entre costados, trasera de 3 mm | — | repisas, soportes Ø5 |
+| `cocina` | 2 costados, base, travesaño frontal y trasero, trasera de 3 mm en ranura (costados, base y travesaño trasero), zócalo retranqueado | puertas cubrientes o frentes de cajón (no se mezclan) | bisagras, correderas, patas regulables |
+| `librero` | 2 costados (con canto frontal y superior), base y tapa entre costados, trasera de 3 mm en ranura | — | repisas, soportes Ø5 |
 
 Las **cajas de cajón** siguen el despiece real del fixture Cortecloud: laterales
 de `largo x alto` con canto en la arista superior, frente interior y trasera de
@@ -85,19 +85,22 @@ de `largo x alto` con canto en la arista superior, frente interior y trasera de
 Los herrajes y complementos (correderas, bisagras, barral, patas, tiradores) van
 en `modulo.accesorios`, no como piezas de tablero.
 
-## Trasera encastrada en ranura (clóset y cajonera)
+## Trasera encastrada en ranura (clóset, cajonera, cocina y librero)
 
-El clóset y la cajonera encastran la trasera de 3 mm en una **ranura** de los
-cuatro lados de la caja (costados, base y tapa) en lugar de clavarla al dorso.
+Los cuatro módulos de caja encastran la trasera de 3 mm en una **ranura** de los
+cuatro lados del cuerpo en lugar de clavarla al dorso: costados y base en todos,
+más tapa en clóset, cajonera y librero y travesaño trasero en la cocina.
 Parámetros: `trasera_ranura` (`true` por omisión; `false` deja la trasera clavada
 al dorso), `ranura_ancho` (5.7 mm), `ranura_profundidad` (9 mm) y
 `ranura_distancia` (15 mm desde el borde del dorso).
 
 - **Geometría:** la trasera entra `ranura_profundidad` mm en cada lado, así que
-  mide alto y ancho interiores + 2 × profundidad. En el clóset las repisas se
-  recortan para terminar en la cara frontal de la trasera
+  mide alto y ancho interiores + 2 × profundidad. En el clóset y el librero las
+  repisas se recortan para terminar en la cara frontal de la trasera
   (`fondo − ranura_distancia − ranura_ancho`); en la cajonera el travesaño
-  trasero queda por delante de la trasera.
+  trasero queda por delante de la trasera; en la cocina la ranura va en el
+  travesaño trasero y la caja del cajón termina en la cara frontal de la trasera
+  (`fondo del costado − ranura_distancia − ranura_ancho − juego_fondo`).
 - **Fuentes:** profundidad de 9 mm y 15 mm desde el borde, [*Manual Técnico de
   Melamina #02*](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938)
   (www.autodidacta.info / comohacercomohacer.com), que ranura el fondo de un cajón
@@ -106,7 +109,10 @@ al dorso), `ranura_ancho` (5.7 mm), `ranura_profundidad` (9 mm) y
   para un panel de 4 mm, medida que ese perfil no ejecuta.
 - **Por revisar:** las tres medidas (el manual es de taller, no de fabricante) y
   el ancho, porque para una trasera de 3 mm la ranura de 5.7 mm queda holgada.
-- La **cocina** y el **librero** mantienen la trasera clavada al dorso.
+- La **cocina** conserva el travesaño frontal sin ranura; el trasero sí la lleva.
+  Con `trasera_ranura: false` los cuatro módulos vuelven a la trasera clavada.
+- **Escritorio y cajón sueltos** no usan este encaje: el escritorio no tiene
+  trasera y el cajón ranura el fondo de 3 mm (ver el módulo `cajon`).
 
 ## Bisagras y revelado de las puertas batientes (clóset y cocina)
 
@@ -211,8 +217,8 @@ verificada para un valor de carga.
 | 2 bisagras de 4 a 6 kg y 3 de 6 a 12 kg, con el peso de la puerta y sus tiradores; puertas de hasta 600 mm de ancho; densidad de referencia 750 kg/m³ | clóset y cocina (el peso suma el tirador, 0.09 kg por omisión) | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | verificado (la densidad de 750 kg/m³ es la que publica Hettich) |
 | peso de referencia de un tirador: 0.09 kg (tirador recto de acero inoxidable de 96 mm, SKU 103910) | clóset y cocina (`peso_tirador`) | [Promart, ficha del tirador Orient recto 96 mm](https://www.promart.pe/tirador-recto-acero-inox-96mm/p) | verificado (2026-10-29); es el peso de ese tirador, así que el taller debe pasar el del tirador elegido |
 | peso de referencia del tirador recto de 128 mm: 0.09 kg (liviano SKU 103911 y pesado SKU 103916) | clóset y cocina (`peso_tirador`), si el taller usa ese tirador | [Promart, tirador recto liviano 128 mm](https://www.promart.pe/tirador-recto-acero-inoxidable-liviano-128mm/p) y [tirador recto pesado 128 mm](https://www.promart.pe/tirador-recto-pesado-acero-inoxidable-128mm/p) | verificado (2026-10-29); las dos fichas publican el mismo peso, así que parece redondeado: conviene pesarlo en el taller |
-| ranura para la trasera: 9 mm de profundidad, a 15 mm del borde del dorso | clóset y cajonera (`ranura_profundidad`, `ranura_distancia`) | [Manual Técnico de Melamina #02](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938) | **por revisar**: manual de taller (ranura el fondo de un cajón de 4 mm), no de fabricante |
-| ancho de la ranura de la trasera: 5.7 mm | clóset y cajonera (`ranura_ancho`) | perfil Cortecloud/Madijal (`docs/memoria/MEMORIA.md`); el manual propone 4 mm | **por revisar**: 5.7 mm es el menor ancho del perfil y queda holgado para una trasera de 3 mm |
+| ranura para la trasera: 9 mm de profundidad, a 15 mm del borde del dorso | clóset, cajonera, cocina y librero (`ranura_profundidad`, `ranura_distancia`) | [Manual Técnico de Melamina #02](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938) | **por revisar**: manual de taller (ranura el fondo de un cajón de 4 mm), no de fabricante |
+| ancho de la ranura de la trasera: 5.7 mm | clóset, cajonera, cocina y librero (`ranura_ancho`) | perfil Cortecloud/Madijal (`docs/memoria/MEMORIA.md`); el manual propone 4 mm | **por revisar**: 5.7 mm es el menor ancho del perfil y queda holgado para una trasera de 3 mm |
 | revelado mínimo de 1.3 mm por puerta de 18 mm con la copa a 3 mm del borde (Hettich *Sensys*: 0.6–0.8 mm); entre dos puertas, ≥ 2 × el revelado | clóset batiente | [Blum, guía rápida de bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf); [Hettich *Sensys*](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | verificado (se toma el mayor) |
 | fondo de 600 mm (clóset) y de 300 mm (librero) | clóset y librero | guías de taller (https://www.closetworld.com/blog/standard-closet-dimensions, https://www.instagram.com/p/B7RItFOH3XF/) | **por revisar** |
 | barral a 1700 mm del piso | clóset | valor de taller | **por revisar** |
@@ -285,7 +291,7 @@ el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio
   [`docs/verificacion-lados-piezas.md`](verificacion-lados-piezas.md).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
 - Confirmar las medidas de la ranura de la trasera (9 mm de profundidad, 15 mm del
-  borde, 5.7 mm de ancho) y, si se adopta, llevarla a cocina y librero.
+  borde, 5.7 mm de ancho), ya adoptada en clóset, cajonera, cocina y librero.
 - Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la
   demo web ya está resuelta en la rama `demo-web-docs`.
 
@@ -298,9 +304,9 @@ machining out, optionally validated against an optional restriction profile
 Reference dimensions come from ARAUCO's public *Serie Cómo Hacer* documents and
 from the real Cortecloud cut-list fixture in `tests/fixtures/`; every value
 without a verified source is flagged `por revisar` (to be verified) and exposed
-as an adjustable parameter. Closet and drawer unit take the 3 mm back panel in a
-groove instead of nailing it to the rear; the groove dimensions are workshop
-values still flagged `por revisar`. The edge-banding mapping to Cortecloud's
+as an adjustable parameter. Closet, drawer unit, kitchen base cabinet and
+bookcase take the 3 mm back panel in a groove instead of nailing it to the rear;
+the groove dimensions are workshop values still flagged `por revisar`. The edge-banding mapping to Cortecloud's
 `c1`/`c2`/`l1`/`l2` fields is not verified yet: a workshop checklist
 (`docs/verificacion-lados-piezas.md`) tracks the physical side of every exported
 piece.

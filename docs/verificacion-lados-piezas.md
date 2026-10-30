@@ -6,7 +6,8 @@ repo: el JSON de Cortecloud no declara en qué orientación se dibujó cada piez
 así que un canto «frontal» puede terminar en el dorso si la pieza se cargó girada.
 
 - **Rama:** `parametric-modules`
-- **Fecha de la lista:** 2026-10-29
+- **Fecha de la lista:** 2026-10-29 (medidas de cocina y librero actualizadas el
+  2026-10-30 al encastrar su trasera en ranura)
 - **Medidas:** las que genera cada módulo con sus **parámetros por omisión**
   (se recalculan solas si cambia el módulo; esta lista sirve para verificar la
   *lectura*, no las medidas).
@@ -64,7 +65,7 @@ en las **horizontales** (base, tapa, repisas, zócalo) en `ancho_a`.
 | Travesaño trasero | 564 × 100 | — | va **al dorso**, arriba entre costados | ☐ |
 | Zócalo frontal | 600 × 100 | `largo_a` | la arista de 600 mm va **arriba** | ☐ |
 | Zócalo lateral (×2) | 507 × 100 | — | retranqueado **al frente** | ☐ |
-| Trasera | 800 × 600 | — | clavada **al dorso** | ☐ |
+| Trasera | 782 × 582 | — | encastrada en la ranura a **15 mm del dorso** | ☐ |
 | Puerta cubriente (×2) | 797 × 298,5 | las 4 aristas | cara **vista** hacia afuera | ☐ |
 
 ## Escritorio (`escritorio`, 1200 x 600 x 750 mm)
@@ -83,8 +84,8 @@ en las **horizontales** (base, tapa, repisas, zócalo) en `ancho_a`.
 | Costado (×2) | 2000 × 300 | `largo_a`, `ancho_a` | canto de 300 mm al **frente** y canto de 2000 mm **arriba** | ☐ |
 | Base | 300 × 764 | `ancho_a` | la arista de 764 mm va al **frente** | ☐ |
 | Tapa | 300 × 764 | `ancho_a` | la arista de 764 mm va al **frente** | ☐ |
-| Repisa (×4) | 300 × 764 | `ancho_a` | la arista de 764 mm va al **frente** | ☐ |
-| Trasera | 2000 × 800 | — | clavada **al dorso** (rigidiza el librero) | ☐ |
+| Repisa (×4) | 279,3 × 764 | `ancho_a` | la arista de 764 mm va al **frente**; el dorso queda recortado | ☐ |
+| Trasera | 1982 × 782 | — | encastrada en la ranura a **15 mm del dorso** (rigidiza el librero) | ☐ |
 
 ## Cajón individual (`cajon`, 600 x 500 x 150 mm)
 
@@ -99,8 +100,8 @@ en las **horizontales** (base, tapa, repisas, zócalo) en `ancho_a`.
 
 Estas no llevan canto que las delate y dependen de cómo se dibujó la pieza:
 
-1. **Traseras encastradas** (clóset y cajonera): la ranura está a 15 mm del borde
-   del dorso; confirmar que ese borde queda al fondo del mueble.
+1. **Traseras encastradas** (clóset, cajonera, cocina y librero): la ranura está a
+   15 mm del borde del dorso; confirmar que ese borde queda al fondo del mueble.
 2. **Travesaños** (cajonera, cocina, escritorio): confirmar cuál es el travesaño
    frontal y cuál el trasero cuando los dos miden lo mismo (cocina: 564 × 100).
 3. **Faldón del escritorio**: el canto va en `ancho_b` (abajo); confirmar que no
