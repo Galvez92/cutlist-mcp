@@ -101,7 +101,11 @@ fresol real.
 - **Geometría:** la trasera entra `ranura_profundidad` mm en cada lado, así que
   mide alto y ancho interiores + 2 × profundidad. En el clóset y el librero las
   repisas se recortan para terminar en la cara frontal de la trasera
-  (`fondo − ranura_distancia − ranura_ancho`); en la cajonera el travesaño
+  (`fondo − ranura_distancia − ranura_ancho`; en el clóset la medida sale de
+  `caraFrontalTrasera()` de `common.ts` —20.7 mm con los valores por omisión—, la
+  misma que descuenta la caja del cajón de la cocina y de la cajonera). La nota
+  del clóset dice además dónde va la ranura (costados, base y tapa; el frente
+  queda sin ranura). En la cajonera el travesaño
   trasero queda por delante de la trasera; en la cocina la ranura va además en
   el travesaño trasero. En las dos cajas con cajones la caja del cajón termina
   en la cara frontal de la trasera, que con ranura queda a 20.7 mm del dorso:

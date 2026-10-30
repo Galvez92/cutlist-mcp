@@ -17,6 +17,7 @@ import {
   RANURA_TRASERA_ANCHO_DEFAULT,
   RANURA_TRASERA_DISTANCIA_DEFAULT,
   RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
+  caraFrontalTrasera,
   encajeTrasera,
 } from "../src/modules/common.js";
 import { generarModulo } from "../src/modules/index.js";
@@ -146,6 +147,32 @@ describe("clóset · trasera en ranura", () => {
     expect(ranura).toEqual({ cara: "i", profundidad: 10.0, ancho: 6.7, distancia: 20.0 });
     aprox(buscar(modulo, "Trasera").largo, 2384.0);
     aprox(buscar(modulo, "Repisa").largo, 573.3);
+  });
+
+  it("la repisa despeja la cara frontal de la trasera con el helper de la cocina", () => {
+    // La profundidad de la repisa sale de `caraFrontalTrasera()`, la misma
+    // medida que descuenta la caja del cajón de la cocina: distancia de la
+    // ranura + su ancho = 20.7 mm con los valores por omisión.
+    const fondo = 600.0;
+    const encaje = encajeTrasera({ anchoInterior: 1464.0, altoInterior: 2364.0, fondo });
+    const frenteTrasera = caraFrontalTrasera(3.0, encaje);
+    aprox(frenteTrasera, 20.7);
+    aprox(buscar(generarCloset({ fondo }), "Repisa").largo, fondo - frenteTrasera);
+    // Clavada al dorso la trasera no ocupa el interior: la repisa llega al dorso.
+    aprox(buscar(generarCloset({ fondo, traseraRanura: false }), "Repisa").largo, fondo);
+  });
+
+  it("la nota dice dónde va la ranura, como en la cocina", () => {
+    const modulo = generarCloset();
+    expect(
+      modulo.notas.some((n) =>
+        n.includes("La ranura va en costados, base y tapa; el frente queda sin ranura."),
+      ),
+    ).toBe(true);
+    expect(modulo.notas.some((n) => n.includes("2.7 mm de holgura para el panel"))).toBe(true);
+    expect(
+      generarCloset({ traseraRanura: false }).notas.some((n) => n.includes("La ranura va en")),
+    ).toBe(false);
   });
 
   it("el parámetro del registro llega al generador", () => {

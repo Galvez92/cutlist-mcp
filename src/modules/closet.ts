@@ -33,6 +33,7 @@ import {
   RANURA_TRASERA_DISTANCIA_DEFAULT,
   RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   barrenosRepisa,
+  caraFrontalTrasera,
   encajeTrasera,
   exigirPositivo,
   frentes,
@@ -217,11 +218,14 @@ export function generar(params: ParamsCloset = {}): Modulo {
   const mecanizadoCostado = new Mecanizado(ranurasTrasera, barrenosCostado);
   const sufijoRanura = encaje ? ", ranura para la trasera" : "";
   // Con la trasera encastrada, las repisas no llegan al dorso: terminan en la
-  // cara frontal de la trasera (distancia de la ranura + su ancho).
-  const largoRepisa = encaje ? p.fondo - (p.ranuraDistancia + p.ranuraAncho) : p.fondo;
+  // cara frontal de la trasera. La medida sale de `caraFrontalTrasera()`, la
+  // misma que usa la cocina para la caja del cajón (distancia de la ranura +
+  // su ancho). Clavada al dorso, la trasera no ocupa el interior: la repisa
+  // llega hasta el dorso.
+  const largoRepisa = encaje ? p.fondo - caraFrontalTrasera(p.traseraEspesor, encaje) : p.fondo;
   let funcionCostado = "Costado — canto en la arista frontal" + sufijoRanura;
   if (encaje) {
-    funcionCostado += ` a ${p.ranuraDistancia.toFixed(1)} mm del borde del dorso`;
+    funcionCostado += ` a ${encaje.ranura.distancia.toFixed(1)} mm del borde del dorso`;
   }
   if (barrenosCostado.length) {
     funcionCostado += " y barrenos Ø5 para repisas móviles";
@@ -291,10 +295,11 @@ export function generar(params: ParamsCloset = {}): Modulo {
   } else if (encaje) {
     notas.push(
       `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
-        `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
-        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
+        `${encaje.ranura.ancho.toFixed(1)} mm de ancho x ${encaje.ranura.profundidad.toFixed(0)} mm de profundidad, ` +
+        `a ${encaje.ranura.distancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
         `de holgura para el panel (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
     );
+    notas.push("La ranura va en costados, base y tapa; el frente queda sin ranura.");
   } else {
     notas.push("La trasera se clava/atornilla al dorso, sin ranura.");
   }
