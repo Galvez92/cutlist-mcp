@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from cutlist.cortecloud import FALLBACK_DIMENSIONS, load_fixture, parse_cortecloud_json
+from cutlist.materials import optimize_by_material
 from cutlist.models import Constraints
 
 
@@ -60,8 +61,20 @@ class FixtureTest(unittest.TestCase):
         self.assertIsNotNone(first.edges.c1)
         self.assertIsNone(first.edges.c2)
 
-    def test_la_veta_no_se_inventa(self):
-        self.assertTrue(all(not part.grain for group in self.groups for part in group.parts))
+    def test_la_veta_sigue_el_largo(self):
+        """Cortecloud: el largo sigue la veta del tablero, así que no se gira."""
+        self.assertTrue(all(part.grain for group in self.groups for part in group.parts))
+
+    def test_las_piezas_del_fixture_no_se_giran(self):
+        optimization = optimize_by_material(load_fixture())
+        placements = [
+            placement
+            for layout in optimization.result.layouts
+            for placement in layout.placements
+        ]
+        self.assertTrue(placements)
+        self.assertTrue(all(not placement.rotated for placement in placements))
+        self.assertEqual(optimization.result.unplaced, [])
 
     def test_importa_barrenos_y_ranuras(self):
         parts = {part.label: part for group in self.groups for part in group.parts}
@@ -95,6 +108,12 @@ class ParseTest(unittest.TestCase):
             "Moscato 18 mm (2500x1830)",
         ])
         self.assertEqual(groups[0].piece_count, 3)
+
+    def test_todas_las_piezas_llevan_veta(self):
+        groups = parse_cortecloud_json(
+            payload(row(), row(material="Moscato 18 mm (2500x1830)"))
+        )
+        self.assertTrue(all(part.grain for group in groups for part in group.parts))
 
     def test_lee_medidas_del_material(self):
         groups = parse_cortecloud_json(payload(row(material="Melamina blanca 15 mm (2440x1220)")))

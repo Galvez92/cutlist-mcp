@@ -18,7 +18,15 @@ Cortecloud/Madijal restringe: el `diameter` de cada barreno (`verticalDrills` y
 `furrowMachiningPair`). Las ranuras y barrenos fuera del perfil no se rechazan
 aquí: quedan en la pieza y `Constraints` los reporta como avisos.
 
-por revisar: la muestra real no trae veta, así que ese campo no se importa.
+Veta: el archivo no trae un campo de veta. Cortecloud documenta que el largo
+(`c`) siempre sigue la veta del tablero cuando el tablero tiene veta, así que
+cada pieza se importa con `grain=True` (el motor no la gira) y conserva el largo
+en la dirección de la veta. Fuente: «Como importar tu lista de piezas de Excel
+para Cortecloud», https://ayuda.vendedores.cortecloud.com/help/como-importar-tu-lista-de-piezas-de-excel-para-cortecloud
+por revisar: el archivo no distingue tableros con veta de tableros sin veta, y
+la dirección de veta del tablero no se modela; la regla se aplica a todas las
+piezas de Cortecloud.
+
 Todos los `horizontalDrills` de la muestra están vacíos y
 `furrowMachiningPair` siempre es `null`: de esos dos se asume que repiten la
 forma de `verticalDrills` y `furrowMachining` (mismo `diameter`/`width`). El
@@ -45,6 +53,11 @@ FIXTURE = (
 
 DEFAULT_KERF = 4.0
 FALLBACK_DIMENSIONS = (2500.0, 1830.0, 18.0)
+
+# Cortecloud: «el largo siempre sigue la veta del tablero (si él tiene veta)».
+# Las piezas se importan con veta para que el motor no las gire y el largo (c)
+# quede en la dirección de la veta.
+GRAIN_FOLLOWS_LARGO = True
 
 _SIZE = re.compile(r"(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)")
 _THICKNESS = re.compile(r"(\d+(?:\.\d+)?)\s*mm")
@@ -128,6 +141,7 @@ def _row_to_part(row: dict, index: int, material: str) -> Part:
             height=height,
             quantity=quantity,
             label=str(row.get("function") or "").strip(),
+            grain=GRAIN_FOLLOWS_LARGO,
             material=material,
             edges=EdgeBanding(
                 c1=_edge(row, "c1", index),
