@@ -1,7 +1,7 @@
 import unittest
 
 from cutlist.dxf import parse_dxf
-from tests.support import dxf_document as dxf, lwpolyline
+from tests.support import block, dxf_document as dxf, insert, lwpolyline
 
 RECT = [(0, 0), (600, 0), (600, 732), (0, 732)]
 
@@ -109,10 +109,13 @@ class DxfTest(unittest.TestCase):
         self.assertEqual(imported.parts[0].width, 600.0)
         self.assertTrue(any("$INSUNITS" in warning for warning in imported.warnings))
 
-    def test_forma_no_rectangular_se_omite(self):
+    def test_forma_no_rectangular_usa_su_rectangulo(self):
         l_shape = [(0, 0), (600, 0), (600, 300), (300, 300), (300, 732), (0, 732)]
         imported = parse_dxf(dxf([lwpolyline(RECT), lwpolyline(l_shape)]))
-        self.assertEqual(len(imported.parts), 1)
+        self.assertEqual(len(imported.parts), 2)
+        self.assertEqual(
+            (imported.parts[1].width, imported.parts[1].height), (600.0, 732.0)
+        )
         self.assertTrue(any("no rectangular" in warning for warning in imported.warnings))
 
     def test_vertice_repetido_al_cerrar(self):
@@ -120,16 +123,10 @@ class DxfTest(unittest.TestCase):
         self.assertEqual(len(imported.parts), 1)
         self.assertEqual(imported.parts[0].height, 732.0)
 
-    def test_insert_se_avisa(self):
-        insert = ["0", "INSERT", "8", "Roble", "2", "PANEL", "10", "0", "20", "0"]
-        imported = parse_dxf(dxf([lwpolyline(RECT), insert]))
-        self.assertEqual(len(imported.parts), 1)
-        self.assertTrue(any("INSERT" in warning for warning in imported.warnings))
-
     def test_sin_piezas_rectangulares(self):
         with self.assertRaises(ValueError) as ctx:
             parse_dxf(dxf([lwpolyline(RECT, closed=False)]))
-        self.assertIn("no tiene piezas rectangulares", str(ctx.exception))
+        self.assertIn("no tiene piezas utilizables", str(ctx.exception))
 
     def test_sin_seccion_entities(self):
         with self.assertRaises(ValueError):
@@ -154,6 +151,107 @@ class DxfTest(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             parse_dxf("hola\nmundo\n")
         self.assertIn("no es ASCII DXF", str(ctx.exception))
+
+
+class DxfBlocksTest(unittest.TestCase):
+    """INSERT: los bloques se expanden con su transformación, también anidados."""
+
+    def test_insert_se_expande_y_hereda_la_capa(self):
+        imported = parse_dxf(
+            dxf(
+                [insert("PANEL", 1000, 0, layer="Roble")],
+                blocks=[block("PANEL", [lwpolyline(RECT, layer="0")])],
+            )
+        )
+        self.assertEqual(len(imported.parts), 1)
+        part = imported.parts[0]
+        self.assertEqual((part.width, part.height), (600.0, 732.0))
+        self.assertEqual(part.material, "Roble")
+        self.assertEqual(imported.warnings, [])
+
+    def test_insert_con_escala_y_rotacion(self):
+        imported = parse_dxf(
+            dxf(
+                [insert("PANEL", scale=(2, 2), rotation=90)],
+                blocks=[block("PANEL", [lwpolyline(RECT, layer="0")])],
+            )
+        )
+        part = imported.parts[0]
+        self.assertAlmostEqual(part.width, 1464.0, delta=0.01)
+        self.assertAlmostEqual(part.height, 1200.0, delta=0.01)
+
+    def test_insert_usa_el_punto_base_del_bloque(self):
+        # Con la base en (600, 0) y el INSERT en (600, 0), la pieza cae de 0 a 600.
+        imported = parse_dxf(
+            dxf(
+                [lwpolyline([(0, 0), (600, 0), (600, 732), (0, 732)]), insert("PANEL", 600, 0)],
+                blocks=[block("PANEL", [lwpolyline(RECT, layer="0")], base=(600, 0))],
+            )
+        )
+        self.assertEqual(len(imported.parts), 2)
+        self.assertEqual(
+            [(part.width, part.height) for part in imported.parts],
+            [(600.0, 732.0), (600.0, 732.0)],
+        )
+
+    def test_insert_en_arreglo(self):
+        imported = parse_dxf(
+            dxf(
+                [insert("PANEL", columns=3, rows=2, spacing=(700, 800))],
+                blocks=[block("PANEL", [lwpolyline(RECT, layer="0")])],
+            )
+        )
+        self.assertEqual(len(imported.parts), 6)
+
+    def test_bloques_anidados(self):
+        blocks = [
+            block("INNER", [lwpolyline(RECT, layer="0")]),
+            block("OUTER", [insert("INNER", 0, 0, layer="0")]),
+        ]
+        imported = parse_dxf(dxf([insert("OUTER", 10, 10)], blocks=blocks))
+        self.assertEqual(len(imported.parts), 1)
+        self.assertEqual(imported.parts[0].material, "Roble")
+
+    def test_lw_polyline_dentro_de_bloque(self):
+        imported = parse_dxf(
+            dxf(
+                [insert("PANEL")],
+                blocks=[block("PANEL", [lwpolyline(RECT, layer="0")])],
+            )
+        )
+        self.assertEqual(len(imported.parts), 1)
+
+    def test_forma_no_rectangular_en_bloque_se_incluye(self):
+        l_shape = [(0, 0), (600, 0), (600, 300), (300, 300), (300, 732), (0, 732)]
+        imported = parse_dxf(
+            dxf(
+                [insert("L")],
+                blocks=[block("L", [lwpolyline(l_shape, layer="0")])],
+            )
+        )
+        self.assertEqual(len(imported.parts), 1)
+        self.assertEqual(
+            (imported.parts[0].width, imported.parts[0].height), (600.0, 732.0)
+        )
+        self.assertTrue(any("no rectangular" in warning for warning in imported.warnings))
+
+    def test_texto_dentro_de_bloque_es_etiqueta(self):
+        imported = parse_dxf(
+            dxf(
+                [insert("PUERTA")],
+                blocks=[
+                    block("PUERTA", [lwpolyline(RECT, layer="0"), text(10, 10, "puerta", layer="0")])
+                ],
+            )
+        )
+        self.assertEqual(imported.parts[0].label, "puerta")
+
+    def test_bloque_inexistente_avisa(self):
+        imported = parse_dxf(dxf([lwpolyline(RECT), insert("NOPE")]))
+        self.assertEqual(len(imported.parts), 1)
+        self.assertTrue(
+            any("bloque inexistente" in warning for warning in imported.warnings)
+        )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,15 @@
 import unittest
 
-from cutlist.models import Constraints, EdgeBanding, Machining, Part, Rect, Sheet
+from cutlist.models import (
+    Constraints,
+    Drill,
+    EdgeBanding,
+    Machining,
+    Part,
+    Rect,
+    Sheet,
+    Slot,
+)
 
 
 class PartTest(unittest.TestCase):
@@ -65,25 +74,29 @@ class MachiningConstraintsTest(unittest.TestCase):
 
     def test_ranuras_y_barrenos_del_perfil_no_avisan(self):
         machining = Machining(
-            vertical_drills=(8.0, 35.0),
-            horizontal_drills=(3.0, 8.0),
-            slots=(5.7, 9.7, 25.7),
+            drills=(
+                Drill(10, 10, 8.0),
+                Drill(20, 20, 35.0),
+                Drill(30, 30, 3.0, horizontal=True),
+                Drill(40, 40, 8.0, horizontal=True),
+            ),
+            slots=(Slot(5.7), Slot(9.7), Slot(25.7)),
         )
         self.assertEqual(self.violations(machining), [])
 
     def test_avisa_ranura_no_permitida(self):
-        problems = self.violations(Machining(slots=(8.0,)))
+        problems = self.violations(Machining(slots=(Slot(8.0),)))
         self.assertTrue(any("ranura de 8 mm" in problem for problem in problems))
         self.assertTrue(any("permitidas: 5.7/6.2/6.7" in problem for problem in problems))
         self.assertTrue(any("tapa" in problem for problem in problems))
 
     def test_avisa_barreno_vertical_no_permitido(self):
-        problems = self.violations(Machining(vertical_drills=(6.0,)))
+        problems = self.violations(Machining(drills=(Drill(10, 10, 6.0),)))
         self.assertTrue(any("barreno vertical Ø6 mm" in problem for problem in problems))
         self.assertTrue(any("permitidos: 3/5/8/10/15/20/35" in problem for problem in problems))
 
     def test_avisa_barreno_horizontal_no_permitido(self):
-        problems = self.violations(Machining(horizontal_drills=(10.0,)))
+        problems = self.violations(Machining(drills=(Drill(10, 10, 10.0, horizontal=True),)))
         self.assertTrue(any("barreno horizontal Ø10 mm" in problem for problem in problems))
         self.assertTrue(any("permitidos: 3/8 mm" in problem for problem in problems))
 
@@ -95,14 +108,53 @@ class MachiningConstraintsTest(unittest.TestCase):
         constraints = Constraints(slot_widths=(8.0,), vertical_drill_diameters=(6.0,))
         self.assertEqual(
             constraints.violations(
-                Part(width=600, height=732, machining=Machining(slots=(8.0,)))
+                Part(width=600, height=732, machining=Machining(slots=(Slot(8.0),)))
             ),
             [],
         )
         problems = constraints.violations(
-            Part(width=600, height=732, machining=Machining(vertical_drills=(35.0,)))
+            Part(width=600, height=732, machining=Machining(drills=(Drill(10, 10, 35.0),)))
         )
         self.assertTrue(any("barreno vertical Ø35 mm" in problem for problem in problems))
+
+
+class MachiningBoundsTest(unittest.TestCase):
+    """Mecanizado fuera del área de la pieza: la pieza no se corta."""
+
+    def test_barreno_dentro_del_area_no_invalida(self):
+        part = Part(600, 300, machining=Machining(drills=(Drill(300, 150, 35.0),)))
+        self.assertEqual(part.invalid_reasons, ())
+
+    def test_barreno_que_sale_del_area_invalida_la_pieza(self):
+        part = Part(
+            600, 300, label="tapa", machining=Machining(drills=(Drill(5, 150, 35.0),))
+        )
+        self.assertEqual(len(part.invalid_reasons), 1)
+        self.assertIn("barreno Ø35 mm en (5; 150)", part.invalid_reasons[0])
+        self.assertIn("600x300", part.invalid_reasons[0])
+
+    def test_ranura_que_sale_del_area_invalida_la_pieza(self):
+        part = Part(600, 300, machining=Machining(slots=(Slot(10.0, 0, 0, 600, 0),)))
+        self.assertEqual(len(part.invalid_reasons), 1)
+        self.assertIn("ranura de 10 mm", part.invalid_reasons[0])
+
+    def test_ranura_dentro_del_area_no_invalida(self):
+        part = Part(600, 300, machining=Machining(slots=(Slot(10.0, 20, 150, 580, 150),)))
+        self.assertEqual(part.invalid_reasons, ())
+
+    def test_ranura_sin_eje_no_se_valida(self):
+        """El `furrowMachining` de Cortecloud no trae eje: por revisar."""
+        part = Part(600, 300, machining=Machining(slots=(Slot(9.7),)))
+        self.assertEqual(part.invalid_reasons, ())
+
+    def test_barreno_horizontal_no_se_valida(self):
+        part = Part(
+            600, 300, machining=Machining(drills=(Drill(1, 1, 35.0, horizontal=True),))
+        )
+        self.assertEqual(part.invalid_reasons, ())
+
+    def test_sin_mecanizado_no_invalida(self):
+        self.assertEqual(Part(600, 300).invalid_reasons, ())
 
 
 class RectTest(unittest.TestCase):

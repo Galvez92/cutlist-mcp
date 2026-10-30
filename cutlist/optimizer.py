@@ -47,9 +47,11 @@ def optimize(
         raise ValueError(f"max_sheets inválido: {max_sheets}")
 
     pack = ALGORITHMS[algorithm]
-    pending = sorted(
-        expand_pieces(parts), key=lambda piece: (-piece.part.max_side, -piece.part.area)
-    )
+    pending: list[Piece] = []
+    invalid: list[Piece] = []
+    for piece in expand_pieces(parts):
+        (invalid if piece.part.invalid_reasons else pending).append(piece)
+    pending.sort(key=lambda piece: (-piece.part.max_side, -piece.part.area))
     layouts: list[SheetLayout] = []
 
     while pending and len(layouts) < max_sheets:
@@ -75,8 +77,9 @@ def optimize(
         layouts=layouts,
         unplaced=list(pending),
         cut_list=_cut_list(layouts),
-        warnings=_warnings(pending, parts, constraints),
+        warnings=_warnings(invalid, pending, parts, constraints),
         algorithm=algorithm,
+        invalid=invalid,
     )
 
 
@@ -114,10 +117,20 @@ def _cut_list(layouts: Sequence[SheetLayout]) -> list[CutRow]:
 
 
 def _warnings(
-    unplaced: Sequence[Piece], parts: Sequence[Part], constraints: Constraints | None
+    invalid: Sequence[Piece],
+    unplaced: Sequence[Piece],
+    parts: Sequence[Part],
+    constraints: Constraints | None,
 ) -> list[str]:
     warnings: list[str] = []
     seen: set[str] = set()
+
+    for piece in invalid:
+        for reason in piece.part.invalid_reasons:
+            message = f"pieza «{piece.part.label or 'sin nombre'}» no se corta: {reason}"
+            if message not in seen:
+                seen.add(message)
+                warnings.append(message)
 
     if unplaced:
         warnings.append(

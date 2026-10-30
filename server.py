@@ -12,8 +12,9 @@ Rutas:
   GET  /api/stocks         catálogo de stocks guardado (JSON en disco)
   PUT  /api/stocks         guarda el catálogo: {"stocks": [{...}, ...]}
   POST /api/optimize       optimiza las piezas enviadas en el cuerpo JSON:
-                           {"csv": "..."} o {"dxf": "..."}, más
-                           "algorithm", "sheet" o "stocks": [{...}, ...]
+                           {"csv": "..."}, {"dxf": "..."} o
+                           {"promob": "..."}, más "algorithm", "sheet" o
+                           "stocks": [{...}, ...]
                            (cada pieza se corta del stock de su material).
   POST /api/report.pdf     el mismo cuerpo, opcionalmente {"source": "demo"},
                            y devuelve el reporte en PDF.
@@ -38,6 +39,7 @@ from cutlist.materials import optimize_by_material
 from cutlist.models import Constraints, Part, Sheet
 from cutlist.optimizer import ALGORITHMS
 from cutlist.pdf import render_pdf
+from cutlist.promob import parse_promob_xml
 from cutlist.stock import optimize_with_stock
 from cutlist.svg import render_svg
 
@@ -60,7 +62,7 @@ def demo_payload(algorithm: str) -> dict:
 
 
 def optimize_payload(body: dict) -> dict:
-    """Optimiza las piezas del cuerpo JSON (CSV o DXF) contra los stocks."""
+    """Optimiza las piezas del cuerpo JSON (CSV, DXF o Promob) contra los stocks."""
     algorithm = str(body.get("algorithm", "guillotine"))
     if algorithm not in ALGORITHMS:
         return {"error": f"algoritmo desconocido: {algorithm}"}
@@ -115,14 +117,26 @@ def _optimize(parts: list[Part], sheets: list[Sheet], algorithm: str):
 
 
 def _parts_from_body(body: dict) -> tuple[list[Part], list[str], str]:
-    """Piezas del cuerpo JSON: el texto `csv` o el dibujo `dxf` (uno de los dos)."""
+    """Piezas del cuerpo JSON: texto `csv`, dibujo `dxf` o XML de Promob."""
     csv_text = str(body.get("csv") or "").strip()
     dxf_text = str(body.get("dxf") or "").strip()
-    if csv_text and dxf_text:
-        raise ValueError("envía las piezas en CSV o en DXF, no en ambos")
+    promob_text = str(body.get("promob") or "").strip()
+    if sum(1 for text in (csv_text, dxf_text, promob_text) if text) > 1:
+        raise ValueError("envía las piezas en CSV, en DXF o en XML de Promob, no en varios")
     if dxf_text:
         imported = parse_dxf(dxf_text)
         return imported.parts, imported.warnings, "dxf"
+    if promob_text:
+        imported = parse_promob_xml(promob_text)
+        return (
+            imported.parts,
+            [
+                *imported.warnings,
+                "el XML de Promob no trae material ni veta: las piezas usan el "
+                "stock comodín y se pueden girar",
+            ],
+            "promob",
+        )
     return parse_parts_csv(csv_text), [], "csv"
 
 

@@ -130,6 +130,13 @@ def render_pdf(
         document.line("Piezas sin ubicar", BOLD, 12, gap=22)
         document.paragraph(", ".join(piece.label for piece in result.unplaced))
 
+    if result.invalid:
+        document.line("Piezas no cortadas", BOLD, 12, gap=22)
+        document.paragraph(
+            "mecanizado fuera del área de la pieza: "
+            + ", ".join(piece.label or "pieza" for piece in result.invalid)
+        )
+
     if result.warnings:
         document.line("Avisos", BOLD, 12, gap=22)
         for warning in result.warnings:
@@ -147,6 +154,8 @@ def _summary_rows(result: OptimizationResult) -> list[tuple[str, str]]:
         ("Piezas sin ubicar", str(len(result.unplaced))),
         ("Algoritmo", result.algorithm),
     ]
+    if result.invalid:
+        rows.insert(-1, ("Piezas no cortadas", str(len(result.invalid))))
     if materials:
         rows.append(("Materiales", materials))
     return rows

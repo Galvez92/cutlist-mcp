@@ -3,16 +3,59 @@
 from cutlist.models import EPS
 
 
-def dxf_document(entities, insunits=4):
-    """DXF ASCII mínimo: HEADER con las unidades y la sección ENTITIES."""
+def dxf_document(entities, insunits=4, blocks=()):
+    """DXF ASCII mínimo: HEADER con las unidades, BLOCKS opcional y ENTITIES."""
     lines = ["0", "SECTION", "2", "HEADER"]
     if insunits is not None:
         lines += ["9", "$INSUNITS", "70", str(insunits)]
-    lines += ["0", "ENDSEC", "0", "SECTION", "2", "ENTITIES"]
+    lines += ["0", "ENDSEC"]
+    if blocks:
+        lines += ["0", "SECTION", "2", "BLOCKS"]
+        for block_lines in blocks:
+            lines += block_lines
+        lines += ["0", "ENDSEC"]
+    lines += ["0", "SECTION", "2", "ENTITIES"]
     for entity in entities:
         lines += entity
     lines += ["0", "ENDSEC", "0", "EOF"]
     return "\n".join(lines) + "\n"
+
+
+def block(name, entities, base=(0, 0), layer="0"):
+    """Definición de bloque (BLOCK ... ENDBLK) con sus entidades."""
+    lines = [
+        "0", "BLOCK", "8", layer, "2", name, "70", "0",
+        "10", f"{base[0]:g}", "20", f"{base[1]:g}",
+    ]
+    for entity in entities:
+        lines += entity
+    lines += ["0", "ENDBLK"]
+    return lines
+
+
+def insert(
+    name,
+    x=0,
+    y=0,
+    layer="Roble",
+    scale=(1, 1),
+    rotation=0,
+    columns=1,
+    rows=1,
+    spacing=(0, 0),
+):
+    """Referencia a un bloque, con escala, rotación y arreglo opcionales."""
+    lines = ["0", "INSERT", "8", layer, "2", name, "10", f"{x:g}", "20", f"{y:g}"]
+    if scale != (1, 1):
+        lines += ["41", f"{scale[0]:g}", "42", f"{scale[1]:g}"]
+    if rotation:
+        lines += ["50", f"{rotation:g}"]
+    if columns != 1 or rows != 1:
+        lines += [
+            "70", str(columns), "71", str(rows),
+            "44", f"{spacing[0]:g}", "45", f"{spacing[1]:g}",
+        ]
+    return lines
 
 
 def lwpolyline(points, layer="Roble", closed=True):

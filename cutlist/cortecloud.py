@@ -12,11 +12,15 @@ perfil Cortecloud/Madijal: 2500 x 1830 x 18 mm.
 Todos los problemas se informan como `ValueError` con el número de la pieza que
 falla, para que la vista previa muestre el motivo en lugar de un traceback.
 
-Del objeto `machining` de cada pieza se importan sólo las medidas que el perfil
-Cortecloud/Madijal restringe: el `diameter` de cada barreno (`verticalDrills` y
+Del objeto `machining` de cada pieza se importan las medidas que el perfil
+Cortecloud/Madijal restringe —el `diameter` de cada barreno (`verticalDrills` y
 `horizontalDrills`) y el `width` de cada ranura (`furrowMachining` y
-`furrowMachiningPair`). Las ranuras y barrenos fuera del perfil no se rechazan
-aquí: quedan en la pieza y `Constraints` los reporta como avisos.
+`furrowMachiningPair`)— y el centro `x`/`y` de cada barreno, que sí viene en la
+muestra real. Una ranura o un barreno fuera del perfil no rechaza el archivo:
+`Constraints` lo reporta como aviso. Un barreno que cae, en todo o en parte,
+fuera del área de la pieza la marca inválida (`Part.invalid_reasons`) y el motor
+no la ubica. El `furrowMachining` real no trae el eje de la ranura, sólo `face`,
+`depth`, `width` y `distance`, así que su posición queda por revisar.
 
 Veta: el archivo no trae un campo de veta. Cortecloud documenta que el largo
 (`c`) siempre sigue la veta del tablero cuando el tablero tiene veta, así que
@@ -41,7 +45,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .models import EdgeBanding, Machining, Part, Sheet
+from .models import Drill, EdgeBanding, Machining, Part, Sheet, Slot
 
 FIXTURE = (
     Path(__file__).resolve().parent.parent
@@ -200,41 +204,65 @@ def _machining(row: dict, index: int) -> Machining | None:
     if not isinstance(raw, dict):
         raise ValueError(f"pieza {index}: «machining» debe ser un objeto o null")
     machining = Machining(
-        vertical_drills=_drill_diameters(raw, "verticalDrills", index),
-        horizontal_drills=_drill_diameters(raw, "horizontalDrills", index),
-        slots=_slot_widths(raw, index),
+        drills=(
+            *_drills(raw, "verticalDrills", index, horizontal=False),
+            *_drills(raw, "horizontalDrills", index, horizontal=True),
+        ),
+        slots=_slots(raw, index),
     )
     return None if machining.is_empty else machining
 
 
-def _drill_diameters(raw: dict, key: str, index: int) -> tuple[float, ...]:
+def _drills(raw: dict, key: str, index: int, horizontal: bool) -> tuple[Drill, ...]:
     drills = raw.get(key)
     if drills is None:
         return ()
     if not isinstance(drills, list):
         raise ValueError(f"pieza {index}: «{key}» debe ser una lista")
     return tuple(
-        _positive(drill.get("diameter"), index, f"diámetro de barreno en «{key}»")
+        Drill(
+            x=_coordinate(drill, "x", index, key),
+            y=_coordinate(drill, "y", index, key),
+            diameter=_positive(drill.get("diameter"), index, f"diámetro de barreno en «{key}»"),
+            horizontal=horizontal,
+        )
         for drill in _objects(drills, key, index)
     )
 
 
-def _slot_widths(raw: dict, index: int) -> tuple[float, ...]:
-    widths: list[float] = []
+def _slots(raw: dict, index: int) -> tuple[Slot, ...]:
+    slots: list[Slot] = []
     for key in ("furrowMachining", "furrowMachiningPair"):
         furrow = raw.get(key)
         if furrow is None:
             continue
         entries = furrow if isinstance(furrow, list) else [furrow]
         for entry in _objects(entries, key, index):
-            widths.append(
-                _positive(
-                    entry.get("width"),
-                    index,
-                    f"ancho de ranura en «{key}» (forma por revisar)",
+            slots.append(
+                Slot(
+                    width=_positive(
+                        entry.get("width"),
+                        index,
+                        f"ancho de ranura en «{key}» (eje por revisar)",
+                    )
                 )
             )
-    return tuple(widths)
+    return tuple(slots)
+
+
+def _coordinate(entry: dict, key: str, index: int, group: str) -> float:
+    """Coordenada del barreno desde una esquina de la pieza (mm)."""
+    raw = entry.get(key)
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        raise ValueError(
+            f"pieza {index}: falta la coordenada {key!r} de un barreno en «{group}»"
+        )
+    value = float(raw)
+    if not math.isfinite(value):
+        raise ValueError(
+            f"pieza {index}: coordenada {key!r} inválida en «{group}»: {raw!r}"
+        )
+    return value
 
 
 def _objects(entries: list, key: str, index: int) -> list[dict]:

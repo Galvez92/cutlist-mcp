@@ -32,6 +32,7 @@ class MaterialSummary:
     sheets_used: int
     piece_count: int
     unplaced: int
+    invalid: int = 0
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,7 @@ class MaterialOptimization:
                 "sheets_used": summary.sheets_used,
                 "piece_count": summary.piece_count,
                 "unplaced": summary.unplaced,
+                "invalid": summary.invalid,
             }
             for summary in self.materials
         ]
@@ -63,6 +65,7 @@ def optimize_by_material(
     """Optimiza cada grupo sobre sus stocks y devuelve el resultado unido."""
     layouts: list[SheetLayout] = []
     unplaced = []
+    invalid = []
     cut_rows = []
     warnings: list[str] = []
     summaries: list[MaterialSummary] = []
@@ -85,6 +88,7 @@ def optimize_by_material(
                 )
             )
         unplaced.extend(result.unplaced)
+        invalid.extend(result.invalid)
         cut_rows.extend(result.cut_list)
         for warning in result.warnings:
             if warning not in warnings:
@@ -96,6 +100,7 @@ def optimize_by_material(
                 sheets_used=len(result.layouts),
                 piece_count=result.piece_count,
                 unplaced=len(result.unplaced),
+                invalid=len(result.invalid),
             )
         )
 
@@ -106,6 +111,7 @@ def optimize_by_material(
             cut_list=cut_rows,
             warnings=warnings,
             algorithm=algorithm,
+            invalid=invalid,
         ),
         materials=summaries,
     )

@@ -7,7 +7,8 @@ Todas las medidas están en milímetros. Los nombres de los cantos (`c1`, `c2`,
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, field
 from typing import Iterator
 
 EPS = 1e-9
@@ -43,21 +44,106 @@ class EdgeBanding:
 
 
 @dataclass(frozen=True)
-class Machining:
-    """Mecanizado de una pieza, tomado de `machining` de Cortecloud.
+class Drill:
+    """Barreno de una pieza: centro (mm) desde una esquina y diámetro."""
 
-    Sólo se guardan las medidas que el perfil Cortecloud/Madijal restringe:
-    el diámetro (mm) de cada barreno y el ancho (mm) de cada ranura
-    (`furrowMachining`). El resto de los campos del archivo no se usan.
+    x: float
+    y: float
+    diameter: float
+    horizontal: bool = False
+
+
+@dataclass(frozen=True)
+class Slot:
+    """Ranura de una pieza: ancho (mm) y, si se conoce, su eje.
+
+    El XML de Promob trae el eje completo (`SX`, `SY`, `EX`, `EY`); el
+    `furrowMachining` de Cortecloud sólo trae el ancho, así que ahí el eje
+    queda en `None` (por revisar: la muestra real no documenta el inicio).
     """
 
-    vertical_drills: tuple[float, ...] = ()
-    horizontal_drills: tuple[float, ...] = ()
-    slots: tuple[float, ...] = ()
+    width: float
+    x0: float | None = None
+    y0: float | None = None
+    x1: float | None = None
+    y1: float | None = None
+
+    @property
+    def has_axis(self) -> bool:
+        return None not in (self.x0, self.y0, self.x1, self.y1)
+
+
+@dataclass(frozen=True)
+class Machining:
+    """Mecanizado de una pieza: barrenos y ranuras con su posición.
+
+    Las medidas (diámetro, ancho) son las que restringe el perfil
+    Cortecloud/Madijal; las coordenadas sirven para comprobar que el
+    mecanizado cae dentro del área de la pieza.
+    """
+
+    drills: tuple[Drill, ...] = ()
+    slots: tuple[Slot, ...] = ()
 
     @property
     def is_empty(self) -> bool:
-        return not (self.vertical_drills or self.horizontal_drills or self.slots)
+        return not (self.drills or self.slots)
+
+    @property
+    def vertical_drills(self) -> tuple[float, ...]:
+        return tuple(drill.diameter for drill in self.drills if not drill.horizontal)
+
+    @property
+    def horizontal_drills(self) -> tuple[float, ...]:
+        return tuple(drill.diameter for drill in self.drills if drill.horizontal)
+
+    @property
+    def slot_widths(self) -> tuple[float, ...]:
+        return tuple(slot.width for slot in self.slots)
+
+    def outside(self, width: float, height: float) -> list[str]:
+        """Mecanizados que caen, en todo o en parte, fuera del área de la pieza."""
+        problems: list[str] = []
+        tolerance = MACHINING_TOLERANCE
+        for drill in self.drills:
+            if drill.horizontal:
+                # por revisar: en un canto el barreno viene proyectado sobre la
+                # cara, así que su X/Y no se miden contra el área de la pieza.
+                continue
+            radius = drill.diameter / 2.0
+            if (
+                drill.x - radius < -tolerance
+                or drill.y - radius < -tolerance
+                or drill.x + radius > width + tolerance
+                or drill.y + radius > height + tolerance
+            ):
+                problems.append(
+                    f"barreno Ø{drill.diameter:g} mm en ({drill.x:g}; {drill.y:g}) "
+                    f"fuera del área {width:g}x{height:g} mm"
+                )
+        for slot in self.slots:
+            if not slot.has_axis:
+                continue
+            half = slot.width / 2.0
+            length = math.hypot(slot.x1 - slot.x0, slot.y1 - slot.y0)
+            if length:
+                # El ancho se abre perpendicular al eje: una ranura puede
+                # terminar justo en el borde de la pieza (ranura pasante).
+                spread_x = abs(slot.y1 - slot.y0) / length * half
+                spread_y = abs(slot.x1 - slot.x0) / length * half
+            else:
+                spread_x = spread_y = half
+            if (
+                min(slot.x0, slot.x1) - spread_x < -tolerance
+                or min(slot.y0, slot.y1) - spread_y < -tolerance
+                or max(slot.x0, slot.x1) + spread_x > width + tolerance
+                or max(slot.y0, slot.y1) + spread_y > height + tolerance
+            ):
+                problems.append(
+                    f"ranura de {slot.width:g} mm de ({slot.x0:g}; {slot.y0:g}) a "
+                    f"({slot.x1:g}; {slot.y1:g}) fuera del área {width:g}x{height:g} mm"
+                )
+        return problems
 
 
 @dataclass(frozen=True)
@@ -94,6 +180,13 @@ class Part:
     @property
     def edges_text(self) -> str:
         return self.edges.describe() if self.edges else ""
+
+    @property
+    def invalid_reasons(self) -> tuple[str, ...]:
+        """Mecanizado fuera del área: la pieza no se puede cortar."""
+        if self.machining is None:
+            return ()
+        return tuple(self.machining.outside(self.width, self.height))
 
 
 @dataclass(frozen=True)
@@ -170,7 +263,7 @@ class Constraints:
 
         name = part.label or "sin nombre"
         problems: list[str] = []
-        for width in machining.slots:
+        for width in machining.slot_widths:
             if not _is_allowed(width, self.slot_widths):
                 problems.append(
                     f"ranura de {width:g} mm no permitida en «{name}» "
@@ -291,6 +384,7 @@ class OptimizationResult:
     cut_list: list[CutRow]
     warnings: list[str]
     algorithm: str
+    invalid: list[Piece] = field(default_factory=list)
 
     @property
     def yield_percent(self) -> float:
@@ -309,6 +403,7 @@ class OptimizationResult:
             "sheets_used": len(self.layouts),
             "piece_count": self.piece_count,
             "unplaced": [piece.label for piece in self.unplaced],
+            "invalid": [piece.label for piece in self.invalid],
             "warnings": self.warnings,
             "sheets": [
                 {

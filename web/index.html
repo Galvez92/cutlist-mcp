@@ -119,7 +119,7 @@
   <div id="layout"></div>
 
   <section class="custom">
-    <h2>Probar con tus piezas (CSV o DXF)</h2>
+    <h2>Probar con tus piezas (CSV, DXF o Promob)</h2>
     <p>
       CSV con formato propio de cutlist-mcp, aún <em>por revisar</em>: columnas
       <code>ancho, alto, cantidad, veta, etiqueta, material</code> en milímetros
@@ -128,10 +128,10 @@
     </p>
     <textarea id="csv" spellcheck="false" aria-label="Piezas en CSV"></textarea>
     <div class="dxf">
-      <label for="dxf">O importa un DXF</label>
-      <input id="dxf" type="file" accept=".dxf,text/plain" />
+      <label for="dxf">O importa un DXF o un XML de Promob</label>
+      <input id="dxf" type="file" accept=".dxf,.xml,text/plain,application/xml" />
       <div class="dxf-actions">
-        <button id="clear-dxf" type="button" class="ghost" hidden>Quitar DXF</button>
+        <button id="clear-dxf" type="button" class="ghost" hidden>Quitar archivo</button>
         <span id="dxf-status"></span>
       </div>
     </div>
@@ -139,7 +139,14 @@
       DXF ASCII, <em>por revisar</em>: cada contorno cerrado (LWPOLYLINE,
       POLYLINE o líneas que lo formen) es una pieza y su <strong>capa</strong> es
       el material; la capa <code>0</code> cuenta como sin material. Un texto
-      dentro del contorno pasa a ser la etiqueta. Si cargas un DXF, reemplaza al CSV.
+      dentro del contorno pasa a ser la etiqueta. Los bloques (<code>INSERT</code>)
+      se expanden con su escala, rotación y arreglo.
+    </p>
+    <p>
+      XML de Promob (Plugin Builder XML), <em>por revisar</em>: cada archivo trae
+      una pieza con sus barrenos y ranuras; se corta como su rectángulo
+      envolvente y, como no trae material ni veta, usa el stock comodín. Si cargas
+      un archivo, reemplaza al CSV.
     </p>
 
     <div class="stocks">
@@ -373,12 +380,13 @@
     saveStocks();
   });
 
-  /* DXF: el dibujo reemplaza al CSV cuando hay un archivo cargado. */
+  /* Archivo: el DXF o el XML de Promob reemplaza al CSV cuando hay uno cargado. */
   const dxfInput = document.getElementById("dxf");
   const dxfStatus = document.getElementById("dxf-status");
   const clearDxf = document.getElementById("clear-dxf");
   let dxfText = "";
   let dxfName = "";
+  let dxfKind = "dxf";
 
   dxfInput.addEventListener("change", async (event) => {
     const file = event.target.files[0];
@@ -386,7 +394,9 @@
     try {
       dxfText = await file.text();
       dxfName = file.name;
-      dxfStatus.textContent = `${file.name} · el DXF reemplaza al CSV`;
+      dxfKind = file.name.toLowerCase().endsWith(".xml") ? "promob" : "dxf";
+      const kindName = dxfKind === "promob" ? "XML de Promob" : "DXF";
+      dxfStatus.textContent = `${file.name} · el ${kindName} reemplaza al CSV`;
       clearDxf.hidden = false;
     } catch (error) {
       dxfText = "";
@@ -409,7 +419,7 @@
     const stocks = readStocks();
     const payload = { algorithm: select.value, stocks };
     if (dxfText) {
-      payload.dxf = dxfText;
+      payload[dxfKind] = dxfText;
     } else {
       payload.csv = document.getElementById("csv").value;
     }
@@ -482,8 +492,12 @@
         body: JSON.stringify(payload),
       });
       render(data);
-      lastSource = payload.dxf ? "dxf" : "csv";
-      const origin = payload.dxf ? `DXF ${dxfName}` : "tu CSV";
+      lastSource = payload.promob ? "promob" : payload.dxf ? "dxf" : "csv";
+      const origin = payload.promob
+        ? `Promob ${dxfName}`
+        : payload.dxf
+          ? `DXF ${dxfName}`
+          : "tu CSV";
       status.textContent =
         `${data.algorithm} · ${origin} · ${data.sheets_used} tablero(s) de ${payload.stocks.length} stock(s)`;
       csvStatus.textContent = "listo";

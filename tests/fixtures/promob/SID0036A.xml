@@ -1,0 +1,196 @@
+<PROGRAM PROGRAMNAME="SID0036A" FILENAME="" PARTDESCRIPTION="Right Side Panel Toe Kick">
+  <HEADER DX="914.4" DY="457.2" DZ="18.5" WORKINGAREAIDENTIFIER="Padrão" WORKINGAREAOFFSETX="0" WORKINGAREAOFFSETY="0" CNCMACHINELOCKOPTION="" WORINGAREAWORKFIELD="">
+    <HEADXDISPLACEMENT X="1914.4" />
+  </HEADER>
+  <CONTENT>
+    <MACHINING DEPTH="18.6" ISEXTERNALCONTOUR="True" CONTOURWIDTH="-1" TYPE="Contour" ISCLOSED="True" ISINSIDEFACE="False" ISTOEKICK="False" ISTHROUGH="True" FACENORMAL="(0;0;1)" FACESTRING="1" GUID="334ee602-9e5f-4c78-85d8-5ef29e4171f6" TOOLCODE="0" TOOLALIGNMENT="Center">
+      <STARTPOINT X="459.7" Y="457.2" Z="18.6" GUID="334ee602-9e5f-4c78-85d8-5ef29e4171f6" />
+      <LINEENDPOINT X="0" Y="457.2" Z="18.6" />
+      <LINEENDPOINT X="0" Y="0" Z="18.6" />
+      <LINEENDPOINT X="814.4" Y="0" Z="18.6" />
+      <LINEENDPOINT X="814.4" Y="50" Z="18.6" />
+      <LINEENDPOINT X="914.4" Y="50" Z="18.6" />
+      <LINEENDPOINT X="914.4" Y="457.2" Z="18.6" />
+      <LINEENDPOINT X="454.7" Y="457.2" Z="18.6" />
+    </MACHINING>
+    <SLOT SX="0" SY="435.45" EX="914.4" EY="435.45" WIDTH="7.5" DEPTH="9.5" LENGTH="914.4" FACENORMAL="(0;0;-1)" GUID="2776b74a-2755-4f15-8c34-b6951a8230f6" TOOLCODE="" ISSLOTTHROUGH="True" CLAMPSTATE="False" />
+    <HOLE X="9" Y="20" Z="18.5" DEPTH="10" DIAMETER="5" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="1" GUID="4e10fdfb-fd98-433e-95e2-4da7f52535a7" />
+    <HOLE X="9.25" Y="80" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="1" GUID="55eba74f-2bc1-4cb2-9fde-dcb06de36d38" />
+    <HOLE X="9" Y="377.2" Z="18.5" DEPTH="10" DIAMETER="5" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="1" GUID="8d7cd084-9a01-4424-87c2-ccfa07359373" />
+    <HOLE X="9.25" Y="422.2" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="1" GUID="30cd8068-f5a9-442a-9099-24d9347e80bf" />
+    <HOLE X="38.5" Y="448.2" Z="18.5" DEPTH="10" DIAMETER="5" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="1" GUID="d2429657-6e1a-441b-81a3-d7c6faed72e4" />
+    <HOLE X="98.5" Y="447.95" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="1" GUID="f486f276-a661-48b1-8ad5-9c24a7c1bc5c" />
+    <HOLE X="805.4" Y="37" Z="18.5" DEPTH="10" DIAMETER="5" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="949707be-1ff4-4770-8b04-ada74c00c73f" />
+    <HOLE X="805.15" Y="69" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="589bccbb-f3b6-4f4f-befb-10df18c7d9cb" />
+    <HOLE X="697.4" Y="448.2" Z="18.5" DEPTH="10" DIAMETER="5" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="dfa91bb2-f3d9-4480-8d65-b01cd929ae54" />
+    <HOLE X="805.15" Y="197" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="7ae5b6dd-f444-4c0b-acee-26039b8f9c31" />
+    <HOLE X="757.4" Y="447.95" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="1d12327e-7638-4480-8ada-ffc2a0d4fc4d" />
+    <HOLE X="805.15" Y="357" Z="18.5" DEPTH="12.5" DIAMETER="8" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="793e0f70-2297-4f6e-85c1-5b5872e6efb0" />
+    <HOLE X="805.4" Y="389" Z="18.5" DEPTH="10" DIAMETER="5" ISTHROUGH="False" ISMARKING="False" FACENORMAL="(0;0;-1)" BASETYPE="2" GUID="6c24fe2f-5de7-4549-8f03-f4023ae0f0b1" />
+    <MACHINING DEPTH="15" ISEXTERNALCONTOUR="False" TYPE="Interior" ISCLOSED="True" ISINSIDEFACE="True" ISTOEKICK="False" ISTHROUGH="False" FACENORMAL="(0;0;1)" FACESTRING="1" GUID="9de180df-6525-43c7-98ae-b93bff889c8c" TOOLCODE="0" TOOLALIGNMENT="Center">
+      <STARTPOINT X="304.54" Y="395.52" Z="15" GUID="9de180df-6525-43c7-98ae-b93bff889c8c" />
+      <LINEENDPOINT X="152.04" Y="395.52" Z="15" />
+      <LINEENDPOINT X="152.04" Y="95.52" Z="15" />
+      <LINEENDPOINT X="452.04" Y="95.52" Z="15" />
+      <LINEENDPOINT X="452.04" Y="395.52" Z="15" />
+      <LINEENDPOINT X="299.54" Y="395.52" Z="15" />
+    </MACHINING>
+    <MACHINING DEPTH="15" ISEXTERNALCONTOUR="False" TYPE="Interior" ISCLOSED="True" ISINSIDEFACE="True" ISTOEKICK="False" ISTHROUGH="False" FACENORMAL="(0;0;1)" FACESTRING="1" GUID="4af80357-ed29-43c4-bb7b-0ee03e4eadfa" X="678.8" Y="231.68" TOOLCODE="0" TOOLALIGNMENT="Center">
+      <STARTPOINT X="678.8" Y="81.68" Z="15" GUID="4af80357-ed29-43c4-bb7b-0ee03e4eadfa" />
+      <ARCMIDENDPOINT SX="678.8" SY="81.68" CX="678.8" CY="231.68" CZ="15" MX="828.8" MY="231.68" MZ="-15" EX="678.8" EY="381.68" EZ="15" RADIUS="150" ISCLOCKWISE="False" />
+      <ARCMIDENDPOINT SX="678.8" SY="381.68" CX="678.8" CY="231.68" CZ="15" MX="528.8" MY="231.68" MZ="-15" EX="678.8" EY="81.68" EZ="15" RADIUS="150" ISCLOCKWISE="False" />
+    </MACHINING>
+  </CONTENT>
+  <COMMENTS>
+    <COMMENT TEXT="AUTHOR: Copyright ® Promob Software Solutions" />
+    <COMMENT TEXT="Promob Maker Automate NA" />
+    <COMMENT TEXT="Promob: 5.60.99.0" />
+    <COMMENT TEXT="Plugin Accord 40 FX - 1.12.12.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Ardis Cutting Optimizer - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Author200 - 1.11.3.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Author327 - 1.11.3.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Author436S - 1.11.4 - Inactivated" />
+    <COMMENT TEXT="Plugin Author500 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin AuthorM600 - 1.11.3.1 - Inactivated" />
+    <COMMENT TEXT="Plugin BHX050 - 1.11.7 - Inactivated" />
+    <COMMENT TEXT="Plugin BHX055 - 1.11.7 - Activated" />
+    <COMMENT TEXT="Plugin BHX500 - 1.11.6 - Activated" />
+    <COMMENT TEXT="Plugin Biesse EKO 902 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Biesse FTT - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Biesse Rover 24 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Biesse Rover A4 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Biesse Rover B7 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Biesse Skill 300 K3 - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin BMG110 - Venture 113-114-115 - 1.12.0.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Builder - 1.11.22.1 - Activated" />
+    <COMMENT TEXT="Plugin Builder Budget - 1.11.21.1 - Activated" />
+    <COMMENT TEXT="Plugin Builder Catalog - 1.11.16 - Activated" />
+    <COMMENT TEXT="Plugin Builder Parts - 1.99.0.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Builder View - 1.11.1.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Builder Xml - 1.11.2 - Activated" />
+    <COMMENT TEXT="Plugin Buselatto Jet Optima A20-C20-C21 - 1.11.7 - Inactivated" />
+    <COMMENT TEXT="Plugin C-Express 920 - 1.11.5 - Inactivated" />
+    <COMMENT TEXT="Plugin Corte Certo - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin CRS Exata Vertical 1000 - 1.11.10.2 - Inactivated" />
+    <COMMENT TEXT="Plugin CRS Exata Vertical 1200 - 1.11.10.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Cut List - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Cut Planning - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Cut Pro - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Cut Rite - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Cyflex 900 - 1.11.8 - Inactivated" />
+    <COMMENT TEXT="Plugin Cyflex 900BR - 1.11.8 - Inactivated" />
+    <COMMENT TEXT="Plugin Cyflex H800 - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Cyflex HP - CX200 - 1.12.1.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Cyflex S e SR - 1.11.0 - Inactivated" />
+    <COMMENT TEXT="Plugin de Relatório de Perfil - 1.12.12.0 - Inactivated" />
+    <COMMENT TEXT="Plugin DRILLTEQ V-200 - 1.60.14.16 - Inactivated" />
+    <COMMENT TEXT="Plugin Dynestic 7516 - 1.11.4.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Easy Jet - 1.60.0.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Easynest 3018 A - 1.11.5.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Easynest 3021 - 1.11.5.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Easynest 4021 - 1.11.6.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Evolution 7405 - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Exata Horizontal - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin F9L - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Felder Creator 950 - 1.12.13.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Flexdrill 1000 - 1.12.12.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Flexdrill 1200 - 1.12.12.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Flexdrill 61200 - 1.12.12.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Format4 Profit H08 - 1.11.5.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Format4 Profit H20-H22-H22L - 1.11.5.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Giben Flat (BDT - Spectra) - 1.11.6.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Giben Flat (Selexx - Professional Line - Stratos) - 1.11.6.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Giben Genesis EVO - 1.11.3.1 - Inactivated" />
+    <COMMENT TEXT="Plugin GPlan - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Hirzt F10 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Hirzt F6 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Hirzt F8 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Holzher Evolution 7401-7402 - 1.12.13.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Holzher Master - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin IF-850 Plus - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin IF-8500 - 1.12.12.0 - Inactivated" />
+    <COMMENT TEXT="Plugin IMA Imagic - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Integração ERP Padrão - 1.12.0.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Integração Focco - 1.11.7.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Integração Insight ERP - 1.60.0.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Integração Promob ERP - 1.11.7.1 - Activated" />
+    <COMMENT TEXT="Plugin Integração Promob ERP Start - 1.12.5.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Integração Promob Production - 1.11.7 - Inactivated" />
+    <COMMENT TEXT="Plugin Integrador WPS - ERP - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin ISO Code - 1.60.14.17 - Inactivated" />
+    <COMMENT TEXT="Plugin Lepton Optimizer - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin M400F - 1.60.0.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Masterwood Nesting MW - 1.11.4.1 - Inactivated" />
+    <COMMENT TEXT="Plugin MasterWood Project 415 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin MasterWood Project 465 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Morbidelli M100 - 1.12.12.17 - Inactivated" />
+    <COMMENT TEXT="Plugin OptiPlanning - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Otimizador de Corte Holzher HHOS - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Ottimo-Perfect Cut - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Point 2 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Pratika 310 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Pratika 315 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Pratika 320 - 1.11.6.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Pratika 325 - 1.11.6.1 - Inactivated" />
+    <COMMENT TEXT="Plugin PratixS - 1.11.7.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Project 250 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Project 450 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Project TF - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin PTP - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin PTP 160 - 1.11.7 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Aplicação de Lâmina por Módulo - 1.12.13.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Bordas - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Corpo de Gavetas - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Fabricação por Componente - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Fabricação por Módulo - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Itens Montados - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Montagem Steel - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Portas - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório de Tamburatos - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatório para Compra de Materiais - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Relatorio para Separação de Almoxarifado - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Router EnRouter CNC - 1.11.10.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover A 1332 - 1.11.2 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover A 1625-1632-1643-1659 - 1.60.14.18 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover A 3.30 - 1.11.5 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover C9 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover1836GFT - 1.11.2.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover20 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Rover2231GFT - 1.11.2.1 - Inactivated" />
+    <COMMENT TEXT="Plugin SCM Startech cn v - 1.60.14.17 - Inactivated" />
+    <COMMENT TEXT="Plugin Skipper 100 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Skipper 130 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Skipper V31 - 1.11.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Spazio3D - 1.12.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Startech - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Tech 99L - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Tech Z1 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Tech Z2 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Tech Z25 - 1.12.12.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Tech Z30 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Tech Z5 - 1.11.5 - Inactivated" />
+    <COMMENT TEXT="Plugin Twister750NX - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Uniflex - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Universal NB-3618 - 1.11.3.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Universal NB-3622 - 1.11.3.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Universal TV 3615 - 1.11.3 - Inactivated" />
+    <COMMENT TEXT="Plugin Vantage 24-25-26 series - Nesting - 1.12.0.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 107 - 1.11.5 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 108 - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 1M - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 22L - 1.11.5 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 2M - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 316 - 1.11.5 - Activated" />
+    <COMMENT TEXT="Plugin Venture 3M - 1.11.7 - Inactivated" />
+    <COMMENT TEXT="Plugin Venture 8M - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin Vetor Opus - 1.11.5.1 - Inactivated" />
+    <COMMENT TEXT="Plugin Vitap Point K2 - 1.12.13.0 - Inactivated" />
+    <COMMENT TEXT="Plugin Weeke BHC280 - 1.11.5 - Inactivated" />
+    <COMMENT TEXT="Plugin Weeke Optimat BHC250 - 1.11.6 - Inactivated" />
+    <COMMENT TEXT="Plugin WIBJ5 - 1.11.7.1 - Inactivated" />
+    <COMMENT TEXT="Plugin WPS Optimizer - 1.11.2 - Inactivated" />
+  </COMMENTS>
+  <FOOTER>
+    <HEADXDISPLACEMENT X="1914.4" />
+  </FOOTER>
+</PROGRAM>

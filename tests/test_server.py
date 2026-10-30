@@ -8,7 +8,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 import server
-from tests.support import dxf_document, lwpolyline
+from tests.support import block, dxf_document, insert, lwpolyline
 
 RECT = [(0, 0), (600, 0), (600, 732), (0, 732)]
 DEFAULT_STOCK = {"material": "", "width": 2500, "height": 1830, "thickness": 18, "kerf": 4}
@@ -242,6 +242,39 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(data["materials"][0]["material"], "Roble")
         self.assertEqual(data["unplaced"], [])
 
+    def test_optimiza_un_dxf_con_bloque(self):
+        document = dxf_document(
+            [insert("PANEL", layer="Roble")],
+            blocks=[block("PANEL", [lwpolyline(RECT, layer="0")])],
+        )
+        status, data = self._post("/api/optimize", {"dxf": document})
+        self.assertEqual(status, 200)
+        self.assertEqual(data["piece_count"], 1)
+        self.assertEqual(data["materials"][0]["material"], "Roble")
+
+    def test_optimiza_un_xml_de_promob(self):
+        xml = Path("tests/fixtures/promob/SID0036A.xml").read_text(encoding="utf-8")
+        status, data = self._post("/api/optimize", {"promob": xml})
+        self.assertEqual(status, 200)
+        self.assertEqual(data["source"], "promob")
+        self.assertEqual(data["piece_count"], 1)
+        self.assertEqual(data["cut_list"][0]["label"], "Right Side Panel Toe Kick")
+        self.assertEqual(data["invalid"], [])
+        self.assertTrue(
+            any("no es rectangular" in warning for warning in data["warnings"])
+        )
+
+    def test_promob_con_mecanizado_fuera_de_la_pieza(self):
+        xml = (
+            '<PROGRAM PARTDESCRIPTION="mala"><HEADER DX="300" DY="200" />'
+            '<CONTENT><HOLE X="5" Y="100" DIAMETER="35" /></CONTENT></PROGRAM>'
+        )
+        status, data = self._post("/api/optimize", {"promob": xml})
+        self.assertEqual(status, 200)
+        self.assertEqual(data["invalid"], ["P01"])
+        self.assertEqual(data["piece_count"], 0)
+        self.assertTrue(any("no se corta" in warning for warning in data["warnings"]))
+
     def test_dxf_invalido_devuelve_400(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self._post("/api/optimize", {"dxf": "esto no es un dxf\n"})
@@ -255,7 +288,7 @@ class ServerTest(unittest.TestCase):
             )
         self.assertEqual(ctx.exception.code, 400)
         error = json.loads(ctx.exception.read().decode("utf-8"))["error"]
-        self.assertIn("no en ambos", error)
+        self.assertIn("no en varios", error)
 
     def test_reporte_pdf(self):
         status, headers, body = self._post_raw(

@@ -1,6 +1,6 @@
 import unittest
 
-from cutlist.models import Constraints, Machining, Part, Sheet
+from cutlist.models import Constraints, Drill, Machining, Part, Sheet, Slot
 from cutlist.optimizer import optimize
 from tests.support import assert_layouts_valid
 
@@ -60,11 +60,27 @@ class OptimizeTest(unittest.TestCase):
             600,
             732,
             label="tapa",
-            machining=Machining(slots=(8.0,), vertical_drills=(6.0,)),
+            machining=Machining(slots=(Slot(8.0),), drills=(Drill(10, 10, 6.0),)),
         )
         result = optimize([part], [Sheet(2500, 1830)], constraints=Constraints())
         self.assertTrue(any("ranura de 8 mm" in warning for warning in result.warnings))
         self.assertTrue(any("barreno vertical Ø6 mm" in warning for warning in result.warnings))
+
+    def test_pieza_con_mecanizado_fuera_del_area_no_se_corta(self):
+        good = Part(600, 300, label="buena")
+        bad = Part(
+            600,
+            300,
+            label="mala",
+            machining=Machining(drills=(Drill(5, 150, 35.0),)),
+        )
+        result = optimize([good, bad], [Sheet(2500, 1830)])
+        self.assertEqual([piece.part.label for piece in result.invalid], ["mala"])
+        self.assertEqual([piece.part.label for piece in result.unplaced], [])
+        self.assertEqual(result.piece_count, 1)
+        self.assertTrue(any("no se corta" in warning for warning in result.warnings))
+        self.assertTrue(any("barreno Ø35 mm" in warning for warning in result.warnings))
+        self.assertEqual(result.to_dict()["invalid"], ["P02"])
 
     def test_sin_perfil_no_hay_avisos_de_restricciones(self):
         result = optimize([Part(50, 300)], [Sheet(2500, 1830)])
