@@ -91,6 +91,29 @@ tocar código (ver `src/red.ts`):
 - El servidor no trae autenticación: si sale de la red local, hay que ponerle un proxy con token o
   mTLS delante.
 
+#### Dónde se configuran (servicio `mcp` del compose)
+
+El servicio `mcp` de `docker-compose.base44.yml` recibe las dos variables por `env_file`, sin tocar
+código ni el compose:
+
+1. `./.env.base44-defaults` — versionado, arranca vacío (sin valores sólo pasa `localhost`).
+2. `/run/base44/app.env` — lo carga el panel de Base44; si define la misma clave, gana sobre el
+   archivo anterior (por eso ninguna de las dos va bajo `environment:`, que las taparía).
+
+Tras cambiar los valores hay que recrear el servicio
+(`docker compose -f docker-compose.base44.yml up -d mcp`) y comprobar que llegaron:
+
+```bash
+docker compose -f docker-compose.base44.yml exec -T mcp \
+  sh -c 'test -n "$MCP_ANFITRIONES" && echo configurado || echo vacío'
+```
+
+Los nombres reales del despliegue de **muebles-cortecloud** todavía no están definidos
+(*por revisar*): hay que declarar el `Host` con el que ese repo llamará a este servidor
+(`MCP_ANFITRIONES`) y, si alguna llamada sale del navegador, el `Origin` de su página
+(`MCP_ORIGENES`). Mientras no se declaren, ese repo sólo puede llamar desde el sandbox de preview,
+donde el `Host`/`Origin` del proxy se aceptan por `BASE44_PREVIEW_MODE=1` (ver más abajo).
+
 Los dos sentidos de trabajo usan las mismas herramientas:
 
 1. **La otra app arma el despiece** → `importar` (`formato: "cortecloud"`, `contenido`: su JSON
