@@ -57,22 +57,26 @@ reparto de las aristas geométricas a los lados absolutos del motor es
   `largo` (piezas verticales: costados) y `ancho_a` cuando es de longitud
   `ancho` (piezas horizontales: base, tapa, repisas, zócalo). La lectura física
   va en `funcion` ("canto en la arista frontal", "canto en la arista superior").
-- *Por revisar*: la equivalencia entre estas aristas y los campos
-  `c1`/`c2`/`l1`/`l2` de Cortecloud **no está verificada**. El fixture real
-  `tests/fixtures/cortecloud/escritorio_D_simple.json` trae «Lateral cajón» con
-  `c=450`, `l=75` y solo `l1` con canto (cuando la arista vista del lateral es la
-  de 450 mm), y «Frente cajón» con los cuatro cantos: esa pieza es la muestra para
-  resolver el mapeo. Mientras no se verifique, cualquier exportador debe marcarlo
-  `por revisar`.
+- Equivalencia con Cortecloud (según su [sistema de
+  coordenadas](https://cortecloud.com/api-docs/en/guias/json_import/#part-coordinate-system),
+  pieza vista por la cara interna): `c1` = `largo_a` (segmento 0-1),
+  `c2` = `largo_b` (2-3), `l1` = `ancho_b` (1-2, lado inferior) y `l2` = `ancho_a`
+  (3-0, lado superior). La conversión vive en `src/modules/cortecloud.ts`
+  (`cantosACortecloud` / `cantosDesdeCortecloud`).
+- *Por revisar*: el JSON no dice en qué orientación se dibujó cada pieza, así que
+  el lado **físico** (frente, arriba) sigue dependiendo de cómo se cargó la pieza
+  en Cortecloud. Por eso la lectura física se guarda en `funcion` y se confirma
+  con el taller con la lista de
+  [`docs/verificacion-lados-piezas.md`](verificacion-lados-piezas.md).
 
 ## Qué genera cada módulo
 
 | Módulo | Cuerpo | Frente | Otros |
 | --- | --- | --- | --- |
-| `cajonera` | 2 costados, base y tapa entre costados, travesaño trasero de 100 mm, trasera de 3 mm | frentes cubrientes de cajón + caja de cajón (laterales, frente interior, trasera, piso) | correderas 400/450/500 mm, tiradores |
-| `closet` | 2 costados, base y tapa, trasera de 3 mm | puertas batientes cubrientes o correderas traslapadas | repisas (repartidas o explícitas), barral, soportes Ø5 |
-| `cocina` | 2 costados, base, travesaño frontal y trasero, trasera de 3 mm, zócalo retranqueado | puertas cubrientes o frentes de cajón (no se mezclan) | bisagras, correderas, patas regulables |
-| `librero` | 2 costados (con canto frontal y superior), base y tapa entre costados, trasera de 3 mm | — | repisas, soportes Ø5 |
+| `cajonera` | 2 costados, base y tapa entre costados, travesaño trasero de 100 mm, trasera de 3 mm en ranura | frentes cubrientes de cajón + caja de cajón (laterales, frente interior, trasera, piso) | correderas 400/450/500 mm, tiradores |
+| `closet` | 2 costados, base y tapa, trasera de 3 mm en ranura | puertas batientes cubrientes o correderas traslapadas | repisas (repartidas o explícitas), barral, soportes Ø5 |
+| `cocina` | 2 costados, base, travesaño frontal y trasero, trasera de 3 mm en ranura (costados, base y travesaño trasero), zócalo retranqueado | puertas cubrientes o frentes de cajón (no se mezclan) | bisagras, correderas, patas regulables |
+| `librero` | 2 costados (con canto frontal y superior), base y tapa entre costados, trasera de 3 mm en ranura | — | repisas, soportes Ø5 |
 
 Las **cajas de cajón** siguen el despiece real del fixture Cortecloud: laterales
 de `largo x alto` con canto en la arista superior, frente interior y trasera de
@@ -80,6 +84,106 @@ de `largo x alto` con canto en la arista superior, frente interior y trasera de
 
 Los herrajes y complementos (correderas, bisagras, barral, patas, tiradores) van
 en `modulo.accesorios`, no como piezas de tablero.
+
+## Trasera encastrada en ranura (clóset, cajonera, cocina y librero)
+
+Los cuatro módulos de caja encastran la trasera de 3 mm en una **ranura** de los
+cuatro lados del cuerpo en lugar de clavarla al dorso: costados y base en todos,
+más tapa en clóset, cajonera y librero y travesaño trasero en la cocina.
+Parámetros: `trasera_ranura` (`true` por omisión; `false` deja la trasera clavada
+al dorso), `ranura_ancho` (5.7 mm), `ranura_profundidad` (9 mm) y
+`ranura_distancia` (15 mm desde el borde del dorso). El ancho tiene que ser mayor
+que el espesor de la trasera (`encajeTrasera()` rechaza la ranura si no: el panel
+no entra) y el encaje devuelve la **holgura del panel** —2.7 mm con los valores
+por omisión—, que las notas de los cuatro módulos muestran para compararla con el
+fresol real.
+
+- **Geometría:** la trasera entra `ranura_profundidad` mm en cada lado, así que
+  mide alto y ancho interiores + 2 × profundidad. En el clóset y el librero las
+  repisas se recortan para terminar en la cara frontal de la trasera; en los dos
+  la medida sale de `caraFrontalTrasera()` de `common.ts` (`fondo − distancia −
+  ancho`, 20.7 mm con los valores por omisión), la misma que descuenta la caja
+  del cajón de la cocina y de la cajonera. Las notas de clóset y librero dicen
+  además dónde va la ranura (costados, base y tapa; el frente queda sin ranura).
+  En la cajonera el travesaño
+  trasero queda por delante de la trasera; en la cocina la ranura va además en
+  el travesaño trasero. En las dos cajas con cajones la caja del cajón termina
+  en la cara frontal de la trasera, que con ranura queda a 20.7 mm del dorso:
+  `fondo − ranura_distancia − ranura_ancho − juego_fondo` (en la cocina el fondo
+  es el del costado). Con `trasera_ranura: false` las dos descuentan solo el
+  espesor de la trasera. La medida sale de `fondoUtilCajon()` (`common.ts`) y la
+  cocina publica el presupuesto en `medidas` (`fondo_util_cajon`,
+  `largo_caja_cajon`) y en una nota, porque la corredera no puede superarlo: con
+  490 mm de fondo la cocina baja de la corredera de 450 mm (trasera clavada) a la
+  de 400 mm (trasera en ranura).
+- **Fuentes:** profundidad de 9 mm y 15 mm desde el borde, [*Manual Técnico de
+  Melamina #02*](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938)
+  (www.autodidacta.info / comohacercomohacer.com), que ranura el fondo de un cajón
+  «4 mm de espesor x 9 mm de profundidad» y «del borde medimos 15 mm». Ancho de
+  5.7 mm: el menor que admite el perfil Cortecloud/Madijal; el manual usa 4 mm
+  para un panel de 4 mm, medida que ese perfil no ejecuta.
+- **Por revisar:** las tres medidas (el manual es de taller, no de fabricante) y
+  el ancho, porque para una trasera de 3 mm la ranura de 5.7 mm queda holgada.
+- La **cocina** conserva el travesaño frontal sin ranura; el trasero sí la lleva.
+  Con `trasera_ranura: false` los cuatro módulos vuelven a la trasera clavada.
+- **Escritorio y cajón sueltos** no usan este encaje: el escritorio no tiene
+  trasera y el cajón ranura el fondo de 3 mm (ver el módulo `cajon`).
+
+## Bisagras y revelado de las puertas batientes (clóset y cocina)
+
+La cantidad de bisagras y el revelado mínimo salen de catálogos de herraje:
+
+- **Cantidad por alto de puerta** ([Hettich *Sensys*, p. 14, «Number of hinges
+  per door»](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf)):
+  2 bisagras hasta 900 mm, 3 hasta 1600 mm, 4 hasta 2000 mm y 5 hasta 2400 mm.
+  La guía vale para puertas de hasta 600 mm de ancho (Blum suma una bisagra
+  entre 600 y 650 mm) y para tablero de 19 mm y 750 kg/m³.
+- **Cantidad por peso de puerta** ([Blum, *CLIP top BLUMOTION: Number of
+  hinges*](https://ea.blum.com/en/number-of-hinges/)): 2 bisagras para puertas de
+  4–6 kg y 3 para 6–12 kg, contando la puerta con sus tiradores; vale para
+  puertas de hasta 600 mm de ancho. Blum pide mirar también el alto: en puertas
+  altas y angostas conviene una bisagra extra.
+- **Revelado mínimo** ([Blum, guía rápida de
+  bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf);
+  [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf)):
+  una puerta de 18 mm con la copa a 3 mm del borde necesita 1.3 mm (Blum) o
+  0.6–0.8 mm (Hettich, según la tabla del catálogo); entre dos puertas el total
+  debe ser al menos el doble, 2.6 mm. El `juego` por omisión de 3 mm lo cumple.
+- **Herraje**: copa Ø35 mm, distancia de copa de 3–8 mm y espesor de puerta de
+  15–24 mm ([Blum CLIP
+  top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf)).
+
+Todo esto vive en `src/modules/bisagras.ts`, compartido por el clóset y la cocina.
+`bisagrasPorPuerta()` aplica la tabla por alto y `bisagrasPorPeso()` la de peso;
+`bisagrasPuerta()` combina las dos y pide la mayor, porque cada guía es un mínimo
+independiente. El peso sale de `pesoPuertaKg()` = área × espesor × densidad, con
+750 kg/m³ (el valor que publica Hettich) y el espesor de puerta del módulo, más el
+peso del tirador (`peso_tirador`, por omisión 0.09 kg: tirador recto de acero de
+96 mm, peso publicado en su ficha de producto, verificado el 2026-10-29; otro
+tirador cambia el valor). Blum pide contar la puerta **con sus tiradores**;
+`peso_tirador: 0` calcula una puerta sin tirador (por ejemplo, de apertura a
+presión). Los pesos publicados están en la tabla `PESOS_TIRADOR_REFERENCIA` de
+`bisagras.ts`: 96 mm (SKU 103910) y 128 mm liviano y pesado (SKU 103911 y
+103916), todos 0.09 kg en sus fichas.
+
+Umbrales de la guía por peso, con el límite inclusivo como lo aplica
+`bisagrasPorPeso()`: 2 bisagras hasta 6.0 kg y 3 de más de 6.0 kg hasta 12.0 kg
+(Blum publica la tabla desde 4 kg; por debajo el módulo se queda en 2, el mínimo).
+Sobre 12 kg la cantidad no sube y el módulo avisa. Como el tirador de 0.09 kg
+cuenta en el peso, la tercera bisagra se activa cuando el tablero pasa de 5.91 kg.
+
+Los dos módulos avisan en `notas` cuando el caso queda fuera de una guía: puertas
+de más de 2400 mm de alto, de más de 600 mm de ancho o de más de 12 kg, y cuando
+el peso pide más bisagras que el alto. El aviso desglosa el peso del tablero y el
+del tirador. El clóset avisa además si la holgura entre puertas queda bajo 2.6 mm.
+Las correderas mantienen su traslape y juego de guía `por revisar`, porque los fija
+el sistema elegido.
+
+Ejemplo de la regla combinada: una puerta cubriente de 600 × 797 × 18 mm pesa
+6.5 kg de tablero (6.6 kg con el tirador), así que Blum pide 3 bisagras aunque el
+alto solo pida 2; una hoja de 298 × 897 × 18 mm pesa 3.6 kg y se queda con las 2
+del alto. Un caso donde el tirador decide: una hoja de 598.5 × 736 × 18 mm pesa
+5.9 kg y se queda en 2 bisagras, pero con el tirador pasa de 6.0 kg y pide 3.
 
 ## Perfil de restricciones (opcional)
 
@@ -97,6 +201,14 @@ const perfilTaller = PERFIL_CORTECLOUD_MADIJAL.con({ piezaMinCorte: 80.0 });
 const hallazgos = validar(modulo.resumen(), perfilTaller);
 ```
 
+La pieza máxima se compara **girada**: el lado mayor contra 2480 mm y el menor
+contra 1810 mm, porque es un límite de hoja/máquina y no de orientación. Así un
+costado de 600 × 2400 mm del clóset o un lateral de 300 × 2000 mm del librero no
+generan hallazgo, y solo es error cuando ninguna orientación cabe (p. ej.
+1900 × 2400 mm). El puente al motor (`validateParts` en `src/profiles.ts`) aplica
+la misma comparación; antes exigía `width` ≤ 2480 **y** `height` ≤ 1810, y el demo
+marcaba `pieza-sobre-maximo` en piezas que sí caben giradas.
+
 Reglas y niveles: `error` (no fabricable en ese perfil) y `aviso` (revisar). El
 perfil no cambia las medidas generadas: solo informa. La luz máxima entre apoyos
 de una repisa (`luz_max_repisa_aviso`) viene **desactivada**: no hay fuente
@@ -112,11 +224,18 @@ verificada para un valor de carga.
 | travesaños de 100 mm de ancho | cajonera y cocina | fixture real `tests/fixtures/cortecloud/escritorio_D_simple.json` | verificado (despiece del repo) |
 | barrenos de repisa: Ø5, a 40–50 mm del borde, con 30 mm entre barrenos, una posición y dos arriba y dos abajo | clóset y librero | ARAUCO, *Cómo Instalar Repisas* (serie Cómo Hacer 6) | verificado |
 | 65 mm mínimo de corte; 250 mm para piezas mecanizadas; 2480 x 1810 mm máximo; tablero 2500 x 1830 x 18; ranuras y barrenos permitidos | perfil Cortecloud/Madijal | `docs/memoria/MEMORIA.md` (restricciones observadas en uso real) | según la MEMORIA; **por revisar** contra el proveedor |
-| juego de 3 mm entre puertas/frentes | todos | valor de taller | **por revisar** |
+| juego de 3 mm entre puertas/frentes | todos | valor de taller; en el clóset cubre el revelado mínimo de la bisagra (≥ 2 × 1.3 mm) | clóset batiente: verificado como suficiente; cajonera y cocina: **por revisar** |
 | juego de corredera 25 mm; margen de alto de caja 20 mm; juego de fondo 10 mm | cajonera y cocina | valor de taller | **por revisar** |
 | profundidad del barreno de repisa 12 mm | clóset y librero | valor de taller | **por revisar** |
-| traslape de 30 mm y juego de guía de 45 mm | clóset con correderas | valor de taller | **por revisar** |
-| 2/3/4 bisagras según alto de puerta | clóset y cocina | regla de taller | **por revisar** |
+| traslape de 30 mm y juego de guía de 45 mm | clóset con correderas | valor de taller (lo fija el sistema de correderas elegido) | **por revisar** |
+| 2/3/4/5 bisagras por puerta hasta 900/1600/2000/2400 mm de alto; puertas de hasta 600 mm de ancho; espesor de puerta 15–24 mm | clóset y cocina | [Hettich *Sensys*, p. 14](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) y [Blum CLIP top](https://d2.blum.com/services/BEC003/cliptopbmn_fl_dok_bus_$sen-us_$aof_$v1.pdf) | verificado |
+| 2 bisagras de 4 a 6 kg y 3 de 6 a 12 kg, con el peso de la puerta y sus tiradores; puertas de hasta 600 mm de ancho; densidad de referencia 750 kg/m³ | clóset y cocina (el peso suma el tirador, 0.09 kg por omisión) | [Blum, *Number of hinges*](https://ea.blum.com/en/number-of-hinges/) | verificado (la densidad de 750 kg/m³ es la que publica Hettich) |
+| peso de referencia de un tirador: 0.09 kg (tirador recto de acero inoxidable de 96 mm, SKU 103910) | clóset y cocina (`peso_tirador`) | [Promart, ficha del tirador Orient recto 96 mm](https://www.promart.pe/tirador-recto-acero-inox-96mm/p) | verificado (2026-10-29); es el peso de ese tirador, así que el taller debe pasar el del tirador elegido |
+| peso de referencia del tirador recto de 128 mm: 0.09 kg (liviano SKU 103911 y pesado SKU 103916) | clóset y cocina (`peso_tirador`), si el taller usa ese tirador | [Promart, tirador recto liviano 128 mm](https://www.promart.pe/tirador-recto-acero-inoxidable-liviano-128mm/p) y [tirador recto pesado 128 mm](https://www.promart.pe/tirador-recto-pesado-acero-inoxidable-128mm/p) | verificado (2026-10-29); las dos fichas publican el mismo peso, así que parece redondeado: conviene pesarlo en el taller |
+| ranura para la trasera: 9 mm de profundidad, a 15 mm del borde del dorso | clóset, cajonera, cocina y librero (`ranura_profundidad`, `ranura_distancia`) | [Manual Técnico de Melamina #02](https://es.slideshare.net/slideshow/manual-tcnico-de-melamina-02pdfffffff/266978938) | **por revisar**: manual de taller (ranura el fondo de un cajón de 4 mm), no de fabricante |
+| ancho de la ranura de la trasera: 5.7 mm | clóset, cajonera, cocina y librero (`ranura_ancho`) | perfil Cortecloud/Madijal (`docs/memoria/MEMORIA.md`); el manual propone 4 mm | **por revisar**: 5.7 mm es el menor ancho del perfil y deja 2.7 mm de holgura para una trasera de 3 mm (el encaje rechaza una ranura más angosta que el panel) |
+| minifix: caja Ø15 mm con 13.5 mm de profundidad en tablero de 18 mm; barreno del pasador de Ø7 u Ø8 mm en el canto | cajón (`diametro_pin`, por omisión 7 mm) | [Häfele, *IXCONNECT Minifix 15 metal housings*](https://files.hafele.co.uk/catalogfiles/www/14CFC294.pdf) | verificado (2026-10-30); el perfil Cortecloud/Madijal solo admite Ø9.525 mm en horizontal, así que el Ø7 sale marcado **por revisar** con el proveedor |
+| revelado mínimo de 1.3 mm por puerta de 18 mm con la copa a 3 mm del borde (Hettich *Sensys*: 0.6–0.8 mm); entre dos puertas, ≥ 2 × el revelado | clóset batiente | [Blum, guía rápida de bisagras](https://downloads2.cabinetparts.com/54af8d4d-ea85-4fdd-a601-1a0a31dbcd92.pdf); [Hettich *Sensys*](https://web.hettich.com/fileadmin/media/Sensys_Catalogue_11309_en.pdf) | verificado (se toma el mayor) |
 | fondo de 600 mm (clóset) y de 300 mm (librero) | clóset y librero | guías de taller (https://www.closetworld.com/blog/standard-closet-dimensions, https://www.instagram.com/p/B7RItFOH3XF/) | **por revisar** |
 | barral a 1700 mm del piso | clóset | valor de taller | **por revisar** |
 
@@ -132,9 +251,17 @@ docker compose -f docker-compose.base44.yml --profile tests run --rm tests
 Cubren: modelo de piezas y cantos (medidas terminadas, agrupación de líneas,
 totales), las reglas del perfil (una prueba por regla, incluidos los umbrales de
 65/70/66 mm), la geometría de los cuatro módulos con sus cantos y el reparto de
-puertas y frentes, la idea escrita y el punto de entrada HTTP. Son **95 pruebas
-vitest** (las 92 originales del Python, con los casos parametrizados expandidos)
-y `tsc --noEmit` estricto pasa.
+puertas y frentes, la idea escrita y el punto de entrada HTTP, y el mapeo de
+cantos a los lados `c1`/`c2`/`l1`/`l2` de Cortecloud
+(`tests/test_cantos_cortecloud.test.ts`, con ida y vuelta sobre las 21 líneas del
+fixture) y las tolerancias de bisagras y juegos de herraje contra las tablas de
+Hettich y Blum (`tests/test_closet_herrajes.test.ts`: tramos de 2/3/4/5 bisagras,
+revelado mínimo entre puertas, avisos de altura y ancho fuera de guía;
+`tests/test_cocina.test.ts`: la cocina aplica la misma tabla y avisa fuera de guía;
+`tests/test_bisagras_peso.test.ts`: peso de la puerta y combinación de la guía por
+alto con la de peso, en el clóset y la cocina).
+Son **369 pruebas vitest** y 60 del servidor MCP (`node:test`), y
+`tsc --noEmit` estricto pasa.
 
 ## Vista previa de desarrollo
 
@@ -160,8 +287,10 @@ La rama `demo-web-docs` integra esta capa en la demo (Vite, DOM nativo):
   parámetro al registro lo expone solo en la UI.
 - Al pulsar *Generar piezas del módulo* se llama a `generarModulo(tipo, valores)` y las
   `Pieza` se bridgean al optimizador con `Pieza.toPartInput()` (`demo/src/engine/modules.js`):
-  `width = ancho`, `height = largo`, veta → `grain`, cantos → `edges`. El reparto de
-  aristas a lados absolutos del motor sigue **por revisar**.
+  `width = ancho`, `height = largo`, veta → `grain`, cantos → `edges`.
+- Los cantos viajan como texto en `Cantos` y se convierten a los lados
+  `c1`/`c2`/`l1`/`l2` de Cortecloud con `cantosACortecloud()` /
+  `cantosDesdeCortecloud()` (`src/modules/cortecloud.ts`).
 - El tablero de stock pasa al recomendado por el perfil (2500×1830×18 mm) y el layout se
   recalcula en vivo, con los hallazgos del perfil como avisos.
 - El ejemplo por omisión de la demo sigue siendo el **escritorio compacto** real (fixture de
@@ -173,9 +302,15 @@ el redibujado de campos al cambiar de módulo y volver al ejemplo del escritorio
 
 ## Pendientes
 
-- Verificar el mapeo de cantos contra el formato de Cortecloud (ver arriba).
+- Confirmar con el taller el lado **físico** de cada canto en las piezas exportadas
+  (el JSON no declara la orientación del dibujo): lista de verificación en
+  [`docs/verificacion-lados-piezas.md`](verificacion-lados-piezas.md).
 - Revisar los valores `por revisar` con el taller o el herraje antes de fabricar.
-- Resolver la ranura de trasera (hoy la trasera va clavada al dorso, sin ranura).
+- Confirmar las medidas de la ranura de la trasera (9 mm de profundidad, 15 mm del
+  borde, 5.7 mm de ancho, 2.7 mm de holgura para el panel), ya adoptada en clóset,
+  cajonera, cocina y librero.
+- Confirmar con el proveedor qué barreno horizontal puede ejecutar la máquina: el
+  perfil solo admite Ø9.525 mm (3/8") y el pasador del minifix real es Ø7 u Ø8 mm.
 - Conectar con el servidor MCP (rama `mcp-server`). La integración con el optimizador y la
   demo web ya está resuelta en la rama `demo-web-docs`.
 
@@ -188,5 +323,9 @@ machining out, optionally validated against an optional restriction profile
 Reference dimensions come from ARAUCO's public *Serie Cómo Hacer* documents and
 from the real Cortecloud cut-list fixture in `tests/fixtures/`; every value
 without a verified source is flagged `por revisar` (to be verified) and exposed
-as an adjustable parameter. The edge-banding mapping to Cortecloud's
-`c1`/`c2`/`l1`/`l2` fields is not verified yet.
+as an adjustable parameter. Closet, drawer unit, kitchen base cabinet and
+bookcase take the 3 mm back panel in a groove instead of nailing it to the rear;
+the groove dimensions are workshop values still flagged `por revisar`. The edge-banding mapping to Cortecloud's
+`c1`/`c2`/`l1`/`l2` fields is not verified yet: a workshop checklist
+(`docs/verificacion-lados-piezas.md`) tracks the physical side of every exported
+piece.

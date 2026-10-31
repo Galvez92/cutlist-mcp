@@ -35,8 +35,8 @@
   declarado en `demo/aliases.js` (lo comparten Vite y el `vitest.config.ts` de la raíz).
   El motor no tiene dependencias de ejecución; el PDF se genera con un escritor propio
   (`src/render/pdf-writer.ts`). `pdf-lib` es solo para los tests del motor.
-- Módulos paramétricos: `src/modules/` (rama `parametric-modules`). Generadores de cajonera,
-  clóset, cocina y librero (`Pieza`, `Modulo`, `PerfilRestricciones`), intérprete de ideas
+- Módulos paramétricos: `src/modules/` (rama `parametric-modules`). Generadores de cajón,
+  cajonera, clóset, cocina, escritorio y librero (`Pieza`, `Modulo`, `PerfilRestricciones`), intérprete de ideas
   escritas (`spec.ts`) y puente al motor (`Pieza.toPartInput()`,
   `PerfilRestricciones.toConstraintProfile()`). Vista previa de desarrollo opcional en
   `tools/preview/` (`npm run preview`; vista del motor con pedido de ejemplo en `npm run preview:motor`, `tools/preview/motor.ts`; documentación de formatos en `npm run preview:formatos`, `tools/preview/formatos.ts`). Ver `docs/modulos-parametricos.md`.
@@ -49,4 +49,4 @@
   con su fuente.
 - Si otra rama agrega un paquete al monorepo, decláralo en `workspaces` de la raíz y añade el
   servicio correspondiente a `docker-compose.base44.yml` con sus etiquetas `base44.*`.
-- Servidor MCP: `src/servidor.ts`, `src/http.ts` (Streamable HTTP en `/mcp`) y `src/stdio.ts`. Servicio `mcp` del compose en el puerto 3001; `npm run start:stdio` / `npm run start:http`. Sus pruebas usan `node:test` y corren con `npm run test:mcp` (incluidas en `npm test`). Las listas de `Host`/`Origin` de `src/http.ts` solo se amplían si `BASE44_PREVIEW_MODE` vale exactamente `"1"`. Ver `docs/mcp-server.md`.
+- Servidor MCP: `src/servidor.ts`, `src/http.ts` (Streamable HTTP en `/mcp`) y `src/stdio.ts`. Servicio `mcp` del compose en el puerto 3001; `npm run start:stdio` / `npm run start:http`. Sus pruebas usan `node:test` y corren con `npm run test:mcp` (incluidas en `npm test`). Las listas de `Host`/`Origin` de `src/http.ts` solo se amplían si `BASE44_PREVIEW_MODE` vale exactamente `"1"`; para otra app se declaran en `.env.base44-defaults` (`MCP_ANFITRIONES`, `MCP_ORIGENES`), que el servicio `mcp` lee por `env_file` junto con `/run/base44/app.env` (este último gana). Ver `docs/mcp-server.md`.

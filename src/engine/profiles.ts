@@ -100,7 +100,15 @@ export function validateParts(
         message: `${part.code}: ${formatMm(part.width)} × ${formatMm(part.height)} mm está por debajo del mínimo de corte ${formatMm(profile.minCutWidth)} × ${formatMm(profile.minCutHeight)} mm.`,
       });
     }
-    if (part.width > profile.maxPartWidth || part.height > profile.maxPartHeight) {
+    // La pieza máxima es un límite de la máquina/hoja, no de orientación: la
+    // pieza cabe girada. Se compara el lado mayor contra el límite mayor y el
+    // menor contra el menor, igual que `cabe()` de los módulos paramétricos y
+    // `validarConPerfil` de este archivo.
+    const ladoMayor = Math.max(part.width, part.height);
+    const ladoMenor = Math.min(part.width, part.height);
+    const maxLadoMayor = Math.max(profile.maxPartWidth, profile.maxPartHeight);
+    const maxLadoMenor = Math.min(profile.maxPartWidth, profile.maxPartHeight);
+    if (ladoMayor > maxLadoMayor || ladoMenor > maxLadoMenor) {
       issues.push({
         code: "pieza-sobre-maximo",
         severity: "error",

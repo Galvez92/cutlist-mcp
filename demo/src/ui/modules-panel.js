@@ -32,7 +32,7 @@ export function createModulesPanel({ onGenerated }) {
   section.className = 'panel panel--modules';
   section.innerHTML = `
     <header class="panel__head">
-      <h2>Módulos paramétricos <span class="muted">(cajonera · clóset · cocina · librero)</span></h2>
+      <h2>Módulos paramétricos <span class="muted">(cajón · cajonera · clóset · cocina · escritorio · librero)</span></h2>
     </header>
     <div class="modules">
       <label class="modules__type">Tipo de módulo

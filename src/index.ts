@@ -78,6 +78,17 @@ export {
 export type { Lado, Veta, Ranura, Barreno, PiezaInit, Totales } from "./modules/parts.js";
 
 export {
+  ARISTA_DE_CORTECLOUD,
+  CORTECLOUD_FUENTES,
+  LADOS_CORTECLOUD,
+  SEGMENTOS_CORTECLOUD,
+  cantosACortecloud,
+  cantosDesdeCortecloud,
+  ladoACortecloud,
+} from "./modules/cortecloud.js";
+export type { CantosCortecloud, LadoCortecloud } from "./modules/cortecloud.js";
+
+export {
   PERFIL_CORTECLOUD_MADIJAL,
   PERFILES,
   PerfilRestricciones,
@@ -97,9 +108,11 @@ export { Accesorio, Modulo } from "./modules/modulo.js";
 export {
   MODULOS,
   ALIAS,
+  CAJON,
   CAJONERA,
   CLOSET,
   COCINA,
+  ESCRITORIO,
   LIBRERO,
   ModuloRegistrado,
   construirParams,
@@ -108,6 +121,10 @@ export {
 } from "./modules/index.js";
 export type { CampoParam, CampoUi, TipoCampo } from "./modules/index.js";
 
+export { generar as generarCajon } from "./modules/cajon.js";
+export type { ParamsCajon } from "./modules/cajon.js";
+export { generar as generarEscritorio } from "./modules/escritorio.js";
+export type { ParamsEscritorio } from "./modules/escritorio.js";
 export { generar as generarCajonera } from "./modules/cajonera.js";
 export type { ParamsCajonera } from "./modules/cajonera.js";
 export { generar as generarCloset } from "./modules/closet.js";

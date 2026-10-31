@@ -4,6 +4,13 @@ import * as z from 'zod/v4';
 
 import { TIPOS_MODULO } from './core/modulos.js';
 import { IDS_FORMATOS } from './export/index.js';
+import { claves, descriptor } from './formats/index.js';
+
+/** Claves de los formatos que pueden leerse (los que tienen importador). */
+const FORMATOS_IMPORTABLES = claves().filter(clave => descriptor(clave).permiteImportar) as [
+  string,
+  ...string[]
+];
 
 const canto = z.string().nullable();
 
@@ -87,4 +94,14 @@ export const exportarSchema = z.object({
     .optional()
     .describe('Tableros para los formatos que necesitan layout (svg, dxf).'),
   ...opcionesOptimizacionShape
+});
+
+export const importarSchema = z.object({
+  formato: z
+    .enum(FORMATOS_IMPORTABLES)
+    .describe(`Formato del contenido. Con importador: ${claves().join(', ')}.`),
+  contenido: z
+    .string()
+    .min(1)
+    .describe('Contenido del despiece tal cual lo exporta la otra app (JSON, CSV o texto según el formato).')
 });

@@ -15,7 +15,8 @@ const MEDIDAS_CUERPO: Record<string, [number, number, number]> = {
   Base: [500.0, 414.0, 1],
   Tapa: [500.0, 414.0, 1],
   "Travesaño trasero": [414.0, 100.0, 1],
-  Trasera: [800.0, 450.0, 1],
+  // Trasera encastrada en ranura: 800 - 36 + 18 y 450 - 36 + 18.
+  Trasera: [782.0, 432.0, 1],
 };
 
 function buscar(modulo: Modulo, nombre: string): Pieza {

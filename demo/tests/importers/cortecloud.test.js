@@ -64,9 +64,17 @@ describe('importCortecloud', () => {
     expect(pata.qty).toBe(1);
     expect(pata.label).toBe('Pata der');
     expect(pata.grain).toBe('none');
-    expect(pata.edges).toEqual({ left: 0.4, right: 0, top: 0.4, bottom: 0 });
+    // c1 = segmento 0-1 (izquierda) y l1 = segmento 1-2 (abajo), según la guía oficial.
+    expect(pata.edges).toEqual({ left: 0.4, right: 0, top: 0, bottom: 0.4 });
     expect(pata.ref.group).toBe('D01');
     expect(pata.ref.verified).toBe(false);
+  });
+
+  it('ubica l2 en el lado superior', () => {
+    const { parts } = importCortecloud({
+      parts: [{ quantity: 1, c: 500, l: 200, function: 'Repisa', c2: edgeText, l2: edgeText }],
+    });
+    expect(parts[0].edges).toEqual({ left: 0, right: 0.4, top: 0.4, bottom: 0 });
   });
 
   it('permite intercambiar c y l (la convención de ejes está por revisar)', () => {

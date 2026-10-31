@@ -20,6 +20,8 @@ export default defineConfig({
       'tests/export.test.ts',
       'tests/servidor.test.ts',
       'tests/stdio.test.ts',
+      'tests/importar.test.ts',
+      'tests/red.test.ts',
       '**/node_modules/**',
     ],
   },

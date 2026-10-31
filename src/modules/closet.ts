@@ -4,14 +4,20 @@
  * Geometría (mm, medidas exteriores)
  * ----------------------------------
  * - ``ancho``, ``alto`` y ``fondo`` exteriores (costado a costado).
- * - Caja: 2 costados, tapa y base entre costados, trasera de 3 mm clavada al dorso
- * (espesor de trasera según ARAUCO, serie Cómo Hacer 17).
+ * - Caja: 2 costados, tapa y base entre costados. La trasera de 3 mm va
+ * encastrada en una ranura de los cuatro lados (``trasera_ranura``; ``false`` la
+ * deja clavada al dorso). Espesor de trasera según ARAUCO, serie Cómo Hacer 17.
  * - Repisas: repartidas en el interior o en posiciones explícitas. Si
  * ``repisasMoviles`` está activo, los costados llevan barrenos Ø5 con el
  * criterio de ARAUCO #6 (a 40–50 mm del borde, 30 mm de paso entre barrenos,
  * una posición y dos arriba y dos abajo).
  * - Puertas ``batiente`` (cubrientes, con ``juego`` entre ellas) o ``corredera``
  * (traslapadas, con juego de guía). El barral es un accesorio, no una pieza.
+ * - Bisagras: la cantidad por puerta sale del alto (Hettich Sensys) y del peso de
+ *   la puerta (Blum CLIP top), y el revelado mínimo está verificado con los
+ *   mismos catálogos; ver ``bisagrasPuerta()`` en ``bisagras.ts``.
+ *   El traslape y el juego de guía de las correderas siguen ``por revisar``: los
+ *   fija el sistema de correderas elegido.
  *
  * El módulo no decide la distribución interna (dónde va el colgado y dónde las
  * repisas): eso se pide con ``posicionesRepisas`` y ``barralAltura``.
@@ -23,13 +29,26 @@ import {
   JUEGO_DEFAULT,
   MATERIAL_DEFAULT,
   MATERIAL_TRASERA_DEFAULT,
+  RANURA_TRASERA_ANCHO_DEFAULT,
+  RANURA_TRASERA_DISTANCIA_DEFAULT,
+  RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   barrenosRepisa,
+  caraFrontalTrasera,
+  encajeTrasera,
   exigirPositivo,
   frentes,
   posicionesRepisas,
   repartir,
 } from "./common.js";
 import { Cantos, Mecanizado, Pieza, ValueError } from "./parts.js";
+import {
+  ALTO_MAXIMO_BISAGRAS,
+  ANCHO_MAXIMO_GUIA_BISAGRAS,
+  JUEGO_MINIMO_ENTRE_PUERTAS,
+  PESO_TIRADOR_REFERENCIA,
+  bisagrasPuerta,
+  notasPesoBisagras,
+} from "./bisagras.js";
 
 export const TIPOS_PUERTA = ["batiente", "corredera", "sin"] as const;
 
@@ -45,8 +64,14 @@ export const CAMPOS: Record<string, string> = {
   repisas_moviles: "Perforar los costados para soportes de repisa (Ø5)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)",
   trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
-  juego: "Holgura entre puertas (mm) — por revisar",
+  trasera_ranura: "Encastrar la trasera en una ranura de los cuatro lados; false = clavada al dorso",
+  ranura_ancho: "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas",
+  ranura_profundidad: "Profundidad de la ranura de la trasera en la cara interior (mm)",
+  ranura_distancia: "Distancia de la ranura desde el borde del dorso (mm)",
+
+  juego: "Holgura entre puertas (mm); el revelado mínimo de la bisagra pide 2.6",
   traslape_corredera: "Traslape entre puertas correderas (mm) — por revisar",
   juego_guia: "Juego vertical para las guías de puerta corredera (mm) — por revisar",
   material: "Texto del material del cuerpo (como en el despiece)",
@@ -69,7 +94,12 @@ export interface ParamsCloset {
   repisasMoviles?: boolean;
   espesor?: number;
   espesorPuerta?: number;
+  pesoTirador?: number;
   traseraEspesor?: number;
+  traseraRanura?: boolean;
+  ranuraAncho?: number;
+  ranuraProfundidad?: number;
+  ranuraDistancia?: number;
   juego?: number;
   traslapeCorredera?: number;
   juegoGuia?: number;
@@ -93,7 +123,12 @@ export const DEFAULTS_CLOSET = {
   repisasMoviles: false,
   espesor: 18.0,
   espesorPuerta: 18.0,
+  pesoTirador: PESO_TIRADOR_REFERENCIA,
   traseraEspesor: 3.0,
+  traseraRanura: true,
+  ranuraAncho: RANURA_TRASERA_ANCHO_DEFAULT,
+  ranuraProfundidad: RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
+  ranuraDistancia: RANURA_TRASERA_DISTANCIA_DEFAULT,
   juego: JUEGO_DEFAULT,
   traslapeCorredera: 30.0,
   juegoGuia: 45.0,
@@ -105,11 +140,9 @@ export const DEFAULTS_CLOSET = {
   nombre: "",
 };
 
-function bisagrasPorPuerta(altoPuerta: number): number {
-  if (altoPuerta <= 900) return 2;
-  if (altoPuerta <= 1600) return 3;
-  return 4;
-}
+// La tabla de bisagras vive en `bisagras.ts` porque la comparten el clóset y la
+// cocina. Se reexporta desde aquí para no cambiar la API de este módulo.
+export * from "./bisagras.js";
 
 export function generar(params: ParamsCloset = {}): Modulo {
   const p = { ...DEFAULTS_CLOSET, ...params };
@@ -125,6 +158,9 @@ export function generar(params: ParamsCloset = {}): Modulo {
   }
   if (p.repisas < 0) {
     throw new ValueError("la cantidad de repisas no puede ser negativa");
+  }
+  if (p.pesoTirador < 0) {
+    throw new ValueError("el peso del tirador no puede ser negativo");
   }
   if (p.tipoPuerta !== "sin" && p.puertas < 1) {
     throw new ValueError("se pidieron puertas pero la cantidad es menor que uno");
@@ -164,9 +200,34 @@ export function generar(params: ParamsCloset = {}): Modulo {
   }
 
   const comun = { espesor: p.espesor, material, modulo: nombre };
-  const mecanizadoCostado = p.repisasMoviles ? barrenosRepisa(alturasRepisas) : new Mecanizado();
-  let funcionCostado = "Costado — canto en la arista frontal";
-  if (mecanizadoCostado.barrenos.length) {
+  const encaje =
+    p.traseraEspesor > 0 && p.traseraRanura
+      ? encajeTrasera({
+          anchoInterior,
+          altoInterior: p.alto - 2 * p.espesor,
+          fondo: p.fondo,
+          anchoRanura: p.ranuraAncho,
+          profundidad: p.ranuraProfundidad,
+          distancia: p.ranuraDistancia,
+          espesorTrasera: p.traseraEspesor,
+        })
+      : null;
+  const ranurasTrasera = encaje ? [encaje.ranura] : [];
+  const mecanizadoHorizontal = new Mecanizado(ranurasTrasera);
+  const barrenosCostado = p.repisasMoviles ? barrenosRepisa(alturasRepisas).barrenos : [];
+  const mecanizadoCostado = new Mecanizado(ranurasTrasera, barrenosCostado);
+  const sufijoRanura = encaje ? ", ranura para la trasera" : "";
+  // Con la trasera encastrada, las repisas no llegan al dorso: terminan en la
+  // cara frontal de la trasera. La medida sale de `caraFrontalTrasera()`, la
+  // misma que usa la cocina para la caja del cajón (distancia de la ranura +
+  // su ancho). Clavada al dorso, la trasera no ocupa el interior: la repisa
+  // llega hasta el dorso.
+  const largoRepisa = encaje ? p.fondo - caraFrontalTrasera(p.traseraEspesor, encaje) : p.fondo;
+  let funcionCostado = "Costado — canto en la arista frontal" + sufijoRanura;
+  if (encaje) {
+    funcionCostado += ` a ${encaje.ranura.distancia.toFixed(1)} mm del borde del dorso`;
+  }
+  if (barrenosCostado.length) {
     funcionCostado += " y barrenos Ø5 para repisas móviles";
   }
 
@@ -188,7 +249,8 @@ export function generar(params: ParamsCloset = {}): Modulo {
       ancho: anchoInterior,
       rol: "base",
       cantos: new Cantos(undefined, undefined, canto),
-      funcion: "Base entre costados — canto en la arista frontal",
+      mecanizado: mecanizadoHorizontal,
+      funcion: "Base entre costados — canto en la arista frontal" + sufijoRanura,
       ...comun,
     }),
     new Pieza({
@@ -197,7 +259,8 @@ export function generar(params: ParamsCloset = {}): Modulo {
       ancho: anchoInterior,
       rol: "tapa",
       cantos: new Cantos(undefined, undefined, canto),
-      funcion: "Tapa entre costados — canto en la arista frontal",
+      mecanizado: mecanizadoHorizontal,
+      funcion: "Tapa entre costados — canto en la arista frontal" + sufijoRanura,
       ...comun,
     }),
   ];
@@ -206,12 +269,14 @@ export function generar(params: ParamsCloset = {}): Modulo {
     piezas.push(
       new Pieza({
         nombre: "Repisa",
-        largo: p.fondo,
+        largo: largoRepisa,
         ancho: anchoInterior,
         cantidad: alturasRepisas.length,
         rol: "repisa",
         cantos: new Cantos(undefined, undefined, canto),
-        funcion: "Repisa entre costados — canto en la arista frontal",
+        funcion:
+          "Repisa entre costados — canto en la arista frontal" +
+          (encaje ? ", recortada contra la trasera encastrada" : ""),
         ...comun,
       }),
     );
@@ -225,11 +290,24 @@ export function generar(params: ParamsCloset = {}): Modulo {
   } else {
     notas.push("Repisas en las alturas pedidas.");
   }
-  notas.push(
-    p.traseraEspesor > 0
-      ? "La trasera se clava/atornilla al dorso, sin ranura."
-      : "Módulo sin trasera: necesita muro o rigidización adicional.",
-  );
+  if (p.traseraEspesor <= 0) {
+    notas.push("Módulo sin trasera: necesita muro o rigidización adicional.");
+  } else if (encaje) {
+    notas.push(
+      `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
+        `${encaje.ranura.ancho.toFixed(1)} mm de ancho x ${encaje.ranura.profundidad.toFixed(0)} mm de profundidad, ` +
+        `a ${encaje.ranura.distancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
+        `de holgura para el panel (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+    );
+    notas.push("La ranura va en costados, base y tapa; el frente queda sin ranura.");
+  } else {
+    notas.push("La trasera se clava/atornilla al dorso, sin ranura.");
+  }
+  if (encaje && alturasRepisas.length) {
+    notas.push(
+      `Repisas de ${largoRepisa.toFixed(0)} mm de fondo: terminan en la cara frontal de la trasera encastrada.`,
+    );
+  }
   if (alturasRepisas.length) {
     notas.push(
       "Alturas de repisa sobre el piso interior (mm): " +
@@ -281,14 +359,33 @@ export function generar(params: ParamsCloset = {}): Modulo {
         modulo: nombre,
       }),
     );
+    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta, {
+      pesoTiradorKg: p.pesoTirador,
+    });
     notas.push(
-      `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (por revisar).`,
+      `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (revelado mínimo documentado: ${JUEGO_MINIMO_ENTRE_PUERTAS.toFixed(1)} mm entre dos puertas).`,
     );
+    notas.push(...notasPesoBisagras(calculoBisagras));
+    if (p.juego < JUEGO_MINIMO_ENTRE_PUERTAS) {
+      notas.push(
+        `La holgura de ${p.juego.toFixed(1)} mm queda bajo el revelado mínimo de la bisagra (${JUEGO_MINIMO_ENTRE_PUERTAS.toFixed(1)} mm): las puertas no abren a la vez.`,
+      );
+    }
+    if (altoPuerta > ALTO_MAXIMO_BISAGRAS) {
+      notas.push(
+        `Puertas de ${altoPuerta.toFixed(0)} mm de alto: la guía de bisagras llega a ${ALTO_MAXIMO_BISAGRAS.toFixed(0)} mm; revisar la cantidad con el fabricante.`,
+      );
+    }
+    if (anchoPuerta > ANCHO_MAXIMO_GUIA_BISAGRAS) {
+      notas.push(
+        `Puertas de ${anchoPuerta.toFixed(1)} mm de ancho: la guía de bisagras vale hasta ${ANCHO_MAXIMO_GUIA_BISAGRAS.toFixed(0)} mm por hoja; revisar la cantidad con el fabricante.`,
+      );
+    }
     accesorios.push(
       new Accesorio(
         "Bisagra",
-        bisagrasPorPuerta(altoPuerta) * p.puertas,
-        "Cantidad por alto de puerta — por revisar con el herraje",
+        calculoBisagras.bisagras * p.puertas,
+        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg), con el peso de la puerta y su tirador: ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg (tirador ${calculoBisagras.pesoTiradorKg.toFixed(2)} kg)`,
       ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));
@@ -325,13 +422,15 @@ export function generar(params: ParamsCloset = {}): Modulo {
     piezas.push(
       new Pieza({
         nombre: "Trasera",
-        largo: p.alto,
-        ancho: p.ancho,
+        largo: encaje ? Math.max(encaje.largo, encaje.ancho) : p.alto,
+        ancho: encaje ? Math.min(encaje.largo, encaje.ancho) : p.ancho,
         espesor: p.traseraEspesor,
         material: p.materialTrasera,
         rol: "trasera",
         veta: "indiferente",
-        funcion: "Trasera clavada al dorso del módulo",
+        funcion: encaje
+          ? "Trasera encastrada en la ranura de costados, base y tapa"
+          : "Trasera clavada al dorso del módulo",
         modulo: nombre,
       }),
     );

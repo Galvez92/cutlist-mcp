@@ -40,8 +40,9 @@ export const DESCRIPTOR = new FormatDescriptor({
   porRevisar: [
     "La guía oficial no declara la unidad de medida de las dimensiones: se " +
       "asume milímetro (mm) según el proyecto.",
-    "Leer `c` como largo y `l` como ancho proviene de los «lados C1/C2/L1/L2» " +
-      "del diagrama oficial; conviene confirmarlo con Cortecloud/Serrabits.",
+    "`c` = largo y `l` = ancho están en la tabla de campos de la guía oficial; " +
+      "los lados siguen su sistema de coordenadas (C1 = 0-1, L1 = 1-2, " +
+      "C2 = 2-3, L2 = 3-0, pieza vista por la cara interna).",
     "El bloque `machining` se conserva tal cual (ida y vuelta) sin interpretar " +
       "geometría ni validar cotas.",
   ],

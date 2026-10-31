@@ -47,7 +47,7 @@ describe('servidor MCP por Streamable HTTP', () => {
     await handler.close();
   });
 
-  it('expone las cinco herramientas con su esquema de entrada', async () => {
+  it('expone las seis herramientas con su esquema de entrada', async () => {
     const { tools } = await cliente.listTools();
     assert.deepEqual(
       tools.map(t => t.name).sort(),
