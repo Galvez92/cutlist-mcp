@@ -6,7 +6,7 @@ Optimizador de corte de tableros open-source, independiente de Cortecloud, usabl
 ## Alcance
 1. **Motor:** piezas (ancho, alto, cantidad, veta, canto) + tableros en stock (medidas, espesor, kerf) → layout optimizado (guillotina y no guillotina), % aprovechamiento, lista de corte, etiquetas, PDF/SVG.
 2. **Import/export:** Cortecloud, Promob, CSV genérico, SketchUp/OpenCutList, Polyboard, Pro100, DXF. Investigar formatos en documentación pública real; lo no verificado = `por revisar` con enlace.
-3. **Servidor MCP:** módulos paramétricos (cajonera, clóset, cocina, librero) → piezas → optimizar → exportar.
+3. **Servidor MCP:** módulos paramétricos (cajonera, clóset, cocina, librero) → piezas → optimizar → exportar. También acepta el despiece ya armado en otra app con la herramienta `importar` (Cortecloud y los demás formatos con importador), y otra app puede llamarlo por HTTP en `/mcp` (2026-10-31; los nombres de `Host`/`Origin` del despliegue se declaran con `MCP_ANFITRIONES`/`MCP_ORIGENES`, ver `docs/mcp-server.md`).
 4. **Demo web simple**, pruebas, README es/en.
 
 ## Decisiones

@@ -14,6 +14,7 @@ que expone el optimizador de corte a cualquier agente: **módulos paramétricos 
 | `crear_modulo` | `tipo` (`cajonera`, `closet`, `cocina`, `librero`), `ancho`, `alto`, `profundidad` en mm y opciones (`espesor`, `cantoFrente`, `numeroCajones`, `numeroEstantes`, `numeroPuertas`, `altoZocalo`, `holgura`, `nombre`, `material`) | lista de piezas con cantidad, veta y cantos + resumen (unidades, m²) |
 | `listar_piezas` | `piezas` | piezas normalizadas y resumen por grupo/material |
 | `optimizar_corte` | `piezas`, `tableros` y opciones (`estrategia`: `guillotina` \| `no-guillotina`, `kerf`, `permitirRotacion`) | layout por hoja con coordenadas en mm, aprovechamiento, consumo y piezas que no cupieron |
+| `importar` | `formato` (con importador: `cortecloud`, `csv_generico`, `dxf`, `opencutlist`, `polyboard`, `pro100`, `promob`) y `contenido` (el texto tal cual lo exporta la otra app) | piezas listas para `optimizar_corte` (con cantos `largo1`/`largo2`/`ancho1`/`ancho2`), resumen y avisos «por revisar» del formato |
 | `exportar` | `formato` (opcional), `piezas`, `tableros` (para los formatos con layout) | contenido del formato pedido; sin `formato`, el catálogo de formatos soportados con su estado |
 
 Las piezas llevan `largo` y `ancho` en mm; `veta: true` significa que la veta sigue el eje `largo`
@@ -72,6 +73,45 @@ curl -s -X POST http://localhost:3000/mcp \
 El endpoint valida `Host` y `Origin` (protección contra DNS rebinding) y **no** implementa
 autenticación: pensado para uso local. Si se publica, hay que ponerle autenticación delante.
 
+### Integración desde otra app (MCP por HTTP)
+
+Otra app del taller (por ejemplo un repo de muebles/Cortecloud) puede llamar a este servidor sin
+compartir código. Las listas de nombres permitidos se amplían con dos variables de entorno, sin
+tocar código (ver `src/red.ts`):
+
+| Variable | Qué acepta | Ejemplo |
+| --- | --- | --- |
+| `MCP_ANFITRIONES` | nombres del `Host` con los que llaman al servidor, separados por comas | `cutlist.mi-dominio.com` |
+| `MCP_ORIGENES` | nombres del `Origin` de las páginas que llaman desde el navegador | `app.mi-dominio.com` |
+
+- Los nombres van **sin esquema ni puerto** (el SDK compara solo el nombre del `Host`/`Origin`).
+- `localhost`, `127.0.0.1` y `[::1]` siguen aceptados siempre; sin las variables el comportamiento
+  es el de antes.
+- Una llamada **servidor a servidor** no manda `Origin`, así que basta con `MCP_ANFITRIONES`.
+- El servidor no trae autenticación: si sale de la red local, hay que ponerle un proxy con token o
+  mTLS delante.
+
+Los dos sentidos de trabajo usan las mismas herramientas:
+
+1. **La otra app arma el despiece** → `importar` (`formato: "cortecloud"`, `contenido`: su JSON
+   `{"parts":[…]}`) → `optimizar_corte` → `exportar`. Las piezas que devuelve `importar` ya vienen
+   con los cantos en el vocabulario de `optimizar_corte`.
+2. **Este servidor arma el despiece** → `crear_modulo` (cajón, cajonera, clóset, cocina, escritorio,
+   librero) → `optimizar_corte` → `exportar` (por ejemplo `formato: "cortecloud"` para que la otra
+   app lo importe).
+
+Ejemplo mínimo con el cliente oficial (cualquier lenguaje con SDK MCP sirve igual):
+
+```ts
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+
+const cliente = new Client({ name: 'mi-app-cortecloud', version: '1.0.0' });
+await cliente.connect(new StreamableHTTPClientTransport(new URL('https://cutlist.mi-dominio.com/mcp')));
+
+const piezas = await cliente.callTool({ name: 'importar', arguments: { formato: 'cortecloud', contenido } });
+await cliente.callTool({ name: 'optimizar_corte', arguments: { piezas: piezas.structuredContent.piezas, tableros } });
+```
+
 ## Formatos de exportación
 
 | `formato` | Archivo | Estado | Fuente |
@@ -122,4 +162,5 @@ Todo lo que no se ha podido contrastar con una fuente real queda marcado `por re
 Única concesión al sandbox: `src/http.ts` añade el `Host` del proxy (`<puerto>-<id>.$BASE44_SANDBOX_HOST_DOMAIN`)
 y el `Origin` público (`https://<puerto>-$BASE44_PUBLIC_HOST_SUFFIX`) a las listas permitidas **sólo**
 cuando `BASE44_PREVIEW_MODE` vale exactamente `"1"`. Sin esa variable (o con otro valor) el servidor
-solo acepta `localhost`, `127.0.0.1` y `[::1]`, que es el comportamiento original.
+solo acepta `localhost`, `127.0.0.1` y `[::1]` (más lo que se ponga en `MCP_ANFITRIONES` /
+`MCP_ORIGENES`), que es el comportamiento original.

@@ -23,7 +23,7 @@
     "start:stdio": "tsx src/stdio.ts",
     "start:http": "tsx src/http.ts",
     "dev:http": "tsx watch src/http.ts",
-    "test:mcp": "node --import tsx --test tests/modulos.test.ts tests/optimizar.test.ts tests/export.test.ts tests/servidor.test.ts tests/stdio.test.ts"
+    "test:mcp": "node --import tsx --test tests/modulos.test.ts tests/optimizar.test.ts tests/export.test.ts tests/servidor.test.ts tests/stdio.test.ts tests/importar.test.ts tests/red.test.ts"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.4.0",
