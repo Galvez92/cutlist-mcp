@@ -143,9 +143,35 @@ await cliente.callTool({ name: 'optimizar_corte', arguments: { piezas: piezas.st
 | `csv` | `.csv` | verificado | esquema propio del proyecto (cabecera fija, se prueba ida y vuelta) |
 | `svg` | `.svg` | verificado | [W3C SVG 2](https://www.w3.org/TR/SVG2/) |
 | `dxf` | `.dxf` | **por revisar** | [Autodesk DXF Reference (R12)](https://damassets.autodesk.net/content/dam/autodesk/www/developer-network/platform-technologies/autocad-dxf-archive/acad_r12_dxf.pdf) y [ezdxf: estructura mínima R12](https://ezdxf.readthedocs.io/en/stable/dxfinternals/filestructure.html) |
+| `pdf` | `.pdf` | verificado | [ISO 32000-1 (PDF 1.4)](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf); la salida se lee con `pdf-lib` en `tests/pdf.test.ts` |
+| `etiquetas` | `.csv` | verificado | esquema propio (ver «Etiquetas de taller» abajo) |
 
 `exportar` devuelve también el estado y las fuentes de cada formato, para que el agente sepa qué
 está verificado y qué no.
+
+Salvo el PDF, el contenido viaja como texto. El PDF es binario: se entrega en base64, en el texto
+de la respuesta y en `structuredContent.contenidoBase64`, con `codificacion: "base64"`; el cliente
+lo decodifica y lo guarda como `.pdf`. Sólo `cortecloud` y `csv` exportan la lista de piezas sin
+tableros; el resto necesita `tableros` para calcular el layout.
+
+### Etiquetas de taller (CSV)
+
+`formato: "etiquetas"` devuelve una fila por pieza colocada, para rotular el corte. Separador coma,
+cabecera fija:
+
+| Columna | Contenido |
+| --- | --- |
+| `hoja` | número de hoja del layout |
+| `codigo` | código de la pieza en el layout (incluye el número de copia) |
+| `pieza` | nombre de la pieza |
+| `medidas` | medidas de la pieza terminada, en mm |
+| `cantos` | cantos declarados en la pieza (`largo 1: PVC 0.4 x 22 mm · …`) |
+| `veta` | «Veta horizontal (→)» o «Veta vertical (↓)» según cómo quedó en la hoja; vacío si no lleva |
+| `girada` | `si` cuando la pieza va girada 90° en la hoja |
+
+Los cantos salen del texto de la pieza (`cantos.largo1` … `cantos.ancho2`), que es como los
+declaran los módulos y la herramienta `importar`; el lado físico de cada orilla sigue **por
+revisar** (ver `docs/verificacion-lados-piezas.md`).
 
 ## Datos por revisar
 
@@ -164,10 +190,10 @@ Todo lo que no se ha podido contrastar con una fuente real queda marcado `por re
    100 mm, 3 cajones, 4 estantes (librero), 1 estante (clóset) y 2 puertas son valores de partida del
    proyecto; conviene pasarlos explícitos en cada corrida. El espesor por defecto (18 mm) sí sale del
    perfil de `docs/memoria/MEMORIA.md`.
-5. **Restricciones de fabricación.** El motor (de `optimizer-engine`) ya tiene perfiles de
-   restricciones (`CORTECLOUD_MADIJAL_PROFILE` en `src/engine/profiles.ts`), pero el adaptador del
-   MCP (`src/core/adaptador.ts`) todavía no los pasa a `optimize()`. Falta exponer el perfil como
-   parámetro de `optimizar_corte`.
+5. **Restricciones de fabricación.** El motor tiene perfiles de restricciones
+   (`CORTECLOUD_MADIJAL_PROFILE` en `src/profiles.ts`), pero el adaptador del MCP
+   (`src/core/adaptador.ts`) todavía no los pasa a `optimize()`; hoy se validan aparte con
+   `validar_despiece`. Falta exponer el perfil como parámetro de `optimizar_corte`.
 6. **Alcance de la cajonera.** Genera el cuerpo y los frentes de cajón, no la caja del cajón.
 7. **Trasera.** Se modela con el mismo espesor que el cuerpo, no con un fondo delgado.
 8. **Optimizador.** El motor es el de la rama `optimizer-engine` (PR 4), integrado en `src/engine/`.

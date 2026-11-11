@@ -20,6 +20,7 @@ Optimizador de corte de tableros open-source, independiente de Cortecloud, usabl
 - Herraje del cajón (2026-10-30, verificado con Häfele *IXCONNECT Minifix 15*): caja Ø15 mm con 13.5 mm de profundidad en tablero de 18 mm (12.0/12.5/13.5/14.0 para 15/16/18/19 mm) y barreno del pasador de **Ø7 u Ø8 mm** en el canto del panel. El módulo usa Ø7 mm (`diametro_pin`, ajustable) porque el perfil Cortecloud/Madijal solo admite Ø9.525 mm (3/8") en horizontal: el cajón por omisión devuelve `barreno_no_permitido` y queda *por revisar* con el proveedor.
 - Pesos de tiradores de referencia (2026-10-29) en `PESOS_TIRADOR_REFERENCIA` (`src/modules/bisagras.ts`): 96 mm SKU 103910 y 128 mm SKU 103911 (liviano) / 103916 (pesado), los tres 0.09 kg según sus fichas de Promart. Las fichas no distinguen liviano de pesado, así que el taller debe pesar el tirador elegido.
 - Lado físico de las piezas exportadas: sigue pendiente de confirmar con el taller; hay una lista de verificación pieza por pieza en `docs/verificacion-lados-piezas.md` (2026-10-29) con el lado esperado y casillas para marcar.
+- Un solo motor (2026-11-11): se eliminó la copia `src/engine/` (había divergido de la raíz); demo, tests y MCP importan de `src/`. El MCP expone dos salidas más en `exportar`: `pdf` (en base64) y `etiquetas` de taller (CSV propio, con cantos de la pieza y numeración de copias).
 
 ## Perfil de restricciones de ejemplo (opcional): Cortecloud/Madijal
 Restricciones observadas en uso real (no son reglas del motor por defecto):

@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
-import { optimizar } from '../src/core/adaptador.js';
+import { optimizar, optimizarConLayout } from '../src/core/adaptador.js';
 import { normalizarPieza, normalizarTablero, type Pieza } from '../src/core/tipos.js';
 import { buscarFormato, catalogoFormatos, IDS_FORMATOS, idsFormatos } from '../src/export/index.js';
 import { exportarCortecloud } from '../src/export/cortecloud.js';
 import { CABECERA_CSV, exportarCsv } from '../src/export/csv.js';
 import { exportarDxf } from '../src/export/dxf.js';
+import { CABECERA_ETIQUETAS, exportarEtiquetas } from '../src/export/etiquetas.js';
+import { exportarPdfBase64 } from '../src/export/pdf.js';
 import { exportarSvg } from '../src/export/svg.js';
 
 const RUTA_FIXTURE = new URL('./fixtures/cortecloud/escritorio_D_simple.json', import.meta.url);
@@ -100,9 +102,11 @@ describe('catálogo de formatos', () => {
     assert.ok(dxf.fuentes.some(f => f.includes('ezdxf')));
   });
 
-  it('svg y dxf exigen layout; csv y cortecloud no', () => {
+  it('svg, dxf, pdf y etiquetas exigen layout; csv y cortecloud no', () => {
     assert.equal(buscarFormato('svg')?.requiereOptimizacion, true);
     assert.equal(buscarFormato('dxf')?.requiereOptimizacion, true);
+    assert.equal(buscarFormato('pdf')?.requiereOptimizacion, true);
+    assert.equal(buscarFormato('etiquetas')?.requiereOptimizacion, true);
     assert.equal(buscarFormato('csv')?.requiereOptimizacion, false);
     assert.equal(buscarFormato('Cortecloud')?.id, 'cortecloud');
   });
@@ -301,5 +305,81 @@ describe('exportar DXF', () => {
     const contenido = exportarDxf(resultadoDePrueba());
     assert.ok(contenido.endsWith('\n'));
     assert.ok(!/e[+-]?\d/i.test(contenido.replace(/TEXT|ENDSEC|SECTION|ENTITIES|LINE/g, '')));
+  });
+});
+
+describe('exportar PDF', () => {
+  it('el catálogo lo declara binario, verificado y con layout', () => {
+    const pdf = buscarFormato('pdf');
+    assert.ok(pdf);
+    assert.equal(pdf.estado, 'verificado');
+    assert.equal(pdf.mime, 'application/pdf');
+    assert.equal(pdf.requiereOptimizacion, true);
+    assert.equal(pdf.codificacion, 'base64');
+    assert.ok(pdf.fuentes.some(fuente => fuente.includes('ISO 32000')));
+  });
+
+  it('genera un PDF 1.4 válido y lo entrega en base64', () => {
+    const { layout } = optimizarConLayout(
+      [piezaDePrueba()],
+      [normalizarTablero({ id: 't1', nombre: '2500x1830x18', largo: 2500, ancho: 1830, kerf: 3 }, 0)],
+      { estrategia: 'no-guillotina' }
+    );
+    const base64 = exportarPdfBase64(layout);
+    assert.match(base64, /^[A-Za-z0-9+/]+=*$/);
+
+    const crudo = Buffer.from(base64, 'base64').toString('latin1');
+    assert.ok(crudo.startsWith('%PDF-1.4'));
+    assert.ok(crudo.trimEnd().endsWith('%%EOF'));
+  });
+});
+
+describe('exportar etiquetas', () => {
+  function layoutDePrueba() {
+    const piezas = [
+      piezaDePrueba({
+        nombre: 'Costado, izquierdo',
+        cantos: { largo1: 'PVC 0.4 x 22 mm', largo2: null, ancho1: null, ancho2: null }
+      }),
+      piezaDePrueba({ id: 'p2', nombre: 'Repisa', cantidad: 1, veta: true })
+    ];
+    const { layout } = optimizarConLayout(
+      piezas,
+      [normalizarTablero({ id: 't1', nombre: '2500x1830x18', largo: 2500, ancho: 1830, kerf: 3 }, 0)],
+      { estrategia: 'no-guillotina' }
+    );
+    return { layout, piezas };
+  }
+
+  it('escribe la cabecera y una fila por pieza colocada', () => {
+    const { layout, piezas } = layoutDePrueba();
+    const filas = parsearCsv(exportarEtiquetas(layout, piezas));
+    const colocadas = layout.sheets.reduce((total, hoja) => total + hoja.placements.length, 0);
+
+    assert.deepEqual(filas[0], [...CABECERA_ETIQUETAS]);
+    assert.equal(colocadas, 3);
+    assert.equal(filas.length, 1 + colocadas);
+    assert.ok(filas.slice(1).every(fila => fila.length === CABECERA_ETIQUETAS.length));
+  });
+
+  it('numera las copias de la misma pieza', () => {
+    const { layout, piezas } = layoutDePrueba();
+    const codigos = parsearCsv(exportarEtiquetas(layout, piezas)).slice(1).map(fila => fila[1]);
+    assert.deepEqual(codigos.sort(), ['p1-1', 'p1-2', 'p2-1']);
+  });
+
+  it('lleva los cantos de la pieza, la veta y el nombre escapado', () => {
+    const { layout, piezas } = layoutDePrueba();
+    const filas = parsearCsv(exportarEtiquetas(layout, piezas)).slice(1);
+
+    const costado = filas.find(fila => fila[2] === 'Costado, izquierdo');
+    assert.ok(costado);
+    assert.equal(costado[4], 'largo 1: PVC 0.4 x 22 mm');
+    assert.equal(costado[5], '');
+
+    const repisa = filas.find(fila => fila[2] === 'Repisa');
+    assert.ok(repisa);
+    assert.equal(repisa[4], '');
+    assert.ok(repisa[5]?.startsWith('Veta'), `la repisa debe declarar su veta, llegó «${repisa[5]}»`);
   });
 });

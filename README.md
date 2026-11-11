@@ -8,7 +8,7 @@ Optimizador de corte de tableros open-source, **independiente de Cortecloud**.
 Alcance:
 1. **Motor:** piezas (ancho, alto, cantidad, veta, canto) + tableros en stock (medidas, espesor, kerf) → layout optimizado (guillotina y no guillotina), % de aprovechamiento, lista de corte, etiquetas, PDF/SVG.
 2. **Importadores/exportadores:** Cortecloud, Promob, CSV genérico, SketchUp/OpenCutList, Polyboard, Pro100, DXF. Formatos basados en documentación pública real; lo no verificado se marca *por revisar*.
-3. **Servidor MCP:** para que el agente de cualquier usuario diseñe muebles a partir de medidas (módulos paramétricos: cajonera, clóset, cocina, librero → piezas → optimizar → exportar). Los generadores de módulos (medidas → piezas con cantos, con perfil de restricciones opcional) están documentados en [`docs/modulos-parametricos.md`](docs/modulos-parametricos.md). Instalación del servidor MCP y estado de cada formato: [`docs/mcp-server.md`](docs/mcp-server.md).
+3. **Servidor MCP:** para que el agente de cualquier usuario diseñe muebles a partir de medidas (módulos paramétricos: cajonera, clóset, cocina, librero → piezas → optimizar → exportar). Exporta `cortecloud`, `csv`, `svg`, `dxf`, `pdf` (en base64) y `etiquetas` de taller (CSV). Los generadores de módulos (medidas → piezas con cantos, con perfil de restricciones opcional) están documentados en [`docs/modulos-parametricos.md`](docs/modulos-parametricos.md). Instalación del servidor MCP y estado de cada formato: [`docs/mcp-server.md`](docs/mcp-server.md).
 4. **Demo web simple**, pruebas y documentación es/en.
 
 ### Formatos (rama `formatos-import-export`)
@@ -39,7 +39,7 @@ for (const aviso of lista.porRevisar()) {                // lo no verificado, co
 Cada formato declara su estado y sus fuentes públicas; lo que no se pudo verificar
 se marca **por revisar** con enlace. Ver `docs/formatos/`.
 
-Pruebas (TypeScript, sin dependencias de ejecución): `docker compose -f docker-compose.base44.yml exec -T web npm test` (59 pruebas `vitest`), o `npx vitest run` sobre Node. Tipos: `npm run typecheck`.
+Pruebas (TypeScript, sin dependencias de ejecución): `docker compose -f docker-compose.base44.yml exec -T web npm test` (373 pruebas `vitest` + 74 del servidor MCP), o `npx vitest run` sobre Node. Tipos: `npm run typecheck`.
 
 Licencia MIT.
 
@@ -49,7 +49,7 @@ Open-source panel cutting optimizer, **independent of Cortecloud**.
 Scope:
 1. **Engine:** parts (width, height, qty, grain, edge banding) + stock sheets (size, thickness, kerf) → optimized layout (guillotine and non-guillotine), yield %, cut list, labels, PDF/SVG.
 2. **Importers/exporters:** Cortecloud, Promob, generic CSV, SketchUp/OpenCutList, Polyboard, Pro100, DXF. Formats based on real public docs; unverified items are marked *por revisar* (to be verified).
-3. **MCP server:** lets any user's agent design furniture from measurements (parametric modules: drawer unit, closet, kitchen, bookcase → parts → optimize → export). The module generators (measurements → parts with edge banding, optional restriction profile) are documented in [`docs/modulos-parametricos.md`](docs/modulos-parametricos.md). MCP server setup and per-format status: [`docs/mcp-server.md`](docs/mcp-server.md).
+3. **MCP server:** lets any user's agent design furniture from measurements (parametric modules: drawer unit, closet, kitchen, bookcase → parts → optimize → export). Exports `cortecloud`, `csv`, `svg`, `dxf`, `pdf` (base64) and workshop `etiquetas` (CSV labels). The module generators (measurements → parts with edge banding, optional restriction profile) are documented in [`docs/modulos-parametricos.md`](docs/modulos-parametricos.md). MCP server setup and per-format status: [`docs/mcp-server.md`](docs/mcp-server.md).
 4. **Simple web demo**, tests and es/en docs.
 
 ### Formats (branch `formatos-import-export`)

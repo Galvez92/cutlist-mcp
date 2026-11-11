@@ -92,7 +92,7 @@ export const exportarSchema = z.object({
     .array(tableroSchema)
     .min(1)
     .optional()
-    .describe('Tableros para los formatos que necesitan layout (svg, dxf).'),
+    .describe('Tableros para los formatos que necesitan layout (svg, dxf, pdf, etiquetas).'),
   ...opcionesOptimizacionShape
 });
 

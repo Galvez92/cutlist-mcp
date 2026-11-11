@@ -2,8 +2,9 @@
 
 import type { McpServer } from '@modelcontextprotocol/server';
 
-import { CORTECLOUD_MADIJAL_PROFILE, normalizeParts, validateParts } from '../engine/index.js';
-import type { PartInput, ProfileIssue } from '../engine/index.js';
+import { normalizeParts } from '../optimizer/normalize.js';
+import { CORTECLOUD_MADIJAL_PROFILE, validateParts } from '../profiles.js';
+import type { PartInput, ProfileIssue } from '../types.js';
 import { validarDespieceSchema } from '../esquemas.js';
 import { ejecutar, normalizarPiezas } from './comun.js';
 

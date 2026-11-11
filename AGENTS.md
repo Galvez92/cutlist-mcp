@@ -35,6 +35,11 @@
   declarado en `demo/aliases.js` (lo comparten Vite y el `vitest.config.ts` de la raíz).
   El motor no tiene dependencias de ejecución; el PDF se genera con un escritor propio
   (`src/render/pdf-writer.ts`). `pdf-lib` es solo para los tests del motor.
+  **Una sola copia del motor**: no existe `src/engine/`; demo, tests y MCP importan de `src/`
+  (`src/index.ts` para la API pública, archivos sueltos desde `src/core` y `src/tools`).
+- Exportación por MCP: catálogo en `src/export/index.ts` (`cortecloud`, `csv`, `svg`, `dxf`,
+  `pdf`, `etiquetas`). El PDF se entrega en base64; las etiquetas de taller son CSV propio
+  (`src/export/etiquetas.ts`). Ver `docs/mcp-server.md`.
 - Módulos paramétricos: `src/modules/` (rama `parametric-modules`). Generadores de cajón,
   cajonera, clóset, cocina, escritorio y librero (`Pieza`, `Modulo`, `PerfilRestricciones`), intérprete de ideas
   escritas (`spec.ts`) y puente al motor (`Pieza.toPartInput()`,
