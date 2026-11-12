@@ -76,7 +76,8 @@ const parts = modulo.resumen().map((pieza) => pieza.toPartInput());
 ```
 
 En la demo, el panel **Módulos paramétricos** hace esto mismo y recalcula el layout. El
-reparto de cantos a lados absolutos del motor está **por revisar** (ver
+reparto de cantos a lados absolutos del motor sigue la convención documentada de Cortecloud
+(`c1`/`c2` = lados del largo, `l1` = lado inferior, `l2` = superior; ver
 [`../docs/modulos-parametricos.md`](../docs/modulos-parametricos.md)).
 
 **d) Importar un JSON de Cortecloud** (`{"parts": [...]}`)
@@ -88,7 +89,9 @@ const { parts, sheets, notes, skipped } = importCortecloud(json, { swap: false }
 
 `c` → alto y `l` → ancho (`swap: true` los intercambia), `quantity` → cantidad,
 `function` → etiqueta, `material` → material y medida de tablero, `c1/c2/l1/l2` → canto por
-lado, `machining` → pieza mecanizada. Todo eso está **por revisar** (ver `../docs/por-revisar.md`).
+lado (`c1` izquierda, `c2` derecha, `l1` abajo, `l2` arriba, según la guía oficial de
+Cortecloud), `machining` → pieza mecanizada. Lo que sigue sin verificar está en
+`../docs/por-revisar.md`.
 
 **e) Exportar CSV** (capa del demo, no del motor)
 

@@ -7,8 +7,8 @@
  * al formato que esperan las herramientas y los exportadores del MCP.
  */
 
-import { optimize } from '../engine/optimize.js';
-import type { AlgorithmOption, LayoutResult, PartInput, Placement, SheetInput, SheetLayout, UnplacedPart } from '../engine/types.js';
+import { optimize } from '../optimize.js';
+import type { AlgorithmOption, LayoutResult, PartInput, Placement, SheetInput, SheetLayout, UnplacedPart } from '../types.js';
 import { redondear, type Pieza, type Tablero } from './tipos.js';
 
 // ── Tipos del resultado MCP (los que esperan herramientas y exportadores) ──
@@ -185,11 +185,19 @@ function calcularConsumo(hojas: HojaOptimizada[], tableros: Tablero[]): ConsumoT
 
 // ── Función principal: llama al motor y traduce el resultado ──
 
-export function optimizar(
+export interface OptimizacionConLayout {
+  /** Resultado en el vocabulario del MCP (lo que devuelven las herramientas). */
+  resultado: ResultadoOptimizacion;
+  /** Layout crudo del motor, para SVG, PDF y etiquetas. */
+  layout: LayoutResult;
+}
+
+/** Igual que `optimizar`, pero devuelve además el layout del motor. */
+export function optimizarConLayout(
   piezas: Pieza[],
   tableros: Tablero[],
   opciones: OpcionesOptimizacion = {}
-): ResultadoOptimizacion {
+): OptimizacionConLayout {
   if (piezas.length === 0) throw new Error('Se requiere al menos una pieza.');
   if (tableros.length === 0) throw new Error('Se requiere al menos un tablero en stock.');
 
@@ -213,7 +221,7 @@ export function optimizar(
   const sobrantes = result.unplaced.map(u => sobranteDeMotor(u, lookup));
   const kerf = opciones.kerf ?? tableros[0]?.kerf ?? 0;
 
-  return {
+  const resultado: ResultadoOptimizacion = {
     resumen: {
       estrategia: algoritmoAEstrategia(result.algorithm),
       kerf,
@@ -228,4 +236,14 @@ export function optimizar(
     consumo: calcularConsumo(hojas, tableros),
     sobrantes,
   };
+
+  return { resultado, layout: result };
+}
+
+export function optimizar(
+  piezas: Pieza[],
+  tableros: Tablero[],
+  opciones: OpcionesOptimizacion = {}
+): ResultadoOptimizacion {
+  return optimizarConLayout(piezas, tableros, opciones).resultado;
 }

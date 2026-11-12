@@ -14,6 +14,7 @@ que expone el optimizador de corte a cualquier agente: **módulos paramétricos 
 | `crear_modulo` | `tipo` (`cajonera`, `closet`, `cocina`, `librero`), `ancho`, `alto`, `profundidad` en mm y opciones (`espesor`, `cantoFrente`, `numeroCajones`, `numeroEstantes`, `numeroPuertas`, `altoZocalo`, `holgura`, `nombre`, `material`) | lista de piezas con cantidad, veta y cantos + resumen (unidades, m²) |
 | `listar_piezas` | `piezas` | piezas normalizadas y resumen por grupo/material |
 | `optimizar_corte` | `piezas`, `tableros` y opciones (`estrategia`: `guillotina` \| `no-guillotina`, `kerf`, `permitirRotacion`) | layout por hoja con coordenadas en mm, aprovechamiento, consumo y piezas que no cupieron |
+| `importar` | `formato` (con importador: `cortecloud`, `csv_generico`, `dxf`, `opencutlist`, `polyboard`, `pro100`, `promob`) y `contenido` (el texto tal cual lo exporta la otra app) | piezas listas para `optimizar_corte` (con cantos `largo1`/`largo2`/`ancho1`/`ancho2`), resumen y avisos «por revisar» del formato |
 | `exportar` | `formato` (opcional), `piezas`, `tableros` (para los formatos con layout) | contenido del formato pedido; sin `formato`, el catálogo de formatos soportados con su estado |
 
 Las piezas llevan `largo` y `ancho` en mm; `veta: true` significa que la veta sigue el eje `largo`
@@ -72,6 +73,68 @@ curl -s -X POST http://localhost:3000/mcp \
 El endpoint valida `Host` y `Origin` (protección contra DNS rebinding) y **no** implementa
 autenticación: pensado para uso local. Si se publica, hay que ponerle autenticación delante.
 
+### Integración desde otra app (MCP por HTTP)
+
+Otra app del taller (por ejemplo un repo de muebles/Cortecloud) puede llamar a este servidor sin
+compartir código. Las listas de nombres permitidos se amplían con dos variables de entorno, sin
+tocar código (ver `src/red.ts`):
+
+| Variable | Qué acepta | Ejemplo |
+| --- | --- | --- |
+| `MCP_ANFITRIONES` | nombres del `Host` con los que llaman al servidor, separados por comas | `cutlist.mi-dominio.com` |
+| `MCP_ORIGENES` | nombres del `Origin` de las páginas que llaman desde el navegador | `app.mi-dominio.com` |
+
+- Los nombres van **sin esquema ni puerto** (el SDK compara solo el nombre del `Host`/`Origin`).
+- `localhost`, `127.0.0.1` y `[::1]` siguen aceptados siempre; sin las variables el comportamiento
+  es el de antes.
+- Una llamada **servidor a servidor** no manda `Origin`, así que basta con `MCP_ANFITRIONES`.
+- El servidor no trae autenticación: si sale de la red local, hay que ponerle un proxy con token o
+  mTLS delante.
+
+#### Dónde se configuran (servicio `mcp` del compose)
+
+El servicio `mcp` de `docker-compose.base44.yml` recibe las dos variables por `env_file`, sin tocar
+código ni el compose:
+
+1. `./.env.base44-defaults` — versionado, arranca vacío (sin valores sólo pasa `localhost`).
+2. `/run/base44/app.env` — lo carga el panel de Base44; si define la misma clave, gana sobre el
+   archivo anterior (por eso ninguna de las dos va bajo `environment:`, que las taparía).
+
+Tras cambiar los valores hay que recrear el servicio
+(`docker compose -f docker-compose.base44.yml up -d mcp`) y comprobar que llegaron:
+
+```bash
+docker compose -f docker-compose.base44.yml exec -T mcp \
+  sh -c 'test -n "$MCP_ANFITRIONES" && echo configurado || echo vacío'
+```
+
+Los nombres reales del despliegue de **muebles-cortecloud** todavía no están definidos
+(*por revisar*): hay que declarar el `Host` con el que ese repo llamará a este servidor
+(`MCP_ANFITRIONES`) y, si alguna llamada sale del navegador, el `Origin` de su página
+(`MCP_ORIGENES`). Mientras no se declaren, ese repo sólo puede llamar desde el sandbox de preview,
+donde el `Host`/`Origin` del proxy se aceptan por `BASE44_PREVIEW_MODE=1` (ver más abajo).
+
+Los dos sentidos de trabajo usan las mismas herramientas:
+
+1. **La otra app arma el despiece** → `importar` (`formato: "cortecloud"`, `contenido`: su JSON
+   `{"parts":[…]}`) → `optimizar_corte` → `exportar`. Las piezas que devuelve `importar` ya vienen
+   con los cantos en el vocabulario de `optimizar_corte`.
+2. **Este servidor arma el despiece** → `crear_modulo` (cajón, cajonera, clóset, cocina, escritorio,
+   librero) → `optimizar_corte` → `exportar` (por ejemplo `formato: "cortecloud"` para que la otra
+   app lo importe).
+
+Ejemplo mínimo con el cliente oficial (cualquier lenguaje con SDK MCP sirve igual):
+
+```ts
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+
+const cliente = new Client({ name: 'mi-app-cortecloud', version: '1.0.0' });
+await cliente.connect(new StreamableHTTPClientTransport(new URL('https://cutlist.mi-dominio.com/mcp')));
+
+const piezas = await cliente.callTool({ name: 'importar', arguments: { formato: 'cortecloud', contenido } });
+await cliente.callTool({ name: 'optimizar_corte', arguments: { piezas: piezas.structuredContent.piezas, tableros } });
+```
+
 ## Formatos de exportación
 
 | `formato` | Archivo | Estado | Fuente |
@@ -80,9 +143,35 @@ autenticación: pensado para uso local. Si se publica, hay que ponerle autentica
 | `csv` | `.csv` | verificado | esquema propio del proyecto (cabecera fija, se prueba ida y vuelta) |
 | `svg` | `.svg` | verificado | [W3C SVG 2](https://www.w3.org/TR/SVG2/) |
 | `dxf` | `.dxf` | **por revisar** | [Autodesk DXF Reference (R12)](https://damassets.autodesk.net/content/dam/autodesk/www/developer-network/platform-technologies/autocad-dxf-archive/acad_r12_dxf.pdf) y [ezdxf: estructura mínima R12](https://ezdxf.readthedocs.io/en/stable/dxfinternals/filestructure.html) |
+| `pdf` | `.pdf` | verificado | [ISO 32000-1 (PDF 1.4)](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf); la salida se lee con `pdf-lib` en `tests/pdf.test.ts` |
+| `etiquetas` | `.csv` | verificado | esquema propio (ver «Etiquetas de taller» abajo) |
 
 `exportar` devuelve también el estado y las fuentes de cada formato, para que el agente sepa qué
 está verificado y qué no.
+
+Salvo el PDF, el contenido viaja como texto. El PDF es binario: se entrega en base64, en el texto
+de la respuesta y en `structuredContent.contenidoBase64`, con `codificacion: "base64"`; el cliente
+lo decodifica y lo guarda como `.pdf`. Sólo `cortecloud` y `csv` exportan la lista de piezas sin
+tableros; el resto necesita `tableros` para calcular el layout.
+
+### Etiquetas de taller (CSV)
+
+`formato: "etiquetas"` devuelve una fila por pieza colocada, para rotular el corte. Separador coma,
+cabecera fija:
+
+| Columna | Contenido |
+| --- | --- |
+| `hoja` | número de hoja del layout |
+| `codigo` | código de la pieza en el layout (incluye el número de copia) |
+| `pieza` | nombre de la pieza |
+| `medidas` | medidas de la pieza terminada, en mm |
+| `cantos` | cantos declarados en la pieza (`largo 1: PVC 0.4 x 22 mm · …`) |
+| `veta` | «Veta horizontal (→)» o «Veta vertical (↓)» según cómo quedó en la hoja; vacío si no lleva |
+| `girada` | `si` cuando la pieza va girada 90° en la hoja |
+
+Los cantos salen del texto de la pieza (`cantos.largo1` … `cantos.ancho2`), que es como los
+declaran los módulos y la herramienta `importar`; el lado físico de cada orilla sigue **por
+revisar** (ver `docs/verificacion-lados-piezas.md`).
 
 ## Datos por revisar
 
@@ -101,10 +190,10 @@ Todo lo que no se ha podido contrastar con una fuente real queda marcado `por re
    100 mm, 3 cajones, 4 estantes (librero), 1 estante (clóset) y 2 puertas son valores de partida del
    proyecto; conviene pasarlos explícitos en cada corrida. El espesor por defecto (18 mm) sí sale del
    perfil de `docs/memoria/MEMORIA.md`.
-5. **Restricciones de fabricación.** El motor (de `optimizer-engine`) ya tiene perfiles de
-   restricciones (`CORTECLOUD_MADIJAL_PROFILE` en `src/engine/profiles.ts`), pero el adaptador del
-   MCP (`src/core/adaptador.ts`) todavía no los pasa a `optimize()`. Falta exponer el perfil como
-   parámetro de `optimizar_corte`.
+5. **Restricciones de fabricación.** El motor tiene perfiles de restricciones
+   (`CORTECLOUD_MADIJAL_PROFILE` en `src/profiles.ts`), pero el adaptador del MCP
+   (`src/core/adaptador.ts`) todavía no los pasa a `optimize()`; hoy se validan aparte con
+   `validar_despiece`. Falta exponer el perfil como parámetro de `optimizar_corte`.
 6. **Alcance de la cajonera.** Genera el cuerpo y los frentes de cajón, no la caja del cajón.
 7. **Trasera.** Se modela con el mismo espesor que el cuerpo, no con un fondo delgado.
 8. **Optimizador.** El motor es el de la rama `optimizer-engine` (PR 4), integrado en `src/engine/`.
@@ -122,4 +211,5 @@ Todo lo que no se ha podido contrastar con una fuente real queda marcado `por re
 Única concesión al sandbox: `src/http.ts` añade el `Host` del proxy (`<puerto>-<id>.$BASE44_SANDBOX_HOST_DOMAIN`)
 y el `Origin` público (`https://<puerto>-$BASE44_PUBLIC_HOST_SUFFIX`) a las listas permitidas **sólo**
 cuando `BASE44_PREVIEW_MODE` vale exactamente `"1"`. Sin esa variable (o con otro valor) el servidor
-solo acepta `localhost`, `127.0.0.1` y `[::1]`, que es el comportamiento original.
+solo acepta `localhost`, `127.0.0.1` y `[::1]` (más lo que se ponga en `MCP_ANFITRIONES` /
+`MCP_ORIGENES`), que es el comportamiento original.

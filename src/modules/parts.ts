@@ -21,13 +21,10 @@
  * o abajo en el mueble armado. Esa lectura va en ``funcion`` (texto libre) porque
  * depende de cómo se monta la pieza.
  *
- * *Por revisar*: la equivalencia entre estas aristas geométricas y los campos
- * ``c1``/``c2``/``l1``/``l2`` del formato de Cortecloud no está verificada. El
- * fixture real `tests/fixtures/cortecloud/escritorio_D_simple.json` trae
- * «Lateral cajón» con ``c=450``, ``l=75``, ``l1`` con canto y ``c1``/``c2`` en
- * ``null``, y «Frente cajón» con los cuatro cantos, que es la muestra para
- * resolverlo. Mientras no se verifique, cualquier exportación debe marcar ese
- * mapeo como `por revisar` (ver `docs/modulos-parametricos.md`).
+ * Equivalencia con el formato de Cortecloud: ``c1`` = ``largo_a`` (segmento 0-1),
+ * ``c2`` = ``largo_b`` (segmento 2-3), ``l1`` = ``ancho_b`` (segmento 1-2, lado
+ * inferior) y ``l2`` = ``ancho_a`` (segmento 3-0, lado superior), según la guía
+ * oficial del formato. La conversión vive en `./cortecloud.ts`.
  *
  * El canto se guarda como el texto del material del canto (igual que en
  * Cortecloud) o ``null`` si la arista no lleva canto.
@@ -306,8 +303,8 @@ export class Pieza {
    * Reparto de las aristas geométricas a los lados absolutos del motor.
    *
    * ``ancho_a``→arriba, ``ancho_b``→abajo, ``largo_a``→izquierda,
-   * ``largo_b``→derecha. **Por revisar**: es una convención de esta capa, no una
-   * equivalencia verificada con el formato de Cortecloud.
+   * ``largo_b``→derecha; es la misma lectura que los lados ``c1``/``c2``/``l1``/
+   * ``l2`` documentados por Cortecloud (ver `./cortecloud.ts`).
    */
   edgesDelMotor(): EdgeBanding {
     const e = emptyEdges();

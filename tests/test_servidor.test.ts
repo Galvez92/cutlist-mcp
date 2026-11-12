@@ -50,17 +50,20 @@ describe("vista previa · rutas GET", () => {
     expect(cuerpo).toContain("Módulos paramétricos");
   });
 
-  it("api de módulos lista los cuatro", async () => {
+  it("api de módulos lista los seis", async () => {
     const { estado, cuerpo } = await pedir("/api/modulos");
     expect(estado).toBe(200);
     const datos = JSON.parse(cuerpo);
     expect(datos.modulos.map((m: { tipo: string }) => m.tipo)).toEqual([
+      "cajon",
       "cajonera",
       "closet",
       "cocina",
+      "escritorio",
       "librero",
     ]);
-    const campos = new Set(datos.modulos[0].campos.map((c: { nombre: string }) => c.nombre));
+    const cajonera = datos.modulos.find((m: { tipo: string }) => m.tipo === "cajonera");
+    const campos = new Set(cajonera.campos.map((c: { nombre: string }) => c.nombre));
     expect(["ancho", "alto", "fondo", "cajones"].every((c) => campos.has(c))).toBe(true);
   });
 

@@ -47,7 +47,7 @@ describe('servidor MCP por Streamable HTTP', () => {
     await handler.close();
   });
 
-  it('expone las cinco herramientas con su esquema de entrada', async () => {
+  it('expone las seis herramientas con su esquema de entrada', async () => {
     const { tools } = await cliente.listTools();
     assert.deepEqual(
       tools.map(t => t.name).sort(),
@@ -62,7 +62,7 @@ describe('servidor MCP por Streamable HTTP', () => {
 
     const exportar = tools.find(t => t.name === 'exportar');
     const esquemaExportar = exportar?.inputSchema as { properties?: Record<string, { enum?: string[] }> };
-    assert.deepEqual(esquemaExportar.properties?.formato?.enum, ['cortecloud', 'csv', 'svg', 'dxf']);
+    assert.deepEqual(esquemaExportar.properties?.formato?.enum, ['cortecloud', 'csv', 'svg', 'dxf', 'pdf', 'etiquetas']);
   });
 
   it('crear_modulo devuelve las piezas y su resumen', async () => {
@@ -118,12 +118,18 @@ describe('servidor MCP por Streamable HTTP', () => {
   it('exportar sin formato devuelve el catálogo con estados de verificación', async () => {
     const respuesta = await cliente.callTool({ name: 'exportar', arguments: {} });
     assert.ok(!respuesta.isError, texto(respuesta));
-    const formatos = estructura(respuesta).formatos as { id: string; estado: string; fuentes: string[] }[];
+    const formatos = estructura(respuesta).formatos as {
+      id: string;
+      estado: string;
+      fuentes: string[];
+      codificacion?: string;
+    }[];
     assert.deepEqual(
       formatos.map(f => f.id),
-      ['cortecloud', 'csv', 'svg', 'dxf']
+      ['cortecloud', 'csv', 'svg', 'dxf', 'pdf', 'etiquetas']
     );
     assert.equal(formatos.find(f => f.id === 'dxf')?.estado, 'por revisar');
+    assert.equal(formatos.find(f => f.id === 'pdf')?.codificacion, 'base64');
     assert.ok(formatos.every(f => f.fuentes.length > 0));
     assert.ok(texto(respuesta).includes('por revisar'));
   });
@@ -136,6 +142,44 @@ describe('servidor MCP por Streamable HTTP', () => {
     assert.ok(!respuesta.isError, texto(respuesta));
     assert.equal(estructura(respuesta).estado, 'verificado');
     assert.ok(texto(respuesta).includes('id,nombre,largo_mm,ancho_mm,cantidad,veta'));
+  });
+
+  it('exportar a PDF devuelve el archivo en base64', async () => {
+    const modulo = await cliente.callTool({ name: 'crear_modulo', arguments: PARAMETROS_COCINA });
+    const piezas = estructura(modulo).piezas;
+
+    const respuesta = await cliente.callTool({
+      name: 'exportar',
+      arguments: { formato: 'pdf', piezas, tableros: [TABLERO] }
+    });
+    assert.ok(!respuesta.isError, texto(respuesta));
+
+    const datos = estructura(respuesta);
+    assert.equal(datos.codificacion, 'base64');
+    const base64 = datos.contenidoBase64 as string;
+    assert.ok(base64.length > 0);
+    assert.ok(Buffer.from(base64, 'base64').toString('latin1').startsWith('%PDF-1.4'));
+  });
+
+  it('exportar a etiquetas devuelve una fila por pieza colocada', async () => {
+    const modulo = await cliente.callTool({ name: 'crear_modulo', arguments: PARAMETROS_COCINA });
+    const piezas = estructura(modulo).piezas;
+
+    const optimizado = await cliente.callTool({
+      name: 'optimizar_corte',
+      arguments: { piezas, tableros: [TABLERO] }
+    });
+    const hojas = estructura(optimizado).hojas as { colocaciones: unknown[] }[];
+    const colocadas = hojas.reduce((total, hoja) => total + hoja.colocaciones.length, 0);
+
+    const respuesta = await cliente.callTool({
+      name: 'exportar',
+      arguments: { formato: 'etiquetas', piezas, tableros: [TABLERO] }
+    });
+    assert.ok(!respuesta.isError, texto(respuesta));
+    assert.ok(texto(respuesta).includes('hoja,codigo,pieza,medidas,cantos,veta,girada'));
+    // Cabecera + una fila por pieza colocada + el salto final del CSV.
+    assert.equal(estructura(respuesta).lineas, colocadas + 2);
   });
 
   it('exportar un formato con layout sin tableros da un error legible', async () => {

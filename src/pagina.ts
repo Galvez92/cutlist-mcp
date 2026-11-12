@@ -18,9 +18,18 @@ const HERRAMIENTAS = [
       'Piezas + tableros en stock → layout por hoja, aprovechamiento y lista de piezas que no cupieron (guillotina o MaxRects).'
   },
   {
+    nombre: 'importar',
+    descripcion:
+      'Lee un despiece ya armado en otro programa (Cortecloud, CSV, DXF, OpenCutList, Polyboard, Pro100, Promob) y devuelve las piezas listas para optimizar.'
+  },
+  {
     nombre: 'exportar',
     descripcion:
       'Exporta a los formatos soportados (cortecloud, csv, svg, dxf) con su estado de verificación; sin `formato`, devuelve el catálogo.'
+  },
+  {
+    nombre: 'validar_despiece',
+    descripcion: 'Valida las piezas contra el perfil de restricciones Cortecloud/Madijal y lista los hallazgos.'
   }
 ] as const;
 

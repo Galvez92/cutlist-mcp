@@ -8,20 +8,25 @@
 
 import type { ResultadoOptimizacion } from '../core/adaptador.js';
 import type { Pieza } from '../core/tipos.js';
+import type { LayoutResult } from '../types.js';
 import { exportarCortecloud } from './cortecloud.js';
 import { exportarCsv } from './csv.js';
 import { exportarDxf } from './dxf.js';
+import { exportarEtiquetas } from './etiquetas.js';
+import { exportarPdfBase64 } from './pdf.js';
 import { exportarSvg } from './svg.js';
 
 export type EstadoFormato = 'verificado' | 'por revisar';
 
 /** Identificadores soportados, en el mismo orden que `FORMATOS`. */
-export const IDS_FORMATOS = ['cortecloud', 'csv', 'svg', 'dxf'] as const;
+export const IDS_FORMATOS = ['cortecloud', 'csv', 'svg', 'dxf', 'pdf', 'etiquetas'] as const;
 export type IdFormato = (typeof IDS_FORMATOS)[number];
 
 export interface ContextoExportacion {
   piezas: Pieza[];
   resultado?: ResultadoOptimizacion;
+  /** Layout del motor; lo usan PDF, etiquetas, SVG y DXF. */
+  layout?: LayoutResult;
 }
 
 export interface FormatoExport {
@@ -35,6 +40,8 @@ export interface FormatoExport {
   nota: string;
   /** `true` si el formato necesita el layout optimizado. */
   requiereOptimizacion: boolean;
+  /** Cómo se codifica el contenido cuando es binario: hoy sólo `base64` (PDF). */
+  codificacion?: 'base64';
   exportar: (ctx: ContextoExportacion) => string;
 }
 
@@ -89,6 +96,36 @@ export const FORMATOS: FormatoExport[] = [
       'Por revisar: no se ha abierto la salida en un CAD real.',
     requiereOptimizacion: true,
     exportar: ({ resultado }) => exportarDxf(requerirResultado(resultado))
+  },
+  {
+    id: 'pdf',
+    nombre: 'PDF (lista de corte + plano)',
+    extension: 'pdf',
+    mime: 'application/pdf',
+    estado: 'verificado',
+    fuentes: [
+      'ISO 32000-1 (PDF 1.4), estructura de objetos, tabla xref y flujo de contenido: https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf',
+      'Salida leída con pdf-lib en tests/pdf.test.ts'
+    ],
+    nota:
+      'Una página de lista de corte y una por hoja, con los rótulos dentro de cada pieza. ' +
+      'Es binario: se entrega en base64 (campo `contenidoBase64`).',
+    requiereOptimizacion: true,
+    codificacion: 'base64',
+    exportar: ({ layout }) => exportarPdfBase64(requerirLayout(layout))
+  },
+  {
+    id: 'etiquetas',
+    nombre: 'Etiquetas de taller (CSV)',
+    extension: 'csv',
+    mime: 'text/csv',
+    estado: 'verificado',
+    fuentes: ['Esquema propio documentado en docs/mcp-server.md («Etiquetas de taller»)'],
+    nota:
+      'Una fila por pieza colocada: hoja, código, pieza, medidas terminadas, cantos, veta y si va girada. ' +
+      'Sirve para rotular las piezas después del corte.',
+    requiereOptimizacion: true,
+    exportar: ({ layout, piezas }) => exportarEtiquetas(requerirLayout(layout), piezas)
   }
 ];
 
@@ -97,6 +134,13 @@ function requerirResultado(resultado: ResultadoOptimizacion | undefined): Result
     throw new Error('Este formato necesita el layout: llama antes a optimizar_corte.');
   }
   return resultado;
+}
+
+function requerirLayout(layout: LayoutResult | undefined): LayoutResult {
+  if (!layout) {
+    throw new Error('Este formato necesita el layout: llama antes a optimizar_corte.');
+  }
+  return layout;
 }
 
 export function buscarFormato(id: string): FormatoExport | undefined {
@@ -118,8 +162,9 @@ export function catalogoFormatos(): {
   fuentes: string[];
   nota: string;
   requiereOptimizacion: boolean;
+  codificacion?: 'base64';
 }[] {
-  return FORMATOS.map(({ id, nombre, extension, mime, estado, fuentes, nota, requiereOptimizacion }) => ({
+  return FORMATOS.map(({ id, nombre, extension, mime, estado, fuentes, nota, requiereOptimizacion, codificacion }) => ({
     id,
     nombre,
     extension,
@@ -127,6 +172,7 @@ export function catalogoFormatos(): {
     estado,
     fuentes,
     nota,
-    requiereOptimizacion
+    requiereOptimizacion,
+    ...(codificacion ? { codificacion } : {})
   }));
 }

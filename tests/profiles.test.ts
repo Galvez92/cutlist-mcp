@@ -18,6 +18,31 @@ describe("perfil de restricciones Cortecloud/Madijal", () => {
     );
   });
 
+  it("acepta una pieza que cabe girada en la pieza máxima", () => {
+    // 600 × 2400 mm supera el orden 2480 × 1810 solo sin girar: el costado de
+    // un clóset o un librero de 2000 mm deben pasar sin aviso.
+    const parts = normalizeParts([
+      { code: "COSTADO", width: 600, height: 2400 },
+      { code: "TRASERA", width: 800, height: 2000 },
+    ]);
+
+    const codes = validateParts(parts, CORTECLOUD_MADIJAL_PROFILE).map(
+      (issue) => issue.code,
+    );
+
+    expect(codes).not.toContain("pieza-sobre-maximo");
+  });
+
+  it("marca la pieza que excede el máximo incluso girada", () => {
+    const parts = normalizeParts([{ code: "ANCHA", width: 1900, height: 2400 }]);
+
+    const codes = validateParts(parts, CORTECLOUD_MADIJAL_PROFILE).map(
+      (issue) => issue.code,
+    );
+
+    expect(codes).toContain("pieza-sobre-maximo");
+  });
+
   it("avisa que el perfil está por revisar", () => {
     const issues = validateParts(
       normalizeParts([{ code: "P", width: 600, height: 400 }]),

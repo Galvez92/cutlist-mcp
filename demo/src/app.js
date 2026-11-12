@@ -23,7 +23,7 @@ export function createApp(root) {
   head.innerHTML = `
     <h1>cutlist-mcp · demo del optimizador de corte</h1>
     <p>Piezas y tablero en stock → layout optimizado, aprovechamiento y descargas SVG en pantalla, PDF y CSV.
-    Genera el despiece de un módulo paramétrico (cajonera, clóset, cocina, librero) o carga el
+    Genera el despiece de un módulo paramétrico (cajón, cajonera, clóset, cocina, escritorio y librero) o carga el
     ejemplo real del escritorio compacto (fixture de Cortecloud).
     La demo usa el motor de <code>optimizer-engine</code> (PR&nbsp;4) y los módulos de
     <code>parametric-modules</code>; lo no verificado queda marcado <em>por revisar</em>.</p>

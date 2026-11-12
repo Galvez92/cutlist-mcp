@@ -17,9 +17,13 @@
  * - ``fondo`` es la profundidad total: ``fondo - espesorPuerta`` es el costado.
  * - Cuerpo: 2 costados, base entre costados, travesaño frontal y trasero de
  * 100 mm de alto arriba (como los travesaños del fixture Cortecloud), trasera de
- * 3 mm y zócalo (frente y dos laterales).
+ * 3 mm y zócalo (frente y dos laterales). La trasera va encastrada en una ranura
+ * de costados, base y travesaño trasero (``trasera_ranura``; ``false`` la deja
+ * clavada al dorso), con las mismas medidas que el clóset y la cajonera.
  * - Frente: puertas cubrientes o, si ``cajones > 0``, frentes de cajón (no se
  * combinan puertas y cajones en el mismo módulo).
+ * - Bisagras: cantidad por puerta con las mismas guías verificadas del clóset
+ *   (``bisagrasPuerta()``: alto con Hettich *Sensys* y peso con Blum CLIP top).
  */
 
 import { Accesorio, Modulo } from "./modulo.js";
@@ -29,13 +33,25 @@ import {
   JUEGO_DEFAULT,
   MATERIAL_DEFAULT,
   MATERIAL_TRASERA_DEFAULT,
+  RANURA_TRASERA_ANCHO_DEFAULT,
+  RANURA_TRASERA_DISTANCIA_DEFAULT,
+  RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
   cajon,
   elegirCorredera,
+  encajeTrasera,
   exigirPositivo,
+  fondoUtilCajon,
   frentes,
   repartir,
 } from "./common.js";
-import { Cantos, Pieza, ValueError } from "./parts.js";
+import {
+  ALTO_MAXIMO_BISAGRAS,
+  ANCHO_MAXIMO_GUIA_BISAGRAS,
+  PESO_TIRADOR_REFERENCIA,
+  bisagrasPuerta,
+  notasPesoBisagras,
+} from "./bisagras.js";
+import { Cantos, Mecanizado, Pieza, ValueError } from "./parts.js";
 
 export const CAMPOS: Record<string, string> = {
   ancho: "Ancho exterior, de costado a costado (mm)",
@@ -48,7 +64,12 @@ export const CAMPOS: Record<string, string> = {
   cajones: "Cantidad de cajones (0 si lleva puertas)",
   espesor: "Espesor del tablero del cuerpo (mm)",
   espesor_puerta: "Espesor del tablero de puertas (mm)",
+  peso_tirador: "Peso de un tirador de puerta (kg); 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)",
   trasera_espesor: "Espesor de la trasera (mm); 0 = sin trasera",
+  trasera_ranura: "Encastrar la trasera en una ranura de costados, base y travesaño trasero; false = clavada al dorso",
+  ranura_ancho: "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas",
+  ranura_profundidad: "Profundidad de la ranura de la trasera en la cara interior (mm)",
+  ranura_distancia: "Distancia de la ranura desde el borde del dorso (mm)",
   juego: "Holgura entre puertas o frentes (mm) — por revisar",
   juego_corredera: "Juego lateral total de la corredera (mm) — por revisar",
   margen_alto_cajon: "Diferencia de alto entre frente y caja del cajón (mm) — por revisar",
@@ -72,7 +93,12 @@ export interface ParamsCocina {
   cajones?: number;
   espesor?: number;
   espesorPuerta?: number;
+  pesoTirador?: number;
   traseraEspesor?: number;
+  traseraRanura?: boolean;
+  ranuraAncho?: number;
+  ranuraProfundidad?: number;
+  ranuraDistancia?: number;
   juego?: number;
   juegoCorredera?: number;
   margenAltoCajon?: number;
@@ -96,7 +122,12 @@ export const DEFAULTS_COCINA = {
   cajones: 0,
   espesor: 18.0,
   espesorPuerta: 18.0,
+  pesoTirador: PESO_TIRADOR_REFERENCIA,
   traseraEspesor: 3.0,
+  traseraRanura: true,
+  ranuraAncho: RANURA_TRASERA_ANCHO_DEFAULT,
+  ranuraProfundidad: RANURA_TRASERA_PROFUNDIDAD_DEFAULT,
+  ranuraDistancia: RANURA_TRASERA_DISTANCIA_DEFAULT,
   juego: JUEGO_DEFAULT,
   juegoCorredera: 25.0,
   margenAltoCajon: 20.0,
@@ -127,6 +158,9 @@ export function generar(params: ParamsCocina = {}): Modulo {
   if (p.cajones < 0 || p.puertas < 0) {
     throw new ValueError("puertas y cajones no pueden ser negativos");
   }
+  if (p.pesoTirador < 0) {
+    throw new ValueError("el peso del tirador no puede ser negativo");
+  }
 
   const [material, materialFrente, canto, cantoFrente] = frentes(
     p.material,
@@ -151,7 +185,29 @@ export function generar(params: ParamsCocina = {}): Modulo {
     throw new ValueError("la trasera no puede ocupar toda la profundidad del costado");
   }
 
+  // El interior de la caja va de la cara superior de la base a la cara inferior
+  // del travesaño trasero: son los dos lados horizontales que llevan la ranura.
+  const altoInterior = altoCarcasa - 2 * p.espesor;
+  if (altoInterior <= 0) {
+    throw new ValueError("la base y el travesaño trasero no dejan alto interior");
+  }
+
   const comun = { espesor: p.espesor, material, modulo: nombre };
+  const encaje =
+    p.traseraEspesor > 0 && p.traseraRanura
+      ? encajeTrasera({
+          anchoInterior,
+          altoInterior,
+          fondo: fondoCostado,
+          anchoRanura: p.ranuraAncho,
+          profundidad: p.ranuraProfundidad,
+          distancia: p.ranuraDistancia,
+          espesorTrasera: p.traseraEspesor,
+        })
+      : null;
+  const ranurasTrasera = encaje ? [encaje.ranura] : [];
+  const mecanizadoTrasera = new Mecanizado(ranurasTrasera);
+  const sufijoRanura = encaje ? ", ranura para la trasera" : "";
   const piezas: Pieza[] = [
     new Pieza({
       nombre: "Costado",
@@ -160,7 +216,11 @@ export function generar(params: ParamsCocina = {}): Modulo {
       cantidad: 2,
       rol: "costado",
       cantos: new Cantos(canto),
-      funcion: "Costado — canto en la arista frontal",
+      mecanizado: mecanizadoTrasera,
+      funcion:
+        "Costado — canto en la arista frontal" +
+        sufijoRanura +
+        (encaje ? ` a ${p.ranuraDistancia.toFixed(1)} mm del borde del dorso` : ""),
       ...comun,
     }),
     new Pieza({
@@ -169,7 +229,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
       ancho: anchoInterior,
       rol: "base",
       cantos: new Cantos(undefined, undefined, canto),
-      funcion: "Base entre costados — canto en la arista frontal",
+      mecanizado: mecanizadoTrasera,
+      funcion: "Base entre costados — canto en la arista frontal" + sufijoRanura,
       ...comun,
     }),
     new Pieza({
@@ -185,7 +246,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
       largo: anchoInterior,
       ancho: ALTO_TRAVESAÑO_DEFAULT,
       rol: "travesaño",
-      funcion: "Barra de armar trasera, arriba entre costados",
+      mecanizado: mecanizadoTrasera,
+      funcion: "Barra de armar trasera, arriba entre costados" + sufijoRanura,
       ...comun,
     }),
   ];
@@ -221,17 +283,24 @@ export function generar(params: ParamsCocina = {}): Modulo {
     piezas.push(
       new Pieza({
         nombre: "Trasera",
-        largo: altoCarcasa,
-        ancho: p.ancho,
+        largo: encaje ? Math.max(encaje.largo, encaje.ancho) : altoCarcasa,
+        ancho: encaje ? Math.min(encaje.largo, encaje.ancho) : p.ancho,
         espesor: p.traseraEspesor,
         material: p.materialTrasera,
         rol: "trasera",
         veta: "indiferente",
-        funcion: "Trasera clavada al dorso del módulo",
+        funcion: encaje
+          ? "Trasera encastrada en la ranura de costados, base y travesaño trasero"
+          : "Trasera clavada al dorso del módulo",
         modulo: nombre,
       }),
     );
   }
+
+  // Fondo libre para la caja del cajón: termina en la cara frontal de la
+  // trasera, que con ranura queda más adelante que el dorso.
+  const fondoUtil = fondoUtilCajon(fondoCostado, p.traseraEspesor, encaje, p.juegoFondo);
+  const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
 
   const notas: string[] = [
     `Alto de carcasa ${altoCarcasa.toFixed(0)} mm: ${p.zocalo.toFixed(0)} mm de zócalo y ${p.cubiertaEspesor.toFixed(0)} mm de mesón.`,
@@ -239,6 +308,21 @@ export function generar(params: ParamsCocina = {}): Modulo {
     `Zócalo retranqueado ${p.retranqueoZocalo.toFixed(0)} mm del borde de las puertas (ARAUCO #17 pide mínimo 75 mm).`,
     "El mesón y los artefactos no son piezas de este módulo.",
   ];
+  if (p.traseraEspesor <= 0) {
+    notas.push("Módulo sin trasera: necesita muro o rigidización adicional.");
+  } else if (encaje) {
+    notas.push(
+      `Trasera encastrada ${encaje.largo.toFixed(0)} x ${encaje.ancho.toFixed(0)} mm en una ranura de ` +
+        `${p.ranuraAncho.toFixed(1)} mm de ancho x ${p.ranuraProfundidad.toFixed(0)} mm de profundidad, ` +
+        `a ${p.ranuraDistancia.toFixed(0)} mm del borde del dorso, con ${encaje.holgura.toFixed(1)} mm ` +
+        `de holgura para el panel (manual de melamina; por revisar contra el fresol y el perfil de la máquina).`,
+    );
+    notas.push(
+      "La ranura va en costados, base y travesaño trasero; el travesaño frontal queda sin ranura.",
+    );
+  } else {
+    notas.push("La trasera se clava/atornilla al dorso, sin ranura.");
+  }
   const accesorios: Accesorio[] = [
     new Accesorio("Pata regulable", 4, "Cerradas por el zócalo"),
     new Accesorio("Tornillo 4 x 50 mm", 1, "Armado de costados, base y travesaños"),
@@ -249,8 +333,10 @@ export function generar(params: ParamsCocina = {}): Modulo {
     if (anchoCaja <= 2 * p.espesor) {
       throw new ValueError("el juego de corredera no deja ancho útil en la caja del cajón");
     }
-    const fondoUtil = fondoCostado - p.traseraEspesor - p.juegoFondo;
-    const { largo: largoCorredera, esEstandar } = elegirCorredera(fondoUtil);
+    notas.push(
+      `Fondo útil para el cajón: ${fondoUtil.toFixed(1)} mm hasta la cara frontal de la trasera ` +
+        `menos ${p.juegoFondo.toFixed(0)} mm de juego de fondo; la corredera no puede superar esa medida.`,
+    );
     if (!esEstandar) {
       notas.push(
         `Cajón de ${largoCorredera.toFixed(0)} mm de fondo: no calza ninguna corredera de 400/450/500 mm (ARAUCO #17); por revisar el catálogo.`,
@@ -315,14 +401,31 @@ export function generar(params: ParamsCocina = {}): Modulo {
         modulo: nombre,
       }),
     );
-    const bisagras = altoPuerta <= 900 ? 2 : 3;
+    const calculoBisagras = bisagrasPuerta(anchoPuerta, altoPuerta, p.espesorPuerta, {
+      pesoTiradorKg: p.pesoTirador,
+    });
     accesorios.push(
-      new Accesorio("Bisagra", bisagras * p.puertas, "Cantidad por alto de puerta — por revisar con el herraje"),
+      new Accesorio(
+        "Bisagra",
+        calculoBisagras.bisagras * p.puertas,
+        `Guías de Hettich Sensys (por alto) y Blum (2 bisagras hasta 6 kg, 3 hasta 12 kg), con el peso de la puerta y su tirador: ${calculoBisagras.bisagras} por puerta con ${calculoBisagras.pesoKg.toFixed(1)} kg (tirador ${calculoBisagras.pesoTiradorKg.toFixed(2)} kg)`,
+      ),
     );
     accesorios.push(new Accesorio("Tirador o manija", p.puertas));
     notas.push(
       `Puertas cubrientes de ${anchoPuerta.toFixed(1)} mm con ${p.juego.toFixed(0)} mm de holgura entre ellas (por revisar).`,
     );
+    notas.push(...notasPesoBisagras(calculoBisagras));
+    if (altoPuerta > ALTO_MAXIMO_BISAGRAS) {
+      notas.push(
+        `Puertas de ${altoPuerta.toFixed(0)} mm de alto: la guía de bisagras llega a ${ALTO_MAXIMO_BISAGRAS.toFixed(0)} mm; revisar la cantidad con el fabricante.`,
+      );
+    }
+    if (anchoPuerta > ANCHO_MAXIMO_GUIA_BISAGRAS) {
+      notas.push(
+        `Puertas de ${anchoPuerta.toFixed(1)} mm de ancho: la guía de bisagras vale hasta ${ANCHO_MAXIMO_GUIA_BISAGRAS.toFixed(0)} mm por hoja; revisar la cantidad con el fabricante.`,
+      );
+    }
   }
 
   return new Modulo(
@@ -336,6 +439,8 @@ export function generar(params: ParamsCocina = {}): Modulo {
       alto_carcasa: altoCarcasa,
       fondo_costado: fondoCostado,
       ancho_interior: anchoInterior,
+      fondo_util_cajon: fondoUtil,
+      largo_caja_cajon: p.cajones > 0 ? largoCorredera : 0.0,
     },
     piezas,
     accesorios,

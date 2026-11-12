@@ -274,12 +274,17 @@ export function validarPieza(pieza: Pieza, perfil: PerfilRestricciones): Hallazg
         );
       }
     }
+    // Un hallazgo por diámetro y tipo de barreno, no uno por agujero.
+    const barrenosVistos = new Set<string>();
     for (const barreno of pieza.mecanizado.barrenos) {
       const permitidos = barreno.horizontal
         ? perfil.barrenosHorizontales
         : perfil.barrenosVerticales;
+      const tipo = barreno.horizontal ? "horizontal" : "vertical";
+      const clave = `${tipo}:${barreno.diametro}`;
+      if (barrenosVistos.has(clave)) continue;
+      barrenosVistos.add(clave);
       if (!permitidos.some((d) => igual(d, barreno.diametro))) {
-        const tipo = barreno.horizontal ? "horizontal" : "vertical";
         hallazgos.push(
           error(
             pieza,

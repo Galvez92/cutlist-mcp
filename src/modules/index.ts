@@ -1,11 +1,14 @@
 /** Registro de módulos paramétricos: cajonera, clóset, cocina y librero. */
 
 import type { Modulo } from "./modulo.js";
+import * as cajon from "./cajon.js";
 import * as cajonera from "./cajonera.js";
 import * as closet from "./closet.js";
 import * as cocina from "./cocina.js";
+import * as escritorio from "./escritorio.js";
 import * as librero from "./librero.js";
 import { ValueError } from "./parts.js";
+import { PESO_TIRADOR_REFERENCIA } from "./bisagras.js";
 
 /** Tipos simples expuestos a la vista previa (igual que el Python original). */
 export type TipoCampo = "float" | "int" | "bool" | "texto" | "lista" | "float_opcional";
@@ -59,6 +62,23 @@ const caj = (nombre: string, campo: string, tipo: TipoCampo, def: number | numbe
   descripcion,
 });
 
+const CAMPOS_CAJON: CampoParam[] = [
+  caj("ancho", "ancho", "float", 600.0, "Ancho exterior de la caja del cajón (mm)"),
+  caj("fondo", "fondo", "float", 500.0, "Profundidad del cajón, largo del lateral (mm)"),
+  caj("alto", "alto", "float", 150.0, "Alto del lateral del cajón (mm)"),
+  caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
+  caj("fondo_espesor", "fondoEspesor", "float", 3.0, "Espesor del panel del fondo (mm); 0 = sin fondo"),
+  caj("ranura_ancho", "ranuraAncho", "float", 6.7, "Ancho de la ranura del fondo (mm) — debe estar en las permitidas del perfil"),
+  caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde inferior (mm)"),
+  caj("ranura_profundidad", "ranuraProfundidad", "float", 10.0, "Profundidad de la ranura en la cara interior (mm)"),
+  caj("distancia_minifix", "distanciaMinifix", "float", 50.0, "Distancia de los minifix desde las orillas superior e inferior (mm)"),
+  caj("diametro_pin", "diametroPin", "float", 7.0, "Diámetro del barreno del pasador minifix en el canto (mm); el herraje real usa Ø7 u Ø8"),
+  caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
+  caj("material_fondo", "materialFondo", "texto", "MDF 3 mm", "Texto del material del fondo"),
+  caj("canto", "canto", "texto", "PVC 0.4 mm", "Texto del canto de las aristas vistas"),
+  caj("nombre", "nombre", "texto", "", "Nombre del módulo para el despiece"),
+];
+
 const CAMPOS_CAJONERA: CampoParam[] = [
   caj("ancho", "ancho", "float", 450.0, "Ancho exterior, de costado a costado (mm)"),
   caj("alto", "alto", "float", 800.0, "Alto exterior total (mm)"),
@@ -66,6 +86,10 @@ const CAMPOS_CAJONERA: CampoParam[] = [
   caj("cajones", "cajones", "int", 4, "Cantidad de cajones"),
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
+  caj("trasera_ranura", "traseraRanura", "bool", true, "Encastrar la trasera en una ranura de los cuatro lados; false = clavada al dorso"),
+  caj("ranura_ancho", "ranuraAncho", "float", 5.7, "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas"),
+  caj("ranura_profundidad", "ranuraProfundidad", "float", 9.0, "Profundidad de la ranura de la trasera en la cara interior (mm)"),
+  caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde del dorso (mm)"),
   caj("juego", "juego", "float", 3.0, "Holgura entre frentes (mm) — por revisar"),
   caj("juego_corredera", "juegoCorredera", "float", 25.0, "Juego lateral total de la corredera (mm) — por revisar"),
   caj("margen_alto_cajon", "margenAltoCajon", "float", 20.0, "Diferencia de alto entre frente y caja del cajón (mm) — por revisar"),
@@ -91,8 +115,13 @@ const CAMPOS_CLOSET: CampoParam[] = [
   caj("repisas_moviles", "repisasMoviles", "bool", false, "Perforar los costados para soportes de repisa (Ø5)"),
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("espesor_puerta", "espesorPuerta", "float", 18.0, "Espesor del tablero de puertas (mm)"),
+  caj("peso_tirador", "pesoTirador", "float", PESO_TIRADOR_REFERENCIA, "Peso de un tirador de puerta (kg), que suma la guía de bisagras; 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
-  caj("juego", "juego", "float", 3.0, "Holgura entre puertas (mm) — por revisar"),
+  caj("trasera_ranura", "traseraRanura", "bool", true, "Encastrar la trasera en una ranura de los cuatro lados; false = clavada al dorso"),
+  caj("ranura_ancho", "ranuraAncho", "float", 5.7, "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas"),
+  caj("ranura_profundidad", "ranuraProfundidad", "float", 9.0, "Profundidad de la ranura de la trasera en la cara interior (mm)"),
+  caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde del dorso (mm)"),
+  caj("juego", "juego", "float", 3.0, "Holgura entre puertas (mm); el revelado mínimo de la bisagra pide 2.6"),
   caj("traslape_corredera", "traslapeCorredera", "float", 30.0, "Traslape entre puertas correderas (mm) — por revisar"),
   caj("juego_guia", "juegoGuia", "float", 45.0, "Juego vertical para las guías de puerta corredera (mm) — por revisar"),
   caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
@@ -114,7 +143,12 @@ const CAMPOS_COCINA: CampoParam[] = [
   caj("cajones", "cajones", "int", 0, "Cantidad de cajones (0 si lleva puertas)"),
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("espesor_puerta", "espesorPuerta", "float", 18.0, "Espesor del tablero de puertas (mm)"),
+  caj("peso_tirador", "pesoTirador", "float", PESO_TIRADOR_REFERENCIA, "Peso de un tirador de puerta (kg), que suma la guía de bisagras; 0 = sin tirador (por omisión, el de la ficha del tirador de 96 mm)"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
+  caj("trasera_ranura", "traseraRanura", "bool", true, "Encastrar la trasera en una ranura de costados, base y travesaño trasero; false = clavada al dorso"),
+  caj("ranura_ancho", "ranuraAncho", "float", 5.7, "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas"),
+  caj("ranura_profundidad", "ranuraProfundidad", "float", 9.0, "Profundidad de la ranura de la trasera en la cara interior (mm)"),
+  caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde del dorso (mm)"),
   caj("juego", "juego", "float", 3.0, "Holgura entre puertas o frentes (mm) — por revisar"),
   caj("juego_corredera", "juegoCorredera", "float", 25.0, "Juego lateral total de la corredera (mm) — por revisar"),
   caj("margen_alto_cajon", "margenAltoCajon", "float", 20.0, "Diferencia de alto entre frente y caja del cajón (mm) — por revisar"),
@@ -136,12 +170,37 @@ const CAMPOS_LIBRERO: CampoParam[] = [
   caj("repisas_moviles", "repisasMoviles", "bool", false, "Perforar los costados para soportes de repisa (Ø5)"),
   caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
   caj("trasera_espesor", "traseraEspesor", "float", 3.0, "Espesor de la trasera (mm); 0 = sin trasera"),
+  caj("trasera_ranura", "traseraRanura", "bool", true, "Encastrar la trasera en una ranura de los cuatro lados; false = clavada al dorso"),
+  caj("ranura_ancho", "ranuraAncho", "float", 5.7, "Ancho de la ranura de la trasera (mm) — por revisar, el perfil exige una de sus medidas"),
+  caj("ranura_profundidad", "ranuraProfundidad", "float", 9.0, "Profundidad de la ranura de la trasera en la cara interior (mm)"),
+  caj("ranura_distancia", "ranuraDistancia", "float", 15.0, "Distancia de la ranura desde el borde del dorso (mm)"),
   caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
   caj("material_trasera", "materialTrasera", "texto", "MDF 3 mm", "Texto del material de la trasera"),
   caj("canto", "canto", "texto", "PVC 0.4 mm", "Texto del canto de las aristas vistas del cuerpo"),
   caj("nombre", "nombre", "texto", "", "Nombre del módulo para el despiece"),
 ];
 
+const CAMPOS_ESCRITORIO: CampoParam[] = [
+  caj("ancho", "ancho", "float", 1200.0, "Ancho exterior del escritorio (mm)"),
+  caj("fondo", "fondo", "float", 600.0, "Profundidad del escritorio (mm)"),
+  caj("alto", "alto", "float", 750.0, "Alto exterior total, piso a cara superior de la cubierta (mm)"),
+  caj("faldon", "faldon", "float", 100.0, "Alto del faldón frontal (mm) — mínimo 70"),
+  caj("espesor", "espesor", "float", 18.0, "Espesor del tablero del cuerpo (mm)"),
+  caj("espesor_cubierta", "espesorCubierta", "float", 18.0, "Espesor del tablero de la cubierta (mm); 0 = igual al cuerpo"),
+  caj("material", "material", "texto", "Melamina 18 mm", "Texto del material del cuerpo (como en el despiece)"),
+  caj("material_cubierta", "materialCubierta", "texto", "", "Texto del material de la cubierta; vacío = igual al cuerpo"),
+  caj("canto", "canto", "texto", "PVC 0.4 mm", "Texto del canto de las aristas vistas del cuerpo"),
+  caj("canto_cubierta", "cantoCubierta", "texto", "", "Texto del canto de la cubierta; vacío = igual al del cuerpo"),
+  caj("nombre", "nombre", "texto", "", "Nombre del módulo para el despiece"),
+];
+
+export const CAJON = new ModuloRegistrado(
+  "cajon",
+  "Cajón",
+  "Caja de cajón individual: fondo en ranura, armado con minifix, correderas al centro.",
+  CAMPOS_CAJON,
+  (params) => cajon.generar(params as cajon.ParamsCajon),
+);
 export const CAJONERA = new ModuloRegistrado(
   "cajonera",
   "Cajonera",
@@ -170,16 +229,27 @@ export const LIBRERO = new ModuloRegistrado(
   CAMPOS_LIBRERO,
   (params) => librero.generar(params as librero.ParamsLibrero),
 );
+export const ESCRITORIO = new ModuloRegistrado(
+  "escritorio",
+  "Escritorio",
+  "Escritorio con cubierta, costados y faldón ≥ 70 mm.",
+  CAMPOS_ESCRITORIO,
+  (params) => escritorio.generar(params as escritorio.ParamsEscritorio),
+);
 
 export const MODULOS: Record<string, ModuloRegistrado> = {
+  cajon: CAJON,
   cajonera: CAJONERA,
   closet: CLOSET,
   cocina: COCINA,
+  escritorio: ESCRITORIO,
   librero: LIBRERO,
 };
 
 /** Alias aceptados al nombrar un módulo en texto libre. */
 export const ALIAS: Record<string, string> = {
+  cajon: "cajon",
+  "cajón": "cajon",
   cajonera: "cajonera",
   cajonero: "cajonera",
   closet: "closet",
@@ -190,6 +260,8 @@ export const ALIAS: Record<string, string> = {
   "bajo mesada": "cocina",
   bajomesada: "cocina",
   "mueble bajo": "cocina",
+  escritorio: "escritorio",
+  mesa: "escritorio",
   librero: "librero",
   biblioteca: "librero",
   estanteria: "librero",

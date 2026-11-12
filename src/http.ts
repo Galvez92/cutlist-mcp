@@ -7,7 +7,8 @@
  * `Host` por sandbox (`<puerto>-<id>.$BASE44_SANDBOX_HOST_DOMAIN`) y el navegador
  * manda un `Origin` público (`https://<puerto>-$BASE44_PUBLIC_HOST_SUFFIX`), así que
  * sólo con `BASE44_PREVIEW_MODE=1` se añaden esos dos nombres a la lista permitida.
- * Sin la variable, se comporta como un servidor local normal (localhost únicamente).
+ * Sin la variable, se comporta como un servidor local normal (localhost más lo que se
+ * configure en `MCP_ANFITRIONES` / `MCP_ORIGENES` para otra app, ver `src/red.ts`).
  */
 
 import { createServer as crearServidorHttp, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -16,6 +17,7 @@ import { hostHeaderValidation, originValidation, toNodeHandler } from '@modelcon
 import { createMcpHandler } from '@modelcontextprotocol/server';
 
 import { paginaPresentacion } from './pagina.js';
+import { anfitrionesPermitidos, origenesPermitidos } from './red.js';
 import { crearServidor } from './servidor.js';
 
 const puerto = Number(process.env.PORT ?? 3000);
@@ -24,14 +26,14 @@ const enPreview = process.env.BASE44_PREVIEW_MODE === '1';
 const sufijoPublico = process.env.BASE44_PUBLIC_HOST_SUFFIX?.trim();
 const dominioSandbox = process.env.BASE44_SANDBOX_HOST_DOMAIN?.trim();
 
-const ANFITRIONES_LOCALES = ['localhost', '127.0.0.1', '[::1]'];
-
 /** Nombres añadidos únicamente en el sandbox de preview. */
 const anfitrionesPreview = enPreview && sufijoPublico ? [`${puerto}-${sufijoPublico}`] : [];
 const sufijoPreview = enPreview && dominioSandbox ? `.${dominioSandbox}` : null;
 
-const validarAnfitrionSdk = hostHeaderValidation([...ANFITRIONES_LOCALES, ...anfitrionesPreview]);
-const validarOrigen = originValidation([...ANFITRIONES_LOCALES, ...anfitrionesPreview]);
+// Listas base: locales + `MCP_ANFITRIONES` / `MCP_ORIGENES` (otra app que llama al
+// servidor). Ver `src/red.ts` y `docs/mcp-server.md`.
+const validarAnfitrionSdk = hostHeaderValidation([...anfitrionesPermitidos(), ...anfitrionesPreview]);
+const validarOrigen = originValidation([...origenesPermitidos(), ...anfitrionesPreview]);
 
 function hostnameDe(cabecera: string | undefined): string | null {
   if (!cabecera) return null;

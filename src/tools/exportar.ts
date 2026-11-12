@@ -1,7 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 
 import type { ResultadoOptimizacion } from '../core/adaptador.js';
-import { optimizar } from '../core/adaptador.js';
+import { optimizarConLayout } from '../core/adaptador.js';
+import type { LayoutResult } from '../types.js';
 import { exportarSchema } from '../esquemas.js';
 import { buscarFormato, catalogoFormatos, idsFormatos } from '../export/index.js';
 import { ejecutar, normalizarPiezas, normalizarTableros } from './comun.js';
@@ -27,7 +28,8 @@ export function registrarExportar(servidor: McpServer): void {
       description:
         'Exporta la lista de piezas (y el layout, cuando el formato lo necesita) al formato pedido. ' +
         'Si se omite `formato`, devuelve el catálogo de formatos soportados con su estado de verificación. ' +
-        'Formatos con layout: svg y dxf (requieren tableros). El contenido se entrega como texto.',
+        'Formatos con layout: svg, dxf, pdf y etiquetas (requieren tableros). ' +
+        'El contenido se entrega como texto; el pdf, en base64 (`contenidoBase64`).',
       inputSchema: exportarSchema
     },
     async ({ formato, piezas: entradasPiezas, tableros: entradasTableros, estrategia, kerf, permitirRotacion }) =>
@@ -54,27 +56,33 @@ export function registrarExportar(servidor: McpServer): void {
 
         const piezas = normalizarPiezas(entradasPiezas);
         let resultado: ResultadoOptimizacion | undefined;
+        let layout: LayoutResult | undefined;
 
         if (definicion.requiereOptimizacion) {
           if (!entradasTableros || entradasTableros.length === 0) {
             throw new Error(`El formato ${definicion.id} necesita tableros en stock para calcular el layout.`);
           }
-          resultado = optimizar(piezas, normalizarTableros(entradasTableros, piezas), {
+          const optimizacion = optimizarConLayout(piezas, normalizarTableros(entradasTableros, piezas), {
             ...(estrategia ? { estrategia } : {}),
             ...(kerf === undefined ? {} : { kerf }),
             ...(permitirRotacion === undefined ? {} : { permitirRotacion })
           });
+          resultado = optimizacion.resultado;
+          layout = optimizacion.layout;
         }
 
-        const contenido = definicion.exportar({ piezas, resultado });
+        const contenido = definicion.exportar({ piezas, resultado, layout });
+        const esBase64 = definicion.codificacion === 'base64';
         const encabezado = [
           `Formato ${definicion.id} (${definicion.nombre}, .${definicion.extension}) · estado: ${definicion.estado}`,
           `Nota: ${definicion.nota}`,
           `Fuentes: ${definicion.fuentes.join(' | ')}`
         ].join('\n');
 
+        const cuerpo = esBase64 ? `Contenido binario en base64 (${definicion.mime}):\n${contenido}` : contenido;
+
         return {
-          content: [{ type: 'text', text: `${encabezado}\n\n${contenido}` }],
+          content: [{ type: 'text', text: `${encabezado}\n\n${cuerpo}` }],
           structuredContent: {
             formato: definicion.id,
             nombre: definicion.nombre,
@@ -84,8 +92,8 @@ export function registrarExportar(servidor: McpServer): void {
             fuentes: definicion.fuentes,
             nota: definicion.nota,
             caracteres: contenido.length,
-            lineas: contenido.split('\n').length,
-            piezas: piezas.length
+            piezas: piezas.length,
+            ...(esBase64 ? { codificacion: 'base64' as const, contenidoBase64: contenido } : { lineas: contenido.split('\n').length })
           }
         };
       })

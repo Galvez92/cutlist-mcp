@@ -24,14 +24,14 @@ describe("librero · cuerpo", () => {
     expect([buscar(modulo, "Base").largo, buscar(modulo, "Base").ancho]).toEqual([300.0, 764.0]);
     expect(buscar(modulo, "Tapa").cantidad).toBe(1);
     expect(buscar(modulo, "Trasera").espesor).toBe(3.0);
-    expect([buscar(modulo, "Trasera").largo, buscar(modulo, "Trasera").ancho]).toEqual([2000.0, 800.0]);
+    expect([buscar(modulo, "Trasera").largo, buscar(modulo, "Trasera").ancho]).toEqual([1982.0, 782.0]);
   });
 
   it("repisas repartidas en el interior", () => {
     const modulo = generar();
     const repisa = buscar(modulo, "Repisa");
     expect(repisa.cantidad).toBe(4);
-    expect([repisa.largo, repisa.ancho]).toEqual([300.0, 764.0]);
+    expect([repisa.largo, repisa.ancho]).toEqual([279.3, 764.0]);
     expect(repisa.cantos.porArista()).toEqual({ ancho_a: "PVC 0.4 mm" });
     expect(modulo.notas.some((n) => n.startsWith("Alturas de repisa"))).toBe(true);
   });

@@ -81,8 +81,9 @@ const jsonCortecloud = exportar(lista, "cortecloud");   // listo para cargar en 
 ## Por revisar
 
 - La guía oficial **no declara la unidad de medida**: se asume milímetro (mm).
-- Leer `c` como largo y `l` como ancho se deduce de los «lados C1/C2/L1/L2» del
-  diagrama oficial; conviene confirmarlo con Cortecloud/Serrabits.
+- `c` = largo y `l` = ancho están en la tabla de campos de la guía oficial; los
+  lados siguen el sistema de coordenadas documentado (C1 = 0-1, L1 = 1-2,
+  C2 = 2-3, L2 = 3-0, pieza vista por la cara interna).
 - El bloque `machining` se conserva sin validar cotas ni geometría.
 - El importador no vincula materiales automáticamente (decisión del proyecto).
 
