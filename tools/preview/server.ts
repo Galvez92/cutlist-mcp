@@ -143,10 +143,10 @@ export function createPreviewServer(): Server {
     } catch (e) {
       if (e instanceof ValueError) {
         errorJson(res, 400, e.message);
-      } else if (e instanceof Error) {
-        errorJson(res, 400, e.message);
       } else {
-        errorJson(res, 400, String(e));
+        // No exponer detalles internos (stack/mensajes) al cliente.
+        console.error("error interno en el preview:", e);
+        errorJson(res, 500, "error interno del servidor");
       }
     }
   });
