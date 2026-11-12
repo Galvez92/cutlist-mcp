@@ -39,6 +39,23 @@ for (const aviso of lista.porRevisar()) {                // lo no verificado, co
 Cada formato declara su estado y sus fuentes públicas; lo que no se pudo verificar
 se marca **por revisar** con enlace. Ver `docs/formatos/`.
 
+### Exportación por MCP (`exportar`)
+
+| `formato` | Archivo | Estado |
+|---|---|---|
+| `cortecloud` | `.json` | verificado |
+| `csv` | `.csv` | verificado |
+| `svg` | `.svg` | verificado |
+| `dxf` | `.dxf` | por revisar |
+| `pdf` | `.pdf` | verificado |
+| `etiquetas` | `.csv` | verificado |
+
+`exportar` sin `formato` devuelve el catálogo con el estado y las fuentes de cada uno. Los
+formatos con layout (`svg`, `dxf`, `pdf`, `etiquetas`) necesitan la corrida de `optimizar_corte`.
+El PDF es binario: viaja en base64 (`structuredContent.contenidoBase64`, `codificacion:
+"base64"`). Las etiquetas de taller son CSV propio, con una fila por copia numerada
+(`hoja,codigo,pieza,medidas,cantos,veta,girada`). Detalle en `docs/mcp-server.md`.
+
 Pruebas (TypeScript, sin dependencias de ejecución): `docker compose -f docker-compose.base44.yml exec -T web npm test` (373 pruebas `vitest` + 74 del servidor MCP), o `npx vitest run` sobre Node. Tipos: `npm run typecheck`.
 
 Licencia MIT.
@@ -63,6 +80,23 @@ sources; anything that could not be verified is flagged **por revisar** (to be
 verified) with a link — see `docs/formatos/`. TypeScript, Node standard library
 only, no runtime dependencies; tests run with
 `docker compose -f docker-compose.base44.yml exec -T web npm test`.
+
+### MCP export formats (`exportar`)
+
+| `formato` | File | Status |
+|---|---|---|
+| `cortecloud` | `.json` | verified |
+| `csv` | `.csv` | verified |
+| `svg` | `.svg` | verified |
+| `dxf` | `.dxf` | to be verified (*por revisar*) |
+| `pdf` | `.pdf` | verified |
+| `etiquetas` | `.csv` | verified |
+
+`exportar` without `formato` returns the catalog with each format's status and sources. Layout
+formats (`svg`, `dxf`, `pdf`, `etiquetas`) need an `optimizar_corte` run first. The PDF is
+binary: it travels as base64 (`structuredContent.contenidoBase64`, `codificacion: "base64"`).
+Workshop labels are our own CSV, one row per numbered copy
+(`hoja,codigo,pieza,medidas,cantos,veta,girada`). See `docs/mcp-server.md` for details.
 
 MIT licensed.
 
